@@ -9,7 +9,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 |---|---|
 | 0: dependency inventory | ✅ done 2026-09-30, verdict GO ([phase0-inventory.md](phase0-inventory.md)) |
 | 1: new repo that builds | ✅ done 2026-09-30: macOS, Linux, Windows (x64), with JIT; smoke test incl. MRS scripts passes on all three |
-| 2: tests and ecosystem validation | 🟡 unit + component tests pass on macOS (116/116); Windows unit tests 98/99 in progress; Linux VM offline; MTR → pytest harness next |
+| 2: tests and ecosystem validation | 🟡 unit + component tests pass on macOS and Windows (116/116 each); Linux VM offline; MTR → pytest harness in progress |
 | 3: MRS setup and cleanup | ⏳ not started |
 | 4: packaging and CI | ⏳ not started |
 
@@ -152,7 +152,8 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
 - [x] mock server without X (step 1.7)
 - [x] unit tests (99 executables) pass on macOS; MRS DB tests run against package mysqld
 - [x] component tests: 17 suites pass on macOS (`-DWITH_COMPONENT_TESTS=ON`), 105 cases excluded
-- [ ] Windows: duktape shared + plugin dir on test PATH (fix pending verification)
+- [x] Windows: 116/116 (duktape shared, plugin dir on test PATH, ws2_32, signal_me→compat,
+      crash-handler symbols, eventlog routing case excluded, id_mismatch waits for exit)
 - [ ] Linux: unit + component tests (VM offline)
 - [ ] MTR suite → pytest harness (mysqltest-subset interpreter, mrs_client, golden files)
 - [ ] integration tests (tests/integration): triage
@@ -169,8 +170,7 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
 - Repository: local git repo in `<dev>/mysql/mrsd`, moved to the final remote later.
 
 ## Next steps
-1. Verify the Windows test fixes (duktape shared, plugin dir on PATH), enable component tests there.
-2. Linux test run when the VM is back.
+1. Linux test run when the VM is back.
 3. pytest harness for the MRS functional suite: port `router/tests/mrs_client`, write the
    mysqltest-subset interpreter, replace the bootstrap-based router setup, start with
    the `table_*` and `mrs_*` tests.

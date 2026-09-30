@@ -192,6 +192,10 @@ TEST_F(RouterMrsConfig, id_mismatch) {
                                 "Metadata already contains Router registered "
                                 "as '.*' at '.*' with id: \\d+, new id: \\d+",
                                 5s));
+
+  // mrsd: wait for the router to exit by itself; otherwise teardown may stop
+  // it while it is still shutting down (seen on Windows under load).
+  check_exit_code(router, EXIT_FAILURE);
 }
 
 /**
