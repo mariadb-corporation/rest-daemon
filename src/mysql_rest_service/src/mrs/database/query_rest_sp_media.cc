@@ -1,0 +1,52 @@
+/*
+ Copyright (c) 2021, 2026, Oracle and/or its affiliates.
+ Copyright (c) 2026, MariaDB plc.
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License, version 2.0,
+ as published by the Free Software Foundation.
+
+ This program is designed to work with certain software (including
+ but not limited to OpenSSL) that is licensed under separate terms,
+ as designated in a particular file or component or in included license
+ documentation.  The authors of MySQL hereby grant you an additional
+ permission to link the program and your derivative works with the
+ separately licensed software that they have either included with
+ the program or referenced in the documentation.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#include "mrs/database/query_rest_sp_media.h"
+
+#include <stdexcept>
+
+namespace mrs {
+namespace database {
+
+void QueryRestSPMedia::query_entries(MySQLSession *session,
+                                     const std::string &schema,
+                                     const std::string &object,
+                                     const mysqlrouter::sqlstring &values) {
+  items = 0;
+  mysqlrouter::sqlstring query{"CALL !.!(!)"};
+  query << schema << object << values;
+
+  auto result = session->query_one(query);
+
+  if (result->size() < 1)
+    throw std::logic_error("Query returned an empty resultset.");
+
+  items = 1;
+  response.assign((*result.get())[0], result->get_data_size(0));
+}
+
+}  // namespace database
+}  // namespace mrs
