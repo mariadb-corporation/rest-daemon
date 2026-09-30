@@ -97,7 +97,9 @@ using namespace std::string_literals;
 using mysql_harness::DIM;
 using mysql_harness::utility::string_format;
 using mysql_harness::utility::wrap_string;
+#ifndef _WIN32
 using mysqlrouter::SysUserOperationsBase;
+#endif
 
 static const char kProgramName[] = "mysqlrouter";
 
