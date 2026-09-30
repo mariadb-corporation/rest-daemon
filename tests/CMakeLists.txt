@@ -83,6 +83,9 @@ TARGET_INCLUDE_DIRECTORIES(routertest_helpers
 IF(WITH_COMPONENT_TESTS)
   ADD_SUBDIRECTORY(component)
 ENDIF()
+# REST client used by the MRS functional tests (tests/mrs)
+ADD_SUBDIRECTORY(mrs_client)
+
 IF(WITH_INTEGRATION_TESTS)
   ADD_SUBDIRECTORY(integration)
 ENDIF()

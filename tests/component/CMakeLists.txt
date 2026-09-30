@@ -38,6 +38,7 @@ MYSQL_ADD_EXECUTABLE(master_key_test_writer
 
 MYSQL_ADD_EXECUTABLE(signal_me
   signal_me.cc
+  LINK_LIBRARIES mrsd_compat  # my_write_core() & co. (upstream: mysys)
   COMPONENT Router
   SKIP_INSTALL
   )
