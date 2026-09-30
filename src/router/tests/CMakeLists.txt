@@ -58,7 +58,7 @@ ADD_HARNESS_TEST_FILE(test_certificate_handler.cc
 ADD_HARNESS_TEST_FILE(test_uri.cc
   MODULE ${TEST_MODULE}
   EXTRA_SOURCES
-    ${CMAKE_SOURCE_DIR}/unittest/gunit/benchmark.cc
+    ${CMAKE_SOURCE_DIR}/tests/helpers/benchmark/benchmark.cc
   LIB_DEPENDS
     test-helpers
     router_utils
@@ -110,19 +110,6 @@ ADD_HARNESS_TEST_FILE(test_mysql_session.cc
     ../src/
   SYSTEM_INCLUDE_DIRS ${GMOCK_INCLUDE_DIRS})
 
-FOREACH(test_file
-    test_instance_attributes.cc
-    )
-  ADD_HARNESS_TEST_FILE(${test_file}
-    MODULE ${TEST_MODULE}
-    LIB_DEPENDS
-      test-helpers router_cluster
-    INCLUDE_DIRS
-      $<TARGET_PROPERTY:router_cluster,INCLUDE_DIRECTORIES>
-      ../src/
-      ../../../tests/helpers/
-    SYSTEM_INCLUDE_DIRS ${GMOCK_INCLUDE_DIRS})
-ENDFOREACH()
 
 ADD_HARNESS_TEST_FILE(test_windows_service.cc
   MODULE ${TEST_MODULE}
@@ -151,7 +138,6 @@ ADD_HARNESS_TEST_FILE(test_mysqlrouter_app.cc
   LIB_DEPENDS
     test-helpers
     router_frontend_lib
-    routing_frontend_lib
   EXTRA_SOURCES
     ../../../tests/helpers/filesystem_utils.cc
   INCLUDE_DIRS
@@ -196,12 +182,6 @@ ADD_HARNESS_TEST_FILE(test_default_paths.cc
     router_utils
   )
 
-ADD_HARNESS_TEST_FILE(test_guidelines_version.cc
-  MODULE ${TEST_MODULE}
-  SYSTEM_INCLUDE_DIRS ${GMOCK_INCLUDE_DIRS}
-  LIB_DEPENDS
-    router_utils
-  )
 
 IF(MY_COMPILER_IS_CLANG)
   STRING_APPEND(CMAKE_CXX_FLAGS " -Wno-deprecated")

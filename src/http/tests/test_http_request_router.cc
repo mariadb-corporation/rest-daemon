@@ -37,7 +37,7 @@
 #include "harness_assert.h"
 #include "http/server/request.h"
 #include "test/helpers.h"  // init_test_logger()
-#include "unittest/gunit/benchmark.h"
+#include "helpers/benchmark/benchmark.h"
 
 class MockRequestHandler : public http::base::RequestHandler {
  public:

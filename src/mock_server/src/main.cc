@@ -56,8 +56,6 @@ struct MysqlServerMockConfig {
   std::string port;
   std::string socket;
   std::string http_port{};
-  std::string xport{};
-  std::string xsocket;
   bool verbose{false};
   std::string logging_folder;
 
@@ -252,29 +250,12 @@ class MysqlServerMockFrontend {
       add_common_mock_server_options(mock_server_config, config_);
     }
 
-    if (!config_.xport.empty() && config_.xport != "0") {
-      auto &mock_server_config = loader_config->add("mock_server", "x");
-      mock_server_config.set("bind_address", config_.bind_address);
-      mock_server_config.set("port", config_.xport);
-      mock_server_config.set("protocol", "x");
-
-      add_common_mock_server_options(mock_server_config, config_);
-    }
-
     if (!config_.socket.empty()) {
       auto &mock_server_config =
           loader_config->add("mock_server", "classic_socket");
 
       mock_server_config.set("named_socket", config_.socket);
       mock_server_config.set("protocol", "classic");
-
-      add_common_mock_server_options(mock_server_config, config_);
-    }
-
-    if (!config_.xsocket.empty()) {
-      auto &mock_server_config = loader_config->add("mock_server", "x_socket");
-      mock_server_config.set("named_socket", config_.xsocket);
-      mock_server_config.set("protocol", "x");
 
       add_common_mock_server_options(mock_server_config, config_);
     }
@@ -351,16 +332,6 @@ class MysqlServerMockFrontend {
         "unix-domain-socket to listen on for classic protocol connections.",
         CmdOptionValueReq::required, "path",
         [this](const std::string &value) { config_.socket = value; });
-    arg_handler_.add_option(
-        CmdOption::OptionNames({"-X", "--xport"}),
-        "TCP port to listen on for X protocol connections.",
-        CmdOptionValueReq::required, "int",
-        [this](const std::string &port) { config_.xport = port; });
-    arg_handler_.add_option(
-        CmdOption::OptionNames({"--xsocket"}),
-        "unix-domain-socket to listen on for x protocol connections.",
-        CmdOptionValueReq::required, "path",
-        [this](const std::string &value) { config_.xsocket = value; });
     arg_handler_.add_option(
         CmdOption::OptionNames({"--http-port"}),
         "TCP port to listen on for HTTP/REST connections.",

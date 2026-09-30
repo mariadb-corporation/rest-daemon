@@ -26,6 +26,9 @@
 
 #include "shared_server.h"
 
+#include <cstdlib>
+#include <optional>
+
 #include <gtest/gtest.h>
 
 #include <iomanip>
@@ -104,12 +107,30 @@ stdx::expected<void, MysqlError> SharedServer::shutdown(MysqlClient &cli) {
 #define SO_EXTENSION ".so"
 #endif
 
+namespace {
+// mrsd: mysqld comes from a MySQL server package (MYSQL_PACKAGE_DIR at build
+// time, MRSD_MYSQL_PACKAGE_DIR in the environment overrides it) instead of
+// the server build tree the tests upstream run in.
+std::optional<mysql_harness::Path> mysql_package_dir() {
+  if (const char *env = std::getenv("MRSD_MYSQL_PACKAGE_DIR");
+      env != nullptr && *env != '\0') {
+    return mysql_harness::Path(env);
+  }
+#ifdef MRSD_MYSQL_PACKAGE_DIR
+  return mysql_harness::Path(MRSD_MYSQL_PACKAGE_DIR);
+#else
+  return std::nullopt;
+#endif
+}
+}  // namespace
+
 // initialize the server
 //
 // initializes the server once into mysqld_init_once_dir_ and creates copies
 // from that into mysqld_dir_
 void SharedServer::initialize_server(const std::string &datadir) {
-  auto bindir = process_manager().get_origin();
+  auto pkg = mysql_package_dir();
+  auto bindir = pkg ? pkg->join("bin") : process_manager().get_origin();
   auto mysqld = bindir.join("mysqld" EXE_EXTENSION);
 
   if (!mysqld.exists()) {
@@ -189,6 +210,11 @@ void SharedServer::spawn_server_with_datadir(
   if (!build_type.empty()) {
     plugindir = plugindir.join(build_type);
   }
+  if (auto pkg = mysql_package_dir()) {
+    bindir = pkg->join("bin");
+    sharedir = pkg->join("share");
+    plugindir = pkg->join("lib").join("plugin");
+  }
   auto lc_messages_dir = sharedir;
 
   auto lc_messages80_dir = sharedir.join("mysql-8.0");
@@ -233,7 +259,7 @@ void SharedServer::spawn_server_with_datadir(
 
   auto &proc =
       process_manager()
-          .spawner(bindir.join("mysqld").str())
+          .spawner(bindir.join("mysqld" EXE_EXTENSION).str())
 #ifdef _WIN32
           // on windows, mysqld has no notify-socket
           .wait_for_sync_point(ProcessManager::Spawner::SyncPoint::NONE)

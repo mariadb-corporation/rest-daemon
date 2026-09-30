@@ -32,7 +32,7 @@
 
 #include "mysql/harness/net_ts/socket.h"  // net::impl::socket::init
 #include "mysql/harness/stdx/expected_ostream.h"
-#include "tests/helpers/stdx_expected_no_error.h"
+#include "helpers/stdx_expected_no_error.h"
 #include "test/temp_directory.h"
 
 #ifdef NET_TS_HAS_UNIX_SOCKET

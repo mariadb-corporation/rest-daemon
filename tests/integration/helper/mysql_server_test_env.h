@@ -32,7 +32,7 @@
 #include <vector>
 
 #include "src/routing/tests/mysql_client.h"
-#include "tests/helpers/shared_server.h"
+#include "helpers/shared_server.h"
 #include "stdx_expected_no_error.h"
 #include "tcp_port_pool.h"
 

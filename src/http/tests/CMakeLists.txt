@@ -29,7 +29,7 @@ SET(TEST_FILES
   server-key.pem
   server-cert.pem
   )
-COPY_TEST_FILES(${CMAKE_SOURCE_DIR}/mysql-test/std_data/ "${TEST_FILES}")
+COPY_TEST_FILES(${CMAKE_SOURCE_DIR}/tests/data/ssl/ "${TEST_FILES}")
 
 
 add_googletest_file(test_time.cc
@@ -146,7 +146,7 @@ TARGET_INCLUDE_DIRECTORIES(routertest_http_matcher
 add_googletest_file(test_http_request_router.cc
   MODULE http
   EXTRA_SOURCES
-    ${CMAKE_SOURCE_DIR}/unittest/gunit/benchmark.cc
+    ${CMAKE_SOURCE_DIR}/tests/helpers/benchmark/benchmark.cc
   LIB_DEPENDS
     router_utils        # uri
     http_server_lib     # request-router

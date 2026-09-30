@@ -230,5 +230,5 @@ ADD_GOOGLETEST_FILE(test_utility_string.cc
   INCLUDE_DIRS ${MySQLRouter_SOURCE_DIR}/src/harness/include/
   INCLUDE_DIRS ${MySQLRouter_BINARY_DIR}/src/harness/include/
   EXTRA_SOURCES
-    ${CMAKE_SOURCE_DIR}/unittest/gunit/benchmark.cc
+    ${CMAKE_SOURCE_DIR}/tests/helpers/benchmark/benchmark.cc
   )

@@ -56,7 +56,6 @@
 #include "mysqlrouter/utils.h"  // to_string
 #include "scope_guard.h"
 #include "statement_reader.h"
-#include "x_mock_session.h"
 
 using namespace std::string_literals;
 
@@ -175,15 +174,10 @@ class Acceptor {
     auto reader = reader_maker_();
 
     auto session_it = client_sessions_([&](auto &socks) {
-      if (protocol_name_ == "classic") {
-        socks.emplace_back(std::make_unique<MySQLServerMockSessionClassic>(
-            std::move(client_sock), client_ep_, tls_server_ctx_,
-            std::move(reader), false, with_tls_));
-      } else {
-        socks.emplace_back(std::make_unique<MySQLServerMockSessionX>(
-            std::move(client_sock), client_ep_, tls_server_ctx_,
-            std::move(reader), false, with_tls_));
-      }
+      // mrsd: classic protocol only (X protocol is out of scope)
+      socks.emplace_back(std::make_unique<MySQLServerMockSessionClassic>(
+          std::move(client_sock), client_ep_, tls_server_ctx_,
+          std::move(reader), false, with_tls_));
       return std::prev(socks.end());
     });
 

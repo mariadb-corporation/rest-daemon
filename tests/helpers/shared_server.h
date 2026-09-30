@@ -30,7 +30,7 @@
 #include "mysql/harness/destination.h"
 #include "mysql/harness/stdx/expected.h"
 #include "procs.h"
-#include "src/routing/tests/mysql_client.h"
+#include "mysql_client.h"  // mrsd: copied from src/routing/tests
 #include "tcp_port_pool.h"
 
 /**

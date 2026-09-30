@@ -31,7 +31,7 @@
 
 #include <gtest/gtest.h>
 
-#include "unittest/gunit/benchmark.h"
+#include "helpers/benchmark/benchmark.h"
 
 namespace cl = classic_protocol;
 

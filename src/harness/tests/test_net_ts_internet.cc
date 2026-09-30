@@ -36,7 +36,7 @@
 #include <type_traits>
 
 #include "mysql/harness/stdx/expected_ostream.h"
-#include "tests/helpers/stdx_expected_no_error.h"
+#include "helpers/stdx_expected_no_error.h"
 
 // helper to be used with ::testing::Truly to check if a std::expected<> has a
 // value and triggering the proper printer used in case of failure

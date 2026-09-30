@@ -303,24 +303,11 @@ TEST_P(PluginInfoAppTestReadInfo, ReadInfo) {
 }
 
 const Plugin_data router_plugins[]{
-    {"routing",
-     "Routing MySQL connections between MySQL clients/connectors "
-     "and servers",
-     "0.0.1", R"(
+    // mrsd: upstream checks the routing and metadata_cache plugins
+    {"http_server", "HTTP_SERVER", "0.0.1", R"(
         "logger",
-        "router_protobuf",
         "router_openssl",
-        "io",
-        "connection_pool",
-        "destination_status",
-        "host_cache"
-    )",
-     ""},
-    {"metadata_cache",
-     "Metadata Cache, managing information fetched from the Metadata Server",
-     "0.0.1", R"(
-        "logger",
-        "router_protobuf"
+        "io"
     )",
      ""},
     {"keepalive", "Keepalive Plugin", "0.0.1", "", ""},

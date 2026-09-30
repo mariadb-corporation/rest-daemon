@@ -125,6 +125,9 @@ FUNCTION(_ADD_TEST_FILE FILE)
 
   ADD_DEPENDENCIES(mysqlrouter_all ${test_target})
 
+  # mrsd: shared test helpers (e.g. helpers/benchmark/benchmark.h)
+  TARGET_INCLUDE_DIRECTORIES(${test_target} PRIVATE ${CMAKE_SOURCE_DIR}/tests)
+
   # ZSTD_generateSequences generates -Werror=alloc-size-larger-than=
   DOWNGRADE_STRINGOP_WARNINGS(${test_target})
 
@@ -158,9 +161,9 @@ FUNCTION(_ADD_TEST_FILE FILE)
   # Our asan.supp is empty anyways, and LSAN is not supported on Windows.
   IF(WITH_ASAN AND NOT WIN32_VS)
     STRING_APPEND(TEST_ENV_PREFIX
-      ";ASAN_OPTIONS=suppressions=${CMAKE_SOURCE_DIR}/mysql-test/asan.supp")
+      ";ASAN_OPTIONS=suppressions=${CMAKE_SOURCE_DIR}/tests/sanitizers/asan.supp")
     STRING_APPEND(TEST_ENV_PREFIX
-      ";LSAN_OPTIONS=suppressions=${CMAKE_SOURCE_DIR}/mysql-test/lsan.supp")
+      ";LSAN_OPTIONS=suppressions=${CMAKE_SOURCE_DIR}/tests/sanitizers/lsan.supp")
   ENDIF()
 
   IF(WIN32)
@@ -173,7 +176,7 @@ FUNCTION(_ADD_TEST_FILE FILE)
   ELSE()
     SET_TESTS_PROPERTIES(${test_name} PROPERTIES
       ENVIRONMENT
-      "${TEST_ENV_PREFIX};LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH};DYLD_LIBRARY_PATH=$ENV{DYLD_LIBRARY_PATH};TSAN_OPTIONS=suppressions=${CMAKE_SOURCE_DIR}/router/tsan.supp;${TEST_ENVIRONMENT}")
+      "${TEST_ENV_PREFIX};LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH};DYLD_LIBRARY_PATH=$ENV{DYLD_LIBRARY_PATH};TSAN_OPTIONS=suppressions=${CMAKE_SOURCE_DIR}/tests/sanitizers/tsan.supp;${TEST_ENVIRONMENT}")
   ENDIF()
 ENDFUNCTION()
 

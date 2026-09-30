@@ -41,7 +41,7 @@
 
 ////////////////////////////////////////
 // Test system include files
-#include "tests/helpers/stdx_expected_no_error.h"
+#include "helpers/stdx_expected_no_error.h"
 #include "test/helpers.h"
 #include "test/temp_directory.h"
 

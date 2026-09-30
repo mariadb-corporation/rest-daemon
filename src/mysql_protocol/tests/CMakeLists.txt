@@ -49,7 +49,7 @@ FOREACH(test_file
     test_microbench.cc
   )
   ADD_GOOGLETEST_FILE(${test_file}
-    EXTRA_SOURCES ${CMAKE_SOURCE_DIR}/unittest/gunit/benchmark.cc
+    EXTRA_SOURCES ${CMAKE_SOURCE_DIR}/tests/helpers/benchmark/benchmark.cc
     MODULE ${TEST_MODULE}
     SYSTEM_INCLUDE_DIRS ${GMOCK_INCLUDE_DIRS}
     INCLUDE_DIRS ../include/

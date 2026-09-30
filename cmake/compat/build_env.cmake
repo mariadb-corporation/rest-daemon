@@ -57,6 +57,8 @@ ENDIF()
 IF(LINUX)
   SET(LIBRT rt)
 ENDIF()
+# the router is always built here (the server build has WITH_ROUTER)
+SET(WITH_ROUTER ON)
 # target architecture; CMAKE_SYSTEM_PROCESSOR is the host's (e.g. ARM64 when
 # cross-compiling x64 binaries on Windows on ARM)
 IF(MSVC AND MSVC_CXX_ARCHITECTURE_ID)

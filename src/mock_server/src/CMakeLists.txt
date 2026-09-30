@@ -67,11 +67,8 @@ ENDIF()
 add_harness_plugin(mock_server
   NO_INSTALL
   SOURCES duktape_statement_reader.cc
-  x_protocol_decoder.cc
-  x_protocol_encoder.cc
   mysql_server_mock.cc
   classic_mock_session.cc
-  x_mock_session.cc
   mysql_server_mock_schema.cc
   duk_module_shim.cc
   duk_node_fs.c
@@ -82,7 +79,6 @@ add_harness_plugin(mock_server
   REQUIRES
     mysql_protocol
     duktape
-    router_mysqlxmessages
     harness_stdx
     harness-library
     router_utils
@@ -90,7 +86,6 @@ add_harness_plugin(mock_server
     harness_tls
   )
 ADD_DEPENDENCIES(mock_server
-  GenError
   mysql_server_mock_schema
   )
 

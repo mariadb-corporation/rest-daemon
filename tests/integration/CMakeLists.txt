@@ -40,7 +40,7 @@ MY_ADD_CUSTOM_TARGET(RouterIdcMetadataSchema
  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/idc_metadata_schema.h
 )
 
-ADD_DEFINITIONS(-DSSL_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/mysql-test/std_data/")
+ADD_DEFINITIONS(-DSSL_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data/ssl/")
 ADD_DEFINITIONS(-DCMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 FOREACH(test_file
     test_routing_direct.cc

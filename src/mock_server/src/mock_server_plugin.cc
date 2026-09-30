@@ -358,7 +358,6 @@ static void deinit(mysql_harness::PluginFuncEnv * /* env */) {
 static constexpr std::array required{
     "logger",
     "router_openssl",
-    "router_protobuf",
     "io",
 };
 

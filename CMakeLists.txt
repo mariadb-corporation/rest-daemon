@@ -134,9 +134,15 @@ INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
 
 ADD_CUSTOM_TARGET(mysqlrouter_all)
 
+IF(WITH_UNIT_TESTS)
+  ENABLE_TESTING()
+  INCLUDE(cmake/compat/googletest.cmake)
+  # JavaScript engine of mysql_server_mock (src/mock_server)
+  ADD_SUBDIRECTORY(extra/duktape)
+ENDIF()
+
 ADD_SUBDIRECTORY(src)
 
 IF(WITH_UNIT_TESTS)
-  ENABLE_TESTING()
   ADD_SUBDIRECTORY(tests)
 ENDIF()

@@ -309,12 +309,8 @@ std::string get_tests_data_dir(const std::string &runtime_dir) {
   std::string cur_dir = Path(runtime_dir).basename().str();
   if (cur_dir == "runtime_output_directory") {
     // single configuration build
-    return Path(runtime_dir)
-        .dirname()
-        .join("router")
-        .join("tests")
-        .join("data")
-        .str();
+    // mrsd: the project is the build root (upstream: <build>/router/...)
+    return Path(runtime_dir).dirname().join("tests").join("data").str();
   } else {
     // multiple configuration build
     // in that case cur_dir has to be configuration name (Debug, Release etc.)
@@ -322,7 +318,6 @@ std::string get_tests_data_dir(const std::string &runtime_dir) {
     return Path(runtime_dir)
         .dirname()
         .dirname()
-        .join("router")
         .join("tests")
         .join("data")
         .join(cur_dir)

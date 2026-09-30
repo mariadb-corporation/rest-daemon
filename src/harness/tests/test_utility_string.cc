@@ -37,7 +37,7 @@
 
 #include "mysql/harness/utility/string.h"
 
-#include "unittest/gunit/benchmark.h"
+#include "helpers/benchmark/benchmark.h"
 
 using mysql_harness::join;
 

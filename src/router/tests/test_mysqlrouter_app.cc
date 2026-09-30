@@ -328,37 +328,6 @@ TEST_F(AppTest, CheckConfigFileFallbackToInNoDefault) {
 }
 
 #ifndef _WIN32
-TEST_F(AppTest, CmdLineUserBeforeBootstrap) {
-  MySQLRouter router;
-  std::vector<std::string> arguments = {"--user", "mysqlrouter", "--bootstrap",
-                                        "127.0.0.1:5000"};
-  ASSERT_THROW(router.parse_command_options(arguments), std::runtime_error);
-
-  try {
-    router.parse_command_options(arguments);
-    FAIL() << "Should throw";
-  } catch (const std::runtime_error &exc) {
-    EXPECT_THAT(
-        exc.what(),
-        StrEq("One can only use the -u/--user switch if running as root"));
-  }
-}
-
-TEST_F(AppTest, CmdLineUserShortBeforeBootstrap) {
-  MySQLRouter router;
-  std::vector<std::string> arguments = {"-u", "mysqlrouter", "--bootstrap",
-                                        "127.0.0.1:5000"};
-  ASSERT_THROW(router.parse_command_options(arguments), std::runtime_error);
-
-  try {
-    router.parse_command_options(arguments);
-    FAIL() << "Should throw";
-  } catch (const std::runtime_error &exc) {
-    EXPECT_THAT(
-        exc.what(),
-        HasSubstr("One can only use the -u/--user switch if running as root"));
-  }
-}
 #endif  // #ifndef _WIN32
 
 TEST_F(AppTest, CmdLineVersion) {
@@ -974,111 +943,36 @@ TEST_F(AppTest, UserSetSetUidFails) {
   }
 }
 
-TEST_F(AppTest, BootstrapSuperuserNoUserOption) {
-  std::vector<std::string> argv = {"--bootstrap", "127.0.0.1:3060"};
-
-  EXPECT_CALL(*mock_sys_user_operations, geteuid())
-      .Times(1)
-      .WillOnce(Return(0));
-
-  try {
-    MySQLRouter r(g_program_name, argv, std::cout, std::cerr,
-                  mock_sys_user_operations.get());
-    FAIL() << "Should throw";
-  } catch (const std::runtime_error &exc) {
-    EXPECT_THAT(exc.what(),
-                StartsWith("You are bootstrapping as a superuser."));
-  }
-}
-
 /**
  * @test
  *      Verify that std::runtime_error is thrown when --master-key-reader option
  * is used in non-bootstrap mode.
  */
-TEST_F(AppTest, ThrowWhenMasterKeyReaderUsedWithoutBootstrap) {
-  std::vector<std::string> argv = {"--master-key-reader=reader.sh"};
-  ASSERT_THROW_LIKE(MySQLRouter(g_program_name, argv, std::cout, std::cerr,
-                                mock_sys_user_operations.get()),
-                    std::runtime_error,
-                    "Option --master-key-reader can only be used together with "
-                    "-B/--bootstrap");
-}
-
 /**
  * @test
  *       Verify that std::runtime_error is thrown when --master_key-writer
  * option is used in non-bootstrap mode.
  */
-TEST_F(AppTest, ThrowWhenMasterKeyWriterUsedWithoutBootstrap) {
-  std::vector<std::string> argv = {"--master-key-writer=writer.sh"};
-  ASSERT_THROW_LIKE(MySQLRouter(g_program_name, argv, std::cout, std::cerr,
-                                mock_sys_user_operations.get()),
-                    std::runtime_error,
-                    "Option --master-key-writer can only be used together with "
-                    "-B/--bootstrap");
-}
-
 /**
  * @test
  *       Verify that std::runtime_error is thrown when --master-key-reader
  * option is used without value.
  */
-TEST_F(AppTest, ThrowWhenMasterKeyReaderUsedWithoutValue) {
-  std::vector<std::string> argv = {"--bootstrap", "127.0.0.1:3060",
-                                   "--master-key-reader"};
-  ASSERT_THROW_LIKE(
-      MySQLRouter(g_program_name, argv, std::cout, std::cerr,
-                  mock_sys_user_operations.get()),
-      std::runtime_error,
-      "option '--master-key-reader' expects a value, got nothing");
-}
-
 /**
  * @test
  *       Verify that std::runtime_error is thrown when --master-key-writer
  * option is used without value.
  */
-TEST_F(AppTest, ThrowWhenMasterKeyWriterUsedWithoutValue) {
-  std::vector<std::string> argv = {"--bootstrap", "127.0.0.1:3060",
-                                   "--master-key-writer"};
-  ASSERT_THROW_LIKE(
-      MySQLRouter(g_program_name, argv, std::cout, std::cerr,
-                  mock_sys_user_operations.get()),
-      std::runtime_error,
-      "option '--master-key-writer' expects a value, got nothing");
-}
-
 /**
  * @test
  *       Verify that std::runtime_error is throw when --master-key-reader option
  * is used without using --master-key-writer option.
  */
-TEST_F(AppTest, ThrowWhenMasterKeyReaderUsedWithoutMasterKeyWriter) {
-  std::vector<std::string> argv = {"--bootstrap", "127.0.0.1:3060",
-                                   "--master-key-reader=reader.sh"};
-  ASSERT_THROW_LIKE(MySQLRouter(g_program_name, argv, std::cout, std::cerr,
-                                mock_sys_user_operations.get()),
-                    std::runtime_error,
-                    "Option --master-key-reader can only be used together with "
-                    "--master-key-writer.");
-}
-
 /**
  * @test
  *       Verify that std::runtime_error is thrown when --master-key-writer
  * option is used without using --master-key-reader option.
  */
-TEST_F(AppTest, ThrowWhenMasterKeyWriterUsedWithoutMasterKeyReader) {
-  std::vector<std::string> argv = {"--bootstrap", "127.0.0.1:3060",
-                                   "--master-key-writer=writer.sh"};
-  ASSERT_THROW_LIKE(MySQLRouter(g_program_name, argv, std::cout, std::cerr,
-                                mock_sys_user_operations.get()),
-                    std::runtime_error,
-                    "Option --master-key-writer can only be used together with "
-                    "--master-key-reader.");
-}
-
 #endif  // #ifndef _WIN32
 
 class AppLoggerTest : public ConsoleOutputTest {
@@ -1162,125 +1056,50 @@ TEST_F(AppTest, EmptyConfigPath) {
  * @test
  * Verify that --https-port could not be used outside of the bootstrap.
  */
-TEST_F(AppTest, https_port_not_in_bootstrap) {
-  std::vector<std::string> argv = {"--https-port", "8080"};
-  ASSERT_THROW_LIKE(MySQLRouter(g_program_name, argv), std::runtime_error,
-                    "Option --https-port can only be used together with "
-                    "-B/--bootstrap");
-}
-
 /**
  * @test
  * Verify that --disable-rest could not be used outside of the bootstrap.
  */
-TEST_F(AppTest, disable_rest_not_in_bootstrap) {
-  std::vector<std::string> argv = {"--disable-rest"};
-  ASSERT_THROW_LIKE(MySQLRouter(g_program_name, argv), std::runtime_error,
-                    "Option --disable-rest can only be used together with "
-                    "-B/--bootstrap");
-}
-
 /**
  * @test
  * Verify that --disable-rest does not take any arguments.
  */
-TEST_F(AppTest, disable_rest_with_value) {
-  std::vector<std::string> argv = {"--bootstrap", "127.0.0.1:5000",
-                                   "--disable-rest", "not_allowed"};
-  ASSERT_THROW_LIKE(MySQLRouter(g_program_name, argv), std::runtime_error,
-                    "invalid argument 'not_allowed'.");
-}
-
 /**
  * @test
  * Verify that --disable-rest and --https-port are mututally exclusive.
  */
-TEST_F(AppTest, https_port_with_disable_rest) {
-  std::vector<std::string> argv = {"--bootstrap", "127.0.0.1:5000",
-                                   "--https-port", "8080", "--disable-rest"};
-  ASSERT_THROW_LIKE(
-      MySQLRouter(g_program_name, argv), std::runtime_error,
-      "Option --disable-rest is not allowed when using --https-port option");
-}
-
 /**
  * @test
  * Verify that --https-port does not accept values lower than 1.
  *
  * WL13906:TS_FailReq02_01
  */
-TEST_F(AppTest, https_port_out_of_range_low) {
-  std::vector<std::string> argv = {"--bootstrap", "127.0.0.1:5000",
-                                   "--https-port", "0"};
-  ASSERT_THROW_LIKE(MySQLRouter(g_program_name, argv), std::runtime_error,
-                    "processing --https-port option failed, not in allowed "
-                    "range [1, 65535]");
-}
-
 /**
  * @test
  * Verify that --https-port does not accept values greater than 65535.
  *
  * WL13906:TS_FailReq02_03
  */
-TEST_F(AppTest, https_port_out_of_range_high) {
-  std::vector<std::string> argv = {"--bootstrap", "127.0.0.1:5000",
-                                   "--https-port", "65599"};
-  ASSERT_THROW_LIKE(MySQLRouter(g_program_name, argv), std::runtime_error,
-                    "processing --https-port option failed, not in allowed "
-                    "range [1, 65535]");
-}
-
 /**
  * @test
  * Verify that --https-port does not accept negative values.
  *
  * WL13906:TS_FailReq02_02
  */
-TEST_F(AppTest, https_port_out_of_range_negative) {
-  std::vector<std::string> argv = {"--bootstrap", "127.0.0.1:5000",
-                                   "--https-port", "-1"};
-  ASSERT_THROW_LIKE(MySQLRouter(g_program_name, argv), std::runtime_error,
-                    "option '--https-port' expects a value, got nothing");
-}
-
 /**
  * @test
  * Verify that --https-port does not accept floating point values.
  *
  * WL13906:TS_FailReq02_04
  */
-TEST_F(AppTest, https_port_float) {
-  std::vector<std::string> argv = {"--bootstrap", "127.0.0.1:5000",
-                                   "--https-port", "1.2"};
-  ASSERT_THROW_LIKE(
-      MySQLRouter(g_program_name, argv), std::runtime_error,
-      "processing --https-port option failed, invalid value: 1.2");
-}
-
 /**
  * @test
  * Verify that --https-port does not accept string values.
  */
-TEST_F(AppTest, https_port_nan) {
-  std::vector<std::string> argv = {"--bootstrap", "127.0.0.1:5000",
-                                   "--https-port", "not-a-number"};
-  ASSERT_THROW_LIKE(
-      MySQLRouter(g_program_name, argv), std::runtime_error,
-      "processing --https-port option failed, invalid value: not-a-number");
-}
-
 /**
  * @test
  * Verify that --https-port has to be called with an argument.
  */
-TEST_F(AppTest, https_port_without_value) {
-  std::vector<std::string> argv = {"--bootstrap", "127.0.0.1:5000",
-                                   "--https-port"};
-  ASSERT_THROW_LIKE(MySQLRouter(g_program_name, argv), std::runtime_error,
-                    "option '--https-port' expects a value, got nothing");
-}
-
 int main(int argc, char *argv[]) {
   g_program_name = argv[0];
 

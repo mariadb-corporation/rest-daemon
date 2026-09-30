@@ -24,27 +24,37 @@
 
 INCLUDE_DIRECTORIES(SYSTEM ${GMOCK_INCLUDE_DIRS})
 
+OPTION(WITH_COMPONENT_TESTS "Build the component tests (tests/component)" OFF)
+OPTION(WITH_INTEGRATION_TESTS "Build the integration tests (tests/integration)" OFF)
+
 SET(helper_sources
   helpers/filesystem_utils.cc
   helpers/gtest_testname.cc
-  helpers/mock_server_testutils.cc
   helpers/core_dumper.cc
   helpers/core_finder.cc
   helpers/process_manager.cc
   helpers/process_wrapper.cc
-  helpers/router_component_clusterset.cc
-  helpers/router_component_test.cc
-  helpers/router_component_testutils.cc
   helpers/router_component_system_layout.cc
-  helpers/router_component_metadata.cc
   helpers/router_test_helpers.cc
   helpers/script_generator.cc
-  helpers/shared_server.cc
   helpers/tcp_port_pool.cc
-  helpers/rest_api_testutils.cc
-  helpers/rest_metadata_client.cc
-  helpers/routing_guidelines_builder.cc
+  # used by the MRS database tests (src/mysql_rest_service/tests)
+  helpers/shared_server.cc
 )
+# mrsd: helpers of the component/integration suites; they still depend on
+# routing and cluster metadata code and are ported with those suites.
+IF(WITH_COMPONENT_TESTS OR WITH_INTEGRATION_TESTS)
+  LIST(APPEND helper_sources
+    helpers/mock_server_testutils.cc
+    helpers/router_component_clusterset.cc
+    helpers/router_component_test.cc
+    helpers/router_component_testutils.cc
+    helpers/router_component_metadata.cc
+    helpers/rest_api_testutils.cc
+    helpers/rest_metadata_client.cc
+    helpers/routing_guidelines_builder.cc
+    )
+ENDIF()
 
 IF(MY_COMPILER_IS_CLANG)
   STRING_APPEND(CMAKE_CXX_FLAGS " -Wno-deprecated")
@@ -58,17 +68,26 @@ TARGET_LINK_LIBRARIES(routertest_helpers
   router_mysql
   mock_server_rest_client
   )
+# mrsd: shared_server starts mysqld from the MySQL server package
+TARGET_COMPILE_DEFINITIONS(routertest_helpers PRIVATE
+  MRSD_MYSQL_PACKAGE_DIR="${MYSQL_PACKAGE_DIR}")
+
 TARGET_INCLUDE_DIRECTORIES(routertest_helpers
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/helpers
   ${PROJECT_SOURCE_DIR}/src/harness/shared/include/
   )
 
-ADD_SUBDIRECTORY(component)
-ADD_SUBDIRECTORY(fuzzers)
-ADD_SUBDIRECTORY(integration)
+# mrsd: component/integration suites are being triaged (routing, cluster and
+# bootstrap tests don't apply); off until that is done.
+IF(WITH_COMPONENT_TESTS)
+  ADD_SUBDIRECTORY(component)
+ENDIF()
+IF(WITH_INTEGRATION_TESTS)
+  ADD_SUBDIRECTORY(integration)
+ENDIF()
 
 ADD_DEFINITIONS(
   -DCOMPONENT_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/component/data/")
 ADD_DEFINITIONS(
-  -DSSL_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/mysql-test/std_data/")
+  -DSSL_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data/ssl/")

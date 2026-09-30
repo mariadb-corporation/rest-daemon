@@ -11,3 +11,5 @@
 # Vendored third-party code keeps its own license notices.
 extra/rapidjson/
 extra/libcno/
+extra/googletest/
+extra/duktape/

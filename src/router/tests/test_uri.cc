@@ -30,7 +30,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "unittest/gunit/benchmark.h"
+#include "helpers/benchmark/benchmark.h"
 
 using mysqlrouter::URI;
 using mysqlrouter::URIAuthority;
