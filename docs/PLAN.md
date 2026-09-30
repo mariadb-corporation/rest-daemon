@@ -102,9 +102,16 @@ See [phase0-inventory.md](phase0-inventory.md). **Verdict: GO.** The kept code u
   moved to Phase 2).
 
 ### Phase 2: tests and validation in the MySQL ecosystem
-- Decide on duktape for `mysql_server_mock` (restore 2.7.0 from git history
-  `214f378700f^:extra/duktape`, or an alternative), then do 1.7 (remove X
-  from the mock server, and its `router_protobuf` plugin requirement).
+- ✅ duktape 2.7.0 restored from git history (`214f378700f^:extra/duktape`) into
+  `extra/duktape`; mock server without X (step 1.7).
+- **MRS functional suite (mysql-test/suite/router, ~115 tests after dropping
+  bootstrap) → pytest + golden files** (decided 2026-09-30): a small Python
+  interpreter for the mysqltest subset these tests use (let, echo, source, exec,
+  eval, if/while, replace_regex, query/result log switches, error, assert,
+  sleep, remove_file; ~10 perl blocks need porting), run by pytest one item per
+  `.test`, comparing against the existing `.result` files. Needs upstream's
+  `router/tests/mrs_client` (C++ REST client) and an mrsd-based replacement for
+  the bootstrap step in `predefined_setup/configure_router_mrs_root.inc`.
 - Move the TLS fixtures (`mysql-test/std_data` → `tests/data/ssl`) and repoint
   `SSL_TEST_DATA_DIR`. Copy the `unittest/gunit/benchmark.h` helper.
 - Get the unit suites green: MRS, HTTP, harness, router_lib, jit_executor.
@@ -188,3 +195,9 @@ mrsd/
 - 2026-09-30: `vio_io_wait()` (internal struct Vio) replaced by `poll()` on the
   public `NET::fd` in `MySQLSession::has_data_on_socket()`.
 - 2026-09-30: step 1.7 (mock server) moved to Phase 2 because of the duktape dependency.
+- 2026-09-30: component tests keep 17 suites; cases exercising removed features
+  are excluded by name via GTEST_FILTER (`tests/component/excluded_cases.cmake`)
+  so the upstream test sources stay unchanged. `rest_api_enable`, `user_option`
+  and `test_mock_server` dropped.
+- 2026-09-30: MTR suite → pytest harness interpreting the mysqltest subset,
+  golden `.result` files kept.

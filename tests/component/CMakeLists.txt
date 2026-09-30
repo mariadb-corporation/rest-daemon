@@ -59,14 +59,12 @@ FOREACH(test_file
     test_mrs_config.cc
     test_pidfile.cc
     test_rest_api.cc
-    test_rest_api_enable.cc
     test_rest_mock_server.cc
     test_rest_router.cc
     test_router_configuration_errors.cc
     test_router_stacktrace.cc
     test_sd_notify.cc
     test_shutdown.cc
-    test_user_option.cc
     test_stacktrace.cc
     )
   ADD_TEST_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${test_file}
@@ -102,3 +100,12 @@ ENDFOREACH()
 ADD_DEFINITIONS(-DSKIP_MYSQL_NATIVE_PASSWORD_TESTS)
 ADD_DEFINITIONS(-DSKIP_BOOTSTRAP_SYSTEM_DEPLOYMENT_TESTS)
 ADD_DEFINITIONS(-DROUTER_SRC_DIR="${CMAKE_SOURCE_DIR}")
+
+# run each test binary without the cases that exercise features mrsd doesn't
+# have (see excluded_cases.cmake)
+FUNCTION(EXCLUDE_TEST_CASES TEST_NAME)
+  LIST(JOIN ARGN ":" _cases)
+  SET_PROPERTY(TEST ${TEST_NAME} APPEND PROPERTY
+    ENVIRONMENT "GTEST_FILTER=-${_cases}")
+ENDFUNCTION()
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/excluded_cases.cmake)

@@ -9,7 +9,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 |---|---|
 | 0: dependency inventory | ✅ done 2026-09-30, verdict GO ([phase0-inventory.md](phase0-inventory.md)) |
 | 1: new repo that builds | ✅ done 2026-09-30: macOS, Linux, Windows (x64), with JIT; smoke test incl. MRS scripts passes on all three |
-| 2: tests and ecosystem validation | ⏳ not started |
+| 2: tests and ecosystem validation | 🟡 unit + component tests pass on macOS (116/116); Windows unit tests 98/99 in progress; Linux VM offline; MTR → pytest harness next |
 | 3: MRS setup and cleanup | ⏳ not started |
 | 4: packaging and CI | ⏳ not started |
 
@@ -147,13 +147,19 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
   `{"status":"ok","result":"Hello world!"}`
 - [x] Windows build + smoke test (x64, RelWithDebInfo, JIT; REST view + MRS script OK)
 
+## Phase 2 checklist
+- [x] GoogleTest 1.17.0 + duktape 2.7.0 vendored; TLS test data; benchmark helper
+- [x] mock server without X (step 1.7)
+- [x] unit tests (99 executables) pass on macOS; MRS DB tests run against package mysqld
+- [x] component tests: 17 suites pass on macOS (`-DWITH_COMPONENT_TESTS=ON`), 105 cases excluded
+- [ ] Windows: duktape shared + plugin dir on test PATH (fix pending verification)
+- [ ] Linux: unit + component tests (VM offline)
+- [ ] MTR suite → pytest harness (mysqltest-subset interpreter, mrs_client, golden files)
+- [ ] integration tests (tests/integration): triage
+- [ ] CI
+
 ## Open questions
-1. **duktape** for `mysql_server_mock` (component tests): restore duktape 2.7.0
-   from upstream history (`git show 214f378700f^:extra/duktape/...`), use a
-   system package, or replace the mock's JavaScript engine? Blocks Phase 2's
-   component tests. Public upstream builds skip them too
-   (`IF(NOT TARGET duktape) RETURN()`); Oracle presumably provides duktape
-   through its internal build files.
+- None blocking.
 
 ## Resolved questions
 - JIT: `-DMRS_JIT_EXECUTOR_LIB=<dir>` (lib + headers). Local: `<dev>/workflow-test/ext/polyglot/polyglot-nativeapi-native-library/target`.
@@ -163,8 +169,11 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
 - Repository: local git repo in `<dev>/mysql/mrsd`, moved to the final remote later.
 
 ## Next steps
-1. Decide on duktape (open question 1), then start Phase 2 with the unit tests
-   (GTest setup, `tests/data/ssl`, `benchmark.h`) on all three platforms.
+1. Verify the Windows test fixes (duktape shared, plugin dir on PATH), enable component tests there.
+2. Linux test run when the VM is back.
+3. pytest harness for the MRS functional suite: port `router/tests/mrs_client`, write the
+   mysqltest-subset interpreter, replace the bootstrap-based router setup, start with
+   the `table_*` and `mrs_*` tests.
 
 
 ## Session log
@@ -245,3 +254,14 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
   `using` guard in `router_app.cc`, the target architecture in `--version`, and
   the stale-DLL copy in `ROUTER_COPY_CUSTOM_DLL`.
 - Smoke test (REST view + MRS script) passes on Windows under Git Bash.
+
+### 2026-09-30: session 1, continued (Phase 2: unit + component tests)
+- Test build: `-DWITH_UNIT_TESTS=ON [-DWITH_COMPONENT_TESTS=ON]`, build dir `build-test`.
+- Fixes: `WITH_ROUTER` set in build_env (gates harness tests), harness
+  `get_tests_data_dir()` path, `shared_server` uses the package mysqld
+  (`MRSD_MYSQL_PACKAGE_DIR`), helpers split, `cluster_metadata_types.h` for the
+  component helpers, `test_mrs_config` rewritten for `mysql_read_write_destinations`.
+- macOS: 116/116 test executables pass (99 unit, 17 component).
+- Windows (unit): 98/99; fixes for the mock server (duktape → shared lib) and
+  `routertest_mrs_plugin` (plugin dir on test PATH) pending verification.
+- Decided: MTR suite → pytest + golden files.

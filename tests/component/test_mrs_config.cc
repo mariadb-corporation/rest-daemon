@@ -71,32 +71,23 @@ class RouterMrsConfig : public RouterComponentTest {
                                          true, false, wait_for);
   }
 
-  std::string get_routing_section(const uint16_t port, const std::string &role,
-                                  const std::string &name) {
-    std::map<std::string, std::string> options{
-        {"bind_port", std::to_string(port)},
-        {"destinations", "metadata-cache://test/default?role=" + role},
-        {"protocol", "classic"}};
-
-    return mysql_harness::ConfigBuilder::build_section("routing:" + name,
-                                                       options);
-  }
-
+  // mrsd: backends are configured with mysql_read_{only,write}_destinations
+  // instead of upstream's mysql_read_{only,write}_route (routing plugin).
   std::string get_mrs_section(
-      const std::optional<std::string> &mysql_read_only_route,
-      const std::optional<std::string> &mysql_read_write_route,
+      const std::optional<std::string> &mysql_read_only_destinations,
+      const std::optional<std::string> &mysql_read_write_destinations,
       const std::optional<std::string> &mysql_user,
       const std::optional<std::string> &mysql_user_data_access,
       const std::optional<std::uint64_t> &router_id) const {
     std::vector<std::pair<std::string, std::string>> options{};
 
-    if (mysql_read_only_route) {
-      options.emplace_back("mysql_read_only_route",
-                           mysql_read_only_route.value());
+    if (mysql_read_only_destinations) {
+      options.emplace_back("mysql_read_only_destinations",
+                           mysql_read_only_destinations.value());
     }
-    if (mysql_read_write_route) {
-      options.emplace_back("mysql_read_write_route",
-                           mysql_read_write_route.value());
+    if (mysql_read_write_destinations) {
+      options.emplace_back("mysql_read_write_destinations",
+                           mysql_read_write_destinations.value());
     }
     if (mysql_user) {
       options.emplace_back("mysql_user", mysql_user.value());
@@ -111,23 +102,6 @@ class RouterMrsConfig : public RouterComponentTest {
 
     return mysql_harness::ConfigBuilder::build_section("mysql_rest_service",
                                                        options);
-  }
-
-  std::string get_metadata_cache_section(
-      mysqlrouter::ClusterType cluster_type = mysqlrouter::ClusterType::GR_V2) {
-    const std::string cluster_type_str =
-        (cluster_type == mysqlrouter::ClusterType::RS_V2) ? "rs" : "gr";
-
-    std::map<std::string, std::string> options{
-        {"cluster_type", cluster_type_str},
-        {"router_id", std::to_string(router_id_)},
-        {"user", user_},
-        {"connect_timeout", "1"},
-        {"metadata_cluster", cluster_name_},
-        {"ttl", "0.1"}};
-
-    return mysql_harness::ConfigBuilder::build_section(
-        "metadata_cache:bootstrap", options);
   }
 
   void setup_cluster(const std::string &mock_file,
@@ -185,7 +159,8 @@ class RouterMrsConfig : public RouterComponentTest {
  */
 TEST_F(RouterMrsConfig, RouterComponentBootstrapWithDefaultCertsTest) {
   const std::string mrs_section =
-      get_mrs_section("bootstrap_ro", "bootstrap_rw",
+      get_mrs_section(std::nullopt,
+                      "127.0.0.1:" + std::to_string(cluster_nodes_ports[0]),
                       "mysql_router_mrs1_ie9u74n75rsb", "", std::nullopt);
 
   auto &router = launch_router(mrs_section,
@@ -208,13 +183,10 @@ TEST_F(RouterMrsConfig, id_mismatch) {
   setup_cluster("metadata_dynamic_nodes_v2_gr_mrs.js",
                 /*mrs_router_id*/ router_id_ + 1);
 
-  const auto rw_route_name = "rw_route";
-  const auto mrs_section = get_mrs_section(std::nullopt, rw_route_name, user_,
-                                           std::nullopt, router_id_);
-  auto &router = launch_router(
-      get_routing_section(router_port_rw, "PRIMARY", rw_route_name) +
-          get_metadata_cache_section() + mrs_section,
-      EXIT_FAILURE);
+  const auto mrs_section = get_mrs_section(
+      std::nullopt, "127.0.0.1:" + std::to_string(cluster_nodes_ports[0]),
+      user_, std::nullopt, router_id_);
+  auto &router = launch_router(mrs_section, EXIT_FAILURE);
 
   EXPECT_TRUE(wait_log_contains(router,
                                 "Metadata already contains Router registered "
@@ -228,9 +200,12 @@ TEST_F(RouterMrsConfig, id_mismatch) {
  */
 TEST_F(RouterMrsConfig, mrs_md_sink_with_no_mrs) {
   const std::string logger_section = "[logger]\nsinks=mysql_rest_service\n\n";
-  auto &router = launch_router(
-      logger_section + get_routing_section(router_port_rw, "PRIMARY", "rw"),
-      /*expect_error=*/true, /*enable_logger_debug=*/false);
+  const std::string http_section =
+      mysql_harness::ConfigBuilder::build_section(
+          "http_server", {{"port", std::to_string(router_port_rw)}});
+  auto &router =
+      launch_router(logger_section + http_section,
+                    /*expect_error=*/true, /*enable_logger_debug=*/false);
 
   check_exit_code(router, EXIT_FAILURE);
   EXPECT_THAT(router.get_full_output(),
