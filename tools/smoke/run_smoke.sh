@@ -26,6 +26,10 @@
 #   MRSD_BUILD=<mrsd build dir> MYSQL_PACKAGE_DIR=<server package> \
 #   MYSQLSH=<path to mysqlsh> SHELL_PLUGINS=<mysql-shell-plugins checkout> \
 #   tools/smoke/run_smoke.sh [workdir]
+#
+# Ubuntu 24.04+: the package's mysqld needs libaio.so.1, which is now
+# libaio.so.1t64. Point LD_LIBRARY_PATH at a directory with a
+# libaio.so.1 -> /usr/lib/<arch>/libaio.so.1t64 symlink.
 set -euo pipefail
 
 MRSD_BUILD=${MRSD_BUILD:?set MRSD_BUILD}
@@ -47,6 +51,7 @@ mysql_cli() { "$MYSQL_PACKAGE_DIR/bin/mysql" -uroot -h127.0.0.1 -P"$PORT" "$@"; 
 cleanup() {
   [ -n "${MRSD_PID:-}" ] && kill "$MRSD_PID" 2>/dev/null || true
   [ -n "${MYSQLD_PID:-}" ] && kill "$MYSQLD_PID" 2>/dev/null || true
+  wait 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -117,16 +122,43 @@ EOF
 MYSQLSH_USER_CONFIG_HOME="$WORK/shellhome" "$MYSQLSH" --no-wizard --sql \
   -uroot -h127.0.0.1 -P"$PORT" --file "$WORK/rest.sql"
 
+fail() {
+  echo "FAILED: $1" >&2
+  grep -E ' (ERROR|WARNING) ' "$WORK/log/mysqlrouter.log" >&2 || true
+  exit 1
+}
+
 # wait for the metadata refresh (default: 5s)
+ok=
 for _ in $(seq 1 20); do
   body=$(curl -s "http://127.0.0.1:$HTTP_PORT/smoke/smoke/city" || true)
   if [[ "$body" == *Helsinki* ]]; then
-    echo "OK: $body"
-    exit 0
+    echo "OK (REST view): $body"
+    ok=1
+    break
   fi
   sleep 1
 done
+[ -n "$ok" ] || fail "REST view, last response: $body"
 
-echo "FAILED: last response: $body" >&2
-grep -E ' (ERROR|WARNING) ' "$WORK/log/mysqlrouter.log" >&2 || true
-exit 1
+# --- optional: MRS scripts (JIT executor) ------------------------------------
+# MRS_SCRIPTS_DIR: a built copy of mysql-shell-plugins'
+# mrs_plugin/examples/mrs_scripts (npm install && npm run build).
+if [ -n "${MRS_SCRIPTS_DIR:-}" ]; then
+  echo "CREATE OR REPLACE REST CONTENT SET /scripts ON SERVICE /smoke FROM \"$MRS_SCRIPTS_DIR\" LOAD SCRIPTS;" \
+    > "$WORK/scripts.sql"
+  MYSQLSH_USER_CONFIG_HOME="$WORK/shellhome" "$MYSQLSH" --no-wizard --sql \
+    -uroot -h127.0.0.1 -P"$PORT" --file "$WORK/scripts.sql"
+
+  ok=
+  for _ in $(seq 1 20); do
+    body=$(curl -s "http://127.0.0.1:$HTTP_PORT/smoke/testScripts/helloWorld" || true)
+    if [[ "$body" == *"Hello world!"* ]]; then
+      echo "OK (MRS script): $body"
+      ok=1
+      break
+    fi
+    sleep 1
+  done
+  [ -n "$ok" ] || fail "MRS script, last response: $body"
+fi

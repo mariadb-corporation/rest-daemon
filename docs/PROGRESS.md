@@ -8,7 +8,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 | Phase | Status |
 |---|---|
 | 0: dependency inventory | ✅ done 2026-09-30, verdict GO ([phase0-inventory.md](phase0-inventory.md)) |
-| 1: new repo that builds | 🟡 macOS done 2026-09-30 (build + end-to-end smoke test); Linux and Windows not started |
+| 1: new repo that builds | 🟡 macOS and Linux done, with and without JIT (2026-09-30); Windows not started |
 | 2: tests and ecosystem validation | ⏳ not started |
 | 3: MRS setup and cleanup | ⏳ not started |
 | 4: packaging and CI | ⏳ not started |
@@ -29,6 +29,73 @@ SHELL_PLUGINS=<dev>/mysql/mysql-shell-plugins \
   tools/smoke/run_smoke.sh      # prints "OK: {...}" on success
 ```
 `build/` is the same build without JIT (leave out `-DMRS_JIT_EXECUTOR_LIB`).
+
+### MRS scripts (JIT) step of the smoke test
+
+Set `MRS_SCRIPTS_DIR` to a built copy of `mysql-shell-plugins/mrs_plugin/examples/mrs_scripts`
+(built on the Mac, since the VM has no Node.js):
+```sh
+rsync -a --exclude node_modules --exclude build \
+  <dev>/mysql/mysql-shell-plugins/mrs_plugin/examples/mrs_scripts/ <dir>/
+cd <dir> && npm install && npm install --save-dev typescript@5 && npm run build
+```
+The example's `package.json` lacks the `typescript` peer dependency of
+`@rollup/plugin-typescript`, hence the extra install. A built copy is on the
+VM at `<dev>/mysql/mrs_scripts` (no `node_modules`; the upload doesn't need it).
+
+### Windows (VM `ssh <windows-vm>`, Windows 11 **ARM64**, VS 2022 Professional 17.14)
+
+x64 binaries run under Windows' built-in emulation. The GraalVM CE 23.0.1 on the VM is the
+**x64** Windows build (GraalVM has no Windows ARM64 release), so `libjitexecutor.dll` is x64,
+which fits an x64 `mrsd` linked against the x64 MySQL package.
+
+JIT library build (24.5 min under emulation), `<win-home>\mrsd-polyglot-build.cmd`:
+```bat
+call "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat"
+set JAVA_HOME=<win-dev>\graalvm-community-openjdk-23.0.1+11.1
+set GRAALJDK_ROOT=<win-dev>\graal-jdk-23.0.1
+set PATH=%JAVA_HOME%\bin;<win-dev>\apache-maven-3.9.16\bin;%PATH%
+cd /d <win-dev>\shell\ext\polyglot
+mvn -B package
+```
+`vcvars64.bat` is required. Without it native-image sets up MSVC itself, and the
+environment it passes to its build process has both `PATH` (with MSVC) and `Path`
+(without). Only one takes effect on Windows, and the build fails at step 1/8 with
+"Default native-compiler executable 'cl.exe' not found".
+
+Notes for driving the VM over SSH:
+- Processes started with `Start-Process` die when the SSH session ends; run long builds in the foreground.
+- Send PowerShell as `-EncodedCommand` from a quoted heredoc (zsh's `echo` mangles `\U`, `\e` in paths).
+- Drive F: is nearly full (0.55 GB free after the JIT build); C: has ~12 GB.
+
+### Linux (Ubuntu VM `<ubuntu-vm>`, `ssh <ubuntu-vm>`, aarch64)
+
+Source: `<dev>/mrsd`, a git repo that accepts pushes (`receive.denyCurrentBranch=updateInstead`).
+On the Mac: `git push vm main` (remote `vm`). Assets live in `<dev>/mysql/`:
+- `mysql-26.7.0-linux-glibc2.28-aarch64/` (server package)
+- `mysql-shell-26.7.0-linux-glibc2.28-arm-64bit/`
+- `mysql-shell-plugins/mrs_plugin/db_schema` (copied from the Mac)
+- `deps/`: no-root workarounds (see below)
+
+```sh
+cd <dev>/mrsd; L=/usr/lib/aarch64-linux-gnu; D=<dev>/mysql
+cmake -S . -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug \
+  -DMYSQL_PACKAGE_DIR=$D/mysql-26.7.0-linux-glibc2.28-aarch64 \
+  -DICU_INCLUDE_DIR=$D/deps/icu/usr/include \
+  -DICU_UC_LIBRARY_RELEASE=$L/libicuuc.so.78 \
+  -DICU_I18N_LIBRARY_RELEASE=$L/libicui18n.so.78 \
+  -DICU_DATA_LIBRARY_RELEASE=$L/libicudata.so.78
+make -C build -j8
+LD_LIBRARY_PATH=$D/deps/lib MRSD_BUILD=$PWD/build \
+  MYSQL_PACKAGE_DIR=$D/mysql-26.7.0-linux-glibc2.28-aarch64 \
+  MYSQLSH=$D/mysql-shell-26.7.0-linux-glibc2.28-arm-64bit/bin/mysqlsh \
+  SHELL_PLUGINS=$D/mysql-shell-plugins tools/smoke/run_smoke.sh /tmp/mrsd-smoke
+```
+The VM has no passwordless sudo, so there are three workarounds, none of them needed if
+`sudo apt install libicu-dev ninja-build` is run once:
+- ICU headers: `apt-get download libicu-dev` unpacked into `deps/icu` (78.2, matches the installed runtime)
+- no ninja: Makefiles generator
+- `deps/lib/libaio.so.1 -> libaio.so.1t64` for the package's mysqld (Ubuntu 24.04+ renamed it)
 The binary is still called `mysqlrouter` (renamed in Phase 3); in the build tree
 the config must set `plugin_folder=<build>/plugin_output_directory`.
 
@@ -42,7 +109,11 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
 - [ ] 1.7 mock_server without X, **moved to Phase 2** (needs duktape)
 - [x] 1.8 JIT build on (macOS)
 - [x] macOS: Debug build with and without JIT; `tools/smoke/run_smoke.sh` passes (MySQL 26.7.0 server and client, MRS metadata 4.1.5, REST view GET)
-- [ ] Linux build + smoke test
+- [x] Linux build + smoke test (Ubuntu 26.04 aarch64, GCC 15.2, Debug, no JIT; `ldd -r` finds no unresolved symbols)
+- [x] Linux with JIT (`-DMRS_JIT_EXECUTOR_LIB=<dev>/mariadb-shell/ext/polyglot/polyglot-nativeapi-native-library/target`, build dir `build-jit`)
+- [x] JIT exercised end to end on macOS and Linux: smoke test with `MRS_SCRIPTS_DIR` deploys the
+  mrs_scripts example with `LOAD SCRIPTS`; `GET /smoke/testScripts/helloWorld` →
+  `{"status":"ok","result":"Hello world!"}`
 - [ ] Windows build + smoke test (expect work on MSVC flags, ICU, OpenSSL, DLL exports)
 
 ## Open questions
@@ -61,8 +132,9 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
 - Repository: local git repo in `<dev>/mysql/mrsd`, moved to the final remote later.
 
 ## Next steps
-1. Linux build (container or VM with a MySQL 9.x/26.x Linux server package), then the smoke test.
-2. Windows build (MSVC); expect `cmake/compat/build_env.cmake` and `third_party.cmake` changes.
+1. Windows build (MSVC), **x64** (MySQL ships Windows packages only for x64); expect
+   `cmake/compat/build_env.cmake` and `third_party.cmake` changes. JIT library ready at
+   `<win-dev>\shell\ext\polyglot\polyglot-nativeapi-native-library\target` (see "Windows" below).
 3. Decide on duktape (open question 1), then start Phase 2 with the unit tests (GTest setup, `tests/data/ssl`, `benchmark.h`).
 
 ## Session log
@@ -113,3 +185,22 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
 - Pitfall: the hook treats every `*.cmake` file as `#`-commented, so C header
   templates must not end in `.cmake`. `my_config.h.cmake` was renamed to
   `my_config.h.in` (the hook leaves `.in` files alone; notice added by hand).
+
+### 2026-09-30: session 1, continued (Linux)
+- Ubuntu 26.04 aarch64 VM (UTM, <ubuntu-vm-ip>). Downloaded MySQL 26.7.0 server
+  and Shell for Linux arm64; copied the MRS schema scripts from the Mac.
+- The build succeeded without source changes. `ldd -r` then showed
+  `mysql_rest_service.so` missing `MySQLSession` symbols: upstream got
+  `router_mysql` through the routing plugin. Fixed in `f23c35e` (on macOS it only
+  worked because the JIT plugin, or flat symbol lookup, pulled the library in).
+- Smoke test passes on Linux.
+
+### 2026-09-30: session 1, continued (JIT on Linux, JIT end to end)
+- Linux JIT build against the VM's polyglot build: clean, no unresolved symbols.
+- The smoke test got an optional MRS scripts step (`MRS_SCRIPTS_DIR`); it passes on
+  macOS and Linux, so the JIT executor runs TypeScript MRS scripts on both.
+
+### 2026-09-30: session 1, continued (Windows JIT library)
+- The Windows polyglot build failure was the MSVC PATH/Path clash described in the
+  Windows section, not the source (`ext/polyglot` is identical across the three checkouts).
+  Built with `vcvars64.bat`: `libjitexecutor.dll` (x64, 176 MB) + `.lib` + headers.
