@@ -8,7 +8,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 | Phase | Status |
 |---|---|
 | 0: dependency inventory | ✅ done 2026-09-30, verdict GO ([phase0-inventory.md](phase0-inventory.md)) |
-| 1: new repo that builds | 🟡 macOS and Linux done, with and without JIT (2026-09-30); Windows not started |
+| 1: new repo that builds | ✅ done 2026-09-30: macOS, Linux, Windows (x64), with JIT; smoke test incl. MRS scripts passes on all three |
 | 2: tests and ecosystem validation | ⏳ not started |
 | 3: MRS setup and cleanup | ⏳ not started |
 | 4: packaging and CI | ⏳ not started |
@@ -49,12 +49,12 @@ x64 binaries run under Windows' built-in emulation. The GraalVM CE 23.0.1 on the
 **x64** Windows build (GraalVM has no Windows ARM64 release), so `libjitexecutor.dll` is x64,
 which fits an x64 `mrsd` linked against the x64 MySQL package.
 
-JIT library build (24.5 min under emulation), `<win-home>\mrsd-polyglot-build.cmd`:
+JIT library build (~25 min under emulation), `<win-home>\mrsd-polyglot-build.cmd`:
 ```bat
 call "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat"
 set JAVA_HOME=<win-dev>\graalvm-community-openjdk-23.0.1+11.1
 set GRAALJDK_ROOT=<win-dev>\graal-jdk-23.0.1
-set PATH=%JAVA_HOME%\bin;<win-dev>\apache-maven-3.9.16\bin;%PATH%
+set PATH=%JAVA_HOME%\bin;<win-dev>\apache-maven-3.9.16\bin;%PATH%;C:\Program Files\Git\usr\bin
 cd /d <win-dev>\shell\ext\polyglot
 mvn -B package
 ```
@@ -62,6 +62,37 @@ mvn -B package
 environment it passes to its build process has both `PATH` (with MSVC) and `Path`
 (without). Only one takes effect on Windows, and the build fails at step 1/8 with
 "Default native-compiler executable 'cl.exe' not found".
+
+Two things are required, and the first failure hides the second:
+- Git's `usr\bin` on PATH: `maven-patch-plugin` runs GNU `patch`. Without it,
+  `enhancements.patch` isn't applied, and because the `prepare-sources` profile only runs
+  while `polyglot-nativeapi/src/main/java/org` doesn't exist, **later runs silently build
+  the unpatched API**. The result is missing `poly_value_is_exception`, `poly_context_eval_source`
+  and others, and `jit_executor` doesn't compile. Check that `polyglot-nativeapi/target/patches-applied.txt`
+  lists `enhancements.patch`. To recover, delete `polyglot-nativeapi/src/main/java/org`,
+  `polyglot-nativeapi/src/main/resources` and both `target` dirs (or `mvn -Ddev clean`).
+- `vcvars64.bat` (MSVC PATH/Path clash, see below).
+
+mrsd build (`<win-home>\mrsd-win.cmd configure|build`; source `<win-home>\mrsd`):
+```bat
+call "...\VC\Auxiliary\Build\vcvarsall.bat" arm64_amd64   & rem native ARM64-hosted compiler, x64 target
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ^
+  -DMYSQL_PACKAGE_DIR=<win-home>\Downloads\mysql-26.7.0-winx64 ^
+  -DOPENSSL_ROOT_DIR=<win-home>\mrsd-deps\vcpkg\installed\x64-windows ^
+  -DICU_ROOT=<win-home>\mrsd-deps\icu ^
+  -DMRS_JIT_EXECUTOR_LIB=<win-dev>\shell\ext\polyglot\polyglot-nativeapi-native-library\target
+ninja -C build
+```
+- OpenSSL 3.6.3 x64: `<win-dev>\vcpkg\vcpkg.exe install openssl:x64-windows --classic` with
+  `--x-install-root/--x-buildtrees-root/--x-packages-root/--downloads-root` under `<win-home>\mrsd-deps\vcpkg` (F: is full)
+- ICU 78.3 x64: official `icu4c-78.3-Win64-MSVC2022.zip` in `<win-home>\mrsd-deps\icu`
+- RelWithDebInfo so everything uses the release C runtime, like the prebuilt deps
+- Smoke test: Git Bash script `<win-home>\mrsd-smoke.sh` (DLL dirs on PATH; MySQL Shell
+  26.7.0 Windows zip in Downloads, whose bundled `lib/mysqlsh/plugins` serves as SHELL_PLUGINS;
+  built mrs_scripts in `<win-home>\mrsd-deps\mrs_scripts`)
+- Source sync from the Mac: commits exported with `git format-patch` from `refs/win/synced..main`,
+  served briefly over HTTP on <host-ip>, applied with `git am` (the VM's sshd has no SFTP
+  and stdin streaming to PowerShell never sees EOF)
 
 Notes for driving the VM over SSH:
 - Processes started with `Start-Process` die when the SSH session ends; run long builds in the foreground.
@@ -114,7 +145,7 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
 - [x] JIT exercised end to end on macOS and Linux: smoke test with `MRS_SCRIPTS_DIR` deploys the
   mrs_scripts example with `LOAD SCRIPTS`; `GET /smoke/testScripts/helloWorld` →
   `{"status":"ok","result":"Hello world!"}`
-- [ ] Windows build + smoke test (expect work on MSVC flags, ICU, OpenSSL, DLL exports)
+- [x] Windows build + smoke test (x64, RelWithDebInfo, JIT; REST view + MRS script OK)
 
 ## Open questions
 1. **duktape** for `mysql_server_mock` (component tests): restore duktape 2.7.0
@@ -132,10 +163,9 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
 - Repository: local git repo in `<dev>/mysql/mrsd`, moved to the final remote later.
 
 ## Next steps
-1. Windows build (MSVC), **x64** (MySQL ships Windows packages only for x64); expect
-   `cmake/compat/build_env.cmake` and `third_party.cmake` changes. JIT library ready at
-   `<win-dev>\shell\ext\polyglot\polyglot-nativeapi-native-library\target` (see "Windows" below).
-3. Decide on duktape (open question 1), then start Phase 2 with the unit tests (GTest setup, `tests/data/ssl`, `benchmark.h`).
+1. Decide on duktape (open question 1), then start Phase 2 with the unit tests
+   (GTest setup, `tests/data/ssl`, `benchmark.h`) on all three platforms.
+
 
 ## Session log
 
@@ -204,3 +234,14 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
 - The Windows polyglot build failure was the MSVC PATH/Path clash described in the
   Windows section, not the source (`ext/polyglot` is identical across the three checkouts).
   Built with `vcvars64.bat`: `libjitexecutor.dll` (x64, 176 MB) + `.lib` + headers.
+
+### 2026-09-30: session 1, continued (Windows, Phase 1 complete)
+- Found why the shell project's Windows polyglot build failed: (1) MSVC PATH/Path clash
+  → fixed with `vcvars64.bat`; (2) GNU `patch` not on PATH, so `enhancements.patch` was
+  never applied and later runs built the unpatched API → Git's `usr\bin` on PATH plus a
+  source reset. The rebuilt `libjitexecutor.dll` has the patched API.
+- mrsd on Windows (x64, cross-compiled by the ARM64-hosted MSVC): fixes were
+  the server's Windows compile definitions (`NOGDI` etc.), a Windows-only
+  `using` guard in `router_app.cc`, the target architecture in `--version`, and
+  the stale-DLL copy in `ROUTER_COPY_CUSTOM_DLL`.
+- Smoke test (REST view + MRS script) passes on Windows under Git Bash.

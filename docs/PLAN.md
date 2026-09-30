@@ -65,7 +65,7 @@ and the relevant test suites.
 See [phase0-inventory.md](phase0-inventory.md). **Verdict: GO.** The kept code uses
 46 public client API functions plus 10 internal symbols, all with simple replacements.
 
-### Phase 1: new repo that builds (🟡 macOS done 2026-09-30; Linux/Windows pending)
+### Phase 1: new repo that builds ✅ done (2026-09-30: macOS, Linux, Windows x64, with JIT)
 - **1.1 Skeleton:** repo layout (below), top-level CMake, `cmake/` helpers
   replacing the server macros (`ADD_HARNESS_PLUGIN`, `ADD_STATIC_LIBRARY`,
   `ROUTER_ADD_SHARED_LIBRARY`, `MYSQL_ADD_EXECUTABLE`, `ADD_SCHEMA_COMMAND`,

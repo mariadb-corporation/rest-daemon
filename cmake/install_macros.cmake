@@ -143,6 +143,8 @@ FUNCTION(ROUTER_COPY_CUSTOM_DLL library_full_filename OUTPUT_LIBRARY_NAME OUTPUT
     OUTPUT "${COPIED_LIBRARY_NAME}"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "${SOURCE_DLL_NAME}" "${COPIED_LIBRARY_NAME}"
+    # mrsd: refresh the copy when the source DLL is rebuilt
+    DEPENDS "${SOURCE_DLL_NAME}"
     )
   MY_ADD_CUSTOM_TARGET(${COPY_TARGET_NAME} ALL
     DEPENDS "${COPIED_LIBRARY_NAME}"
@@ -171,6 +173,7 @@ FUNCTION(ROUTER_COPY_CUSTOM_DLL library_full_filename OUTPUT_LIBRARY_NAME OUTPUT
       OUTPUT "${COPIED_PDB_NAME}"
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
       "${HAVE_${library_name_we}_PDB}" "${COPIED_PDB_NAME}"
+      DEPENDS "${HAVE_${library_name_we}_PDB}"
       )
     MY_ADD_CUSTOM_TARGET(${COPY_TARGET_PDB_NAME} ALL
       DEPENDS "${COPIED_PDB_NAME}"
