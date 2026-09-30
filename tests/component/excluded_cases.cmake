@@ -148,3 +148,8 @@ EXCLUDE_TEST_CASES(routertest_component_master_key_reader_writer
   "MasterKeyReaderWriterTest.ConnectToMetadataServerPass"
   "MasterKeyReaderWriterTest.NoMasterKeyInLogsWhenConnectToMetadataServerPass"
 )
+
+# Windows-only case configuring a [routing] section
+EXCLUDE_TEST_CASES(routertest_component_logging_eventlog
+  "RouterEventlogTest.application_running_as_process_postconfig"
+)

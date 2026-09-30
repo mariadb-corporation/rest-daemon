@@ -78,14 +78,27 @@ size_t my_safe_printf_stderr(const char *fmt, ...) {
 
 #ifdef _WIN32
 
-void my_init_stacktrace() {
+namespace {
+bool sym_initialized{false};
+
+void init_symbols() {
+  if (sym_initialized) return;
+  sym_initialized = true;
+
   SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS | SYMOPT_LOAD_LINES);
+  // search the directories of the loaded modules for their .pdb files
   SymInitialize(GetCurrentProcess(), nullptr, TRUE);
 }
+}  // namespace
+
+void my_init_stacktrace() { init_symbols(); }
 
 void my_set_exception_pointers(EXCEPTION_POINTERS *ep) { exception_ptrs = ep; }
 
 void my_print_stacktrace(const unsigned char *, unsigned long) {
+  // the Windows exception filter calls this without my_init_stacktrace()
+  init_symbols();
+
   void *frames[64];
   const USHORT num_frames = CaptureStackBackTrace(0, 64, frames, nullptr);
 
@@ -98,11 +111,20 @@ void my_print_stacktrace(const unsigned char *, unsigned long) {
   for (USHORT i = 0; i < num_frames; ++i) {
     const auto addr = reinterpret_cast<DWORD64>(frames[i]);
     DWORD64 displacement{0};
-    if (SymFromAddr(process, addr, &displacement, sym)) {
-      my_safe_printf_stderr("%p %s+0x%llx\n", frames[i], sym->Name,
-                            static_cast<unsigned long long>(displacement));
-    } else {
+    if (!SymFromAddr(process, addr, &displacement, sym)) {
       my_safe_printf_stderr("%p\n", frames[i]);
+      continue;
+    }
+
+    IMAGEHLP_LINE64 line{};
+    line.SizeOfStruct = sizeof(line);
+    DWORD line_displacement{0};
+    if (SymGetLineFromAddr64(process, addr, &line_displacement, &line)) {
+      my_safe_printf_stderr("%p %s()[%s:%lu]\n", frames[i], sym->Name,
+                            line.FileName, line.LineNumber);
+    } else {
+      my_safe_printf_stderr("%p %s()+0x%llx\n", frames[i], sym->Name,
+                            static_cast<unsigned long long>(displacement));
     }
   }
 }
