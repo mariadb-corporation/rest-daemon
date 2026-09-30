@@ -32,7 +32,7 @@
 #include <vector>
 
 #include "mysql/harness/destination.h"
-#include "mysqlrouter/cluster_metadata.h"
+#include "cluster_metadata_types.h"  // mrsd
 #include "mysqlrouter/mysql_session.h"
 
 std::string create_state_file_content(

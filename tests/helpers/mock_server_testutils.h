@@ -39,7 +39,7 @@
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/schema.h>
 
-#include "mysqlrouter/cluster_metadata.h"
+#include "cluster_metadata_types.h"  // mrsd
 
 // AddressSanitizer gets confused by the default, MemoryPoolAllocator
 // Solaris sparc also gets crashes

@@ -35,7 +35,7 @@
 
 #include "mysql/harness/stdx/attribute.h"
 #include "mysql/harness/stdx/expected.h"
-#include "mysqlrouter/cluster_metadata.h"
+#include "cluster_metadata_types.h"  // mrsd
 #include "mysqlrouter/mysql_session.h"
 #include "process_manager.h"
 #include "process_wrapper.h"

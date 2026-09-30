@@ -58,3 +58,8 @@ TARGET_SOURCES(harness_net_ts
 IF(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
   TARGET_LINK_LIBRARIES(harness_net_ts INTERFACE socket;nsl)
 ENDIF()
+# mrsd: Winsock for the header-only socket code; the server build linked it
+# for everything through its own libraries.
+IF(WIN32)
+  TARGET_LINK_LIBRARIES(harness_net_ts INTERFACE ws2_32)
+ENDIF()

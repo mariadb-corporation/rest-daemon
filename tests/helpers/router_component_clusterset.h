@@ -44,7 +44,7 @@
 #include <rapidjson/stringbuffer.h>
 
 #include "mock_server_testutils.h"
-#include "mysqlrouter/cluster_metadata.h"
+#include "cluster_metadata_types.h"  // mrsd
 #include "rest_api_testutils.h"
 #include "router_component_test.h"
 

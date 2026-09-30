@@ -127,6 +127,10 @@ FUNCTION(_ADD_TEST_FILE FILE)
 
   # mrsd: shared test helpers (e.g. helpers/benchmark/benchmark.h)
   TARGET_INCLUDE_DIRECTORIES(${test_target} PRIVATE ${CMAKE_SOURCE_DIR}/tests)
+  IF(WIN32)
+    # tests use the header-only net_ts socket code directly
+    TARGET_LINK_LIBRARIES(${test_target} ws2_32)
+  ENDIF()
 
   # ZSTD_generateSequences generates -Werror=alloc-size-larger-than=
   DOWNGRADE_STRINGOP_WARNINGS(${test_target})
