@@ -57,7 +57,14 @@ ENDIF()
 IF(LINUX)
   SET(LIBRT rt)
 ENDIF()
-SET(MYSQL_MACHINE_TYPE ${CMAKE_SYSTEM_PROCESSOR})
+# target architecture; CMAKE_SYSTEM_PROCESSOR is the host's (e.g. ARM64 when
+# cross-compiling x64 binaries on Windows on ARM)
+IF(MSVC AND MSVC_CXX_ARCHITECTURE_ID)
+  SET(MRSD_TARGET_ARCH ${MSVC_CXX_ARCHITECTURE_ID})
+ELSE()
+  SET(MRSD_TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR})
+ENDIF()
+SET(MYSQL_MACHINE_TYPE ${MRSD_TARGET_ARCH})
 
 # ---------------------------------------------------------------------------
 # install layout (server: cmake/install_layout.cmake, STANDALONE/TARGZ only)

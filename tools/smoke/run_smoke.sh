@@ -27,6 +27,12 @@
 #   MYSQLSH=<path to mysqlsh> SHELL_PLUGINS=<mysql-shell-plugins checkout> \
 #   tools/smoke/run_smoke.sh [workdir]
 #
+# SHELL_PLUGINS can also be a MySQL Shell package's lib/mysqlsh/plugins
+# (it bundles mrs_plugin/db_schema).
+#
+# Windows: run from Git Bash with the DLL directories (MySQL lib/, OpenSSL and
+# ICU bin/) on PATH.
+#
 # Ubuntu 24.04+: the package's mysqld needs libaio.so.1, which is now
 # libaio.so.1t64. Point LD_LIBRARY_PATH at a directory with a
 # libaio.so.1 -> /usr/lib/<arch>/libaio.so.1t64 symlink.
@@ -39,6 +45,17 @@ SHELL_PLUGINS=${SHELL_PLUGINS:?set SHELL_PLUGINS}
 WORK=${1:-$(mktemp -d)}
 PORT=${MYSQL_PORT:-13306}
 HTTP_PORT=${HTTP_PORT:-18080}
+
+# Windows (Git Bash): mysqld, mrsd and mysqlsh are native programs, so hand
+# them C:/... paths; Git Bash itself accepts those too.
+if command -v cygpath >/dev/null 2>&1; then
+  mkdir -p "$WORK"
+  WORK=$(cygpath -m "$WORK")
+  MRSD_BUILD=$(cygpath -m "$MRSD_BUILD")
+  MYSQL_PACKAGE_DIR=$(cygpath -m "$MYSQL_PACKAGE_DIR")
+  SHELL_PLUGINS=$(cygpath -m "$SHELL_PLUGINS")
+  [ -n "${MRS_SCRIPTS_DIR:-}" ] && MRS_SCRIPTS_DIR=$(cygpath -m "$MRS_SCRIPTS_DIR")
+fi
 
 SCHEMA_DIR=$SHELL_PLUGINS/mrs_plugin/db_schema
 TASKS_SQL=$(ls "$SCHEMA_DIR"/mysql_tasks.msm.project/releases/deployment/*.sql | sort -V | tail -1)
