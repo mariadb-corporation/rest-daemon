@@ -72,9 +72,27 @@ ADD_COMPILE_DEFINITIONS(
   _USE_MATH_DEFINES
   __STDC_FORMAT_MACROS
   __STDC_LIMIT_MACROS)
+IF(WIN32)
+  # as in the server's cmake/os/Windows.cmake. NOGDI matters: wingdi.h
+  # defines ERROR and GetObject, which clash with MRS/jit_executor code and
+  # rapidjson.
+  ADD_COMPILE_DEFINITIONS(
+    _WIN32_WINNT=0x0601
+    WIN32_LEAN_AND_MEAN
+    NOGDI
+    NOMINMAX
+    _CRT_SECURE_NO_WARNINGS
+    _CRT_NONSTDC_NO_DEPRECATE
+    _WINSOCK_DEPRECATED_NO_WARNINGS
+    RAPIDJSON_HAS_CXX11_RVALUE_REFS=1
+    RAPIDJSON_HAS_CXX11_NOEXCEPT=1
+    RAPIDJSON_HAS_CXX11_RANGE_FOR=1)
+ENDIF()
 IF(MSVC)
-  ADD_COMPILE_OPTIONS(/wd4251)
-  ADD_COMPILE_DEFINITIONS(_CRT_SECURE_NO_WARNINGS NOMINMAX WIN32_LEAN_AND_MEAN)
+  ADD_COMPILE_OPTIONS(/wd4251 /wd4267 /wd4244
+    $<$<COMPILE_LANGUAGE:CXX>:/permissive->
+    $<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus>
+    /bigobj /utf-8)
 ELSE()
   ADD_COMPILE_OPTIONS(-Wall -Wextra -Wformat-security -Wvla -Wundef
     -Woverloaded-virtual -Wcast-qual -Wno-deprecated-declarations)
