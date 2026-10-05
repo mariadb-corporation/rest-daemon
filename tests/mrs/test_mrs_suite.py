@@ -1,0 +1,138 @@
+# Copyright (c) 2026, MariaDB plc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1335 USA
+
+"""Runs each tests/mrs/t/<name>.test and compares the output with
+tests/mrs/r/<name>.result (see conftest.py and mrstest/mysqltest.py)."""
+
+from __future__ import annotations
+
+import difflib
+import os
+import shutil
+import sys
+from pathlib import Path
+
+import pytest
+
+from conftest import IS_WINDOWS, SUITE_DIR, Mrsd, server_options_for
+from mrstest.mysqltest import Environment, Interpreter, ScriptFailed, ScriptSkipped
+
+
+def read_def(filename: str) -> dict[str, str]:
+    result = {}
+    f = SUITE_DIR / filename
+    for line in f.read_text().splitlines() if f.exists() else []:
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        name, _, reason = line.partition(":")
+        result[name.strip()] = reason.strip()
+    return result
+
+
+TESTS = sorted(p.stem for p in (SUITE_DIR / "t").glob("*.test"))
+DISABLED = read_def("disabled.def")
+KNOWN_FAILURES = read_def("known_failures.def")
+
+
+def shell() -> list[str]:
+    if IS_WINDOWS:
+        bash = shutil.which("bash") or r"C:\Program Files\Git\bin\bash.exe"
+        return [bash, "-c"]
+    return ["bash", "-c"]
+
+
+@pytest.mark.parametrize("name", TESTS)
+def test_mrs(name, paths, mysqld, tmp_path, request):
+    if name in DISABLED:
+        pytest.skip(DISABLED[name])
+    if name in KNOWN_FAILURES:
+        request.applymarker(pytest.mark.xfail(reason=KNOWN_FAILURES[name], strict=False))
+
+    test_file = SUITE_DIR / "t" / f"{name}.test"
+    result_file = SUITE_DIR / "r" / f"{name}.result"
+    router_cnf = SUITE_DIR / "t" / f"{name}-router.cnf"
+
+    mysqld.ensure_options(server_options_for(SUITE_DIR / "t" / f"{name}.cnf"))
+    mrsd = Mrsd(paths, mysqld, tmp_path / "router",
+                router_cnf if router_cnf.exists() else None)
+    mrsd.start()
+
+    tmp = tmp_path / "tmp"
+    tmp.mkdir()
+    env = {
+        "MRS_CLIENT": str(paths.mrs_client),
+        "HTTP_SERVER_PORT": str(mrsd.http_port),
+        "HTTP_SERVER_SSL": mrsd.http_ssl,
+        "MYSQL_TMP_DIR": str(tmp),
+        "MYSQLTEST_VARDIR": str(mrsd.base),
+        "MYSQL_TEST_DIR": str(SUITE_DIR),
+        "STD_DATA_DIR": str(SUITE_DIR.parent / "data" / "ssl"),
+        "MASTER_MYPORT": str(mysqld.port),
+        "MASTER_MYSOCK": str(mysqld.datadir / "m.sock"),
+        "MYSQLROUTER": str(paths.mrsd),
+        "MYSQLROUTER_KEYRING": str(paths.keyring),
+        "MYSQLROUTER_LOGFILE": str(mrsd.logfile),
+        "MYSQLROUTER_PIDFILE": str(mrsd.pidfile),
+        "ROUTER_PLUGIN_DIRECTORY": str(paths.plugins),
+        "_MRS_CONTROL_START": "1",
+        "USER": os.environ.get("USER", os.environ.get("USERNAME", "")),
+    }
+
+    def require_jit(_arg):
+        if not paths.has_jit:
+            raise ScriptSkipped("mrsd built without the JIT executor")
+
+    envn = Environment(
+        mysql_host="127.0.0.1", mysql_port=mysqld.port, mysql_user="root",
+        mysql_password="", env=env,
+        source_roots=[SUITE_DIR / "mtr_include", SUITE_DIR],
+        shell=shell(), tmp_dir=tmp,
+        hooks={"mrsd_stop": mrsd.hook_stop,
+               "mrsd_wait_stopped": mrsd.hook_wait_stopped,
+               "mrsd_restart": mrsd.hook_restart,
+               "mrsd_require_jit": require_jit})
+
+    interp = Interpreter(envn)
+    try:
+        interp.run_file(test_file)
+    except ScriptSkipped as e:
+        pytest.skip(str(e))
+    except ScriptFailed as e:
+        pytest.fail(f"{e}\n\n--- output so far (last 60 lines) ---\n" +
+                    "\n".join(interp.output().splitlines()[-60:]) +
+                    f"\n\nrouter log: {mrsd.logfile}")
+    finally:
+        interp.close()
+        mrsd.stop()
+        mysqld.reset()
+
+    actual = interp.output()
+    if request.config.getoption("--record"):
+        result_file.write_text(actual, errors="surrogateescape")
+        return
+    # binary data in responses: compare the bytes (surrogateescape round-trips)
+    expected = (result_file.read_text(errors="surrogateescape")
+                if result_file.exists() else "")
+    if actual != expected:
+        reject = tmp_path / f"{name}.reject"
+        reject.write_text(actual, errors="surrogateescape")
+        diff = "".join(difflib.unified_diff(
+            expected.splitlines(True), actual.splitlines(True),
+            fromfile=f"r/{name}.result", tofile=f"{name}.reject", n=2))
+        lines = diff.splitlines()
+        if len(lines) > 80:
+            diff = "\n".join(lines[:80]) + f"\n... ({len(lines) - 80} more lines)"
+        pytest.fail(f"result mismatch, reject file: {reject}\n{diff}")

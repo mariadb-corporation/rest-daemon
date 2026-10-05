@@ -13,3 +13,6 @@ extra/rapidjson/
 extra/libcno/
 extra/googletest/
 extra/duktape/
+
+# golden files of the MRS functional tests: compared byte for byte
+tests/mrs/r/

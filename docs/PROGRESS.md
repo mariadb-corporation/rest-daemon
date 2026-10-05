@@ -9,7 +9,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 |---|---|
 | 0: dependency inventory | ✅ done 2026-09-30, verdict GO ([phase0-inventory.md](phase0-inventory.md)) |
 | 1: new repo that builds | ✅ done 2026-09-30: macOS, Linux, Windows (x64), with JIT; smoke test incl. MRS scripts passes on all three |
-| 2: tests and ecosystem validation | 🟡 unit + component tests pass on macOS and Windows (116/116 each); Linux VM offline; MTR → pytest harness in progress |
+| 2: tests and ecosystem validation | 🟡 unit + component tests pass on macOS and Windows (116/116 each); Linux VM offline; MRS functional suite (pytest) passes on macOS: 113 passed, 1 known failure (JIT library), 7 skipped |
 | 3: MRS setup and cleanup | ⏳ not started |
 | 4: packaging and CI | ⏳ not started |
 
@@ -29,6 +29,25 @@ SHELL_PLUGINS=<dev>/mysql/mysql-shell-plugins \
   tools/smoke/run_smoke.sh      # prints "OK: {...}" on success
 ```
 `build/` is the same build without JIT (leave out `-DMRS_JIT_EXECUTOR_LIB`).
+
+### MRS functional suite (pytest, `tests/mrs`)
+
+```sh
+python3 -m venv build-test/mrs-venv && build-test/mrs-venv/bin/pip install -r tests/mrs/requirements.txt
+MRSD_BUILD=$PWD/build-test \
+MYSQL_PACKAGE_DIR=<dev>/mysql/mysql-26.7.0-macos15-arm64 \
+  build-test/mrs-venv/bin/python -m pytest tests/mrs -q [-k <test>] [--record]
+```
+- needs a build with `-DWITH_UNIT_TESTS=ON` (for `mysqlrouter_mrs_client`)
+- `t/*.test` + `r/*.result` are upstream's `mysql-test/suite/router`, unchanged except
+  `include/mysqlrouter_shutdown.inc` (router stop via harness hook) and the copyright lines
+- `mrstest/mysqltest.py`: interpreter for the mysqltest subset (follows client/mysqltest.cc);
+  `mtr_include/`: the mtr-level includes the suite sources, some replaced by harness hooks
+- `disabled.def`: disabled tests with reasons; bootstrap/InnoDB Cluster tests weren't copied
+- a failing test leaves `<name>.reject` in its pytest tmp dir (path in the failure message)
+- `known_failures.def`: expected failures (xfail) with reasons
+- `mysqltest` from the server build (`ninja mysqltest` in mysql-server/build) is useful to
+  check what the real interpreter does with a construct
 
 ### MRS scripts (JIT) step of the smoke test
 
@@ -155,7 +174,9 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
 - [x] Windows: 116/116 (duktape shared, plugin dir on test PATH, ws2_32, signal_me→compat,
       crash-handler symbols, eventlog routing case excluded, id_mismatch waits for exit)
 - [ ] Linux: unit + component tests (VM offline)
-- [ ] MTR suite → pytest harness (mysqltest-subset interpreter, mrs_client, golden files)
+- [x] MTR suite → pytest harness (`tests/mrs`) on macOS: 113 passed, 1 known failure, 7 skipped
+      (2 disabled bootstrap tests, 3 for metadata schema v2/v3, 1 needs mysql_no_login, 1 not on macOS)
+- [ ] MRS functional suite on Linux and Windows
 - [ ] integration tests (tests/integration): triage
 - [ ] CI
 
@@ -265,3 +286,19 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
 - Windows (unit): 98/99; fixes for the mock server (duktape → shared lib) and
   `routertest_mrs_plugin` (plugin dir on test PATH) pending verification.
 - Decided: MTR suite → pytest + golden files.
+
+### 2026-09-30: session 1, continued (MRS functional suite → pytest)
+- Unit + component tests pass on Windows too (116/116).
+- `tests/mrs`: pytest harness + mysqltest-subset interpreter; mrs_client copied from
+  upstream. First full run on macOS: 25 passed, 89 failed, 7 skipped (7 min).
+- Next: work through the failure groups (REST calls failing, `$$` usage in
+  add_named_resultset.inc/modify_fields.inc, result mismatches).
+
+### 2026-09-30: session 1, continued (MRS functional suite passing on macOS)
+- Interpreter matched to mysqltest in detail (checked against the real binary for
+  statement echo/indentation), harness matched to mtr (server options, reset/restart,
+  keyring, router config replacement semantics).
+- Result: 113 passed, 1 known failure, 7 skipped (~18 min).
+- Known difference: `scripting_base_tests` - the JIT library built from the
+  mariadb-shell polyglot sources lets a native callback run with missing parameters
+  instead of raising an error. To compare with the libjitexecutor upstream ships.

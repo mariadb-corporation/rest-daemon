@@ -1,0 +1,2 @@
+# Known failures (reported as xfail): <test> : <reason>
+scripting_base_tests : fails with the macOS libjitexecutor build (workflow-test checkout): a native callback with missing parameters runs ("Hello undefined!") instead of failing; passes with the Linux build of the same polyglot sources
