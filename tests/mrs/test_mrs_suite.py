@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import difflib
 import os
-import shutil
 import sys
 from pathlib import Path
 
@@ -33,7 +32,7 @@ from mrstest.mysqltest import Environment, Interpreter, ScriptFailed, ScriptSkip
 def read_def(filename: str) -> dict[str, str]:
     result = {}
     f = SUITE_DIR / filename
-    for line in f.read_text().splitlines() if f.exists() else []:
+    for line in f.read_text(encoding="utf-8").splitlines() if f.exists() else []:
         line = line.strip()
         if not line or line.startswith("#"):
             continue
@@ -48,9 +47,9 @@ KNOWN_FAILURES = read_def("known_failures.def")
 
 
 def shell() -> list[str]:
+    # the shell mysqltest's exec uses: popen() runs cmd.exe on Windows
     if IS_WINDOWS:
-        bash = shutil.which("bash") or r"C:\Program Files\Git\bin\bash.exe"
-        return [bash, "-c"]
+        return ["cmd.exe", "/d", "/s", "/c"]
     return ["bash", "-c"]
 
 
@@ -121,14 +120,16 @@ def test_mrs(name, paths, mysqld, tmp_path, request):
 
     actual = interp.output()
     if request.config.getoption("--record"):
-        result_file.write_text(actual, errors="surrogateescape")
+        result_file.write_text(actual, encoding="utf-8",
+                               errors="surrogateescape", newline="")
         return
     # binary data in responses: compare the bytes (surrogateescape round-trips)
-    expected = (result_file.read_text(errors="surrogateescape")
+    expected = (result_file.read_text(encoding="utf-8", errors="surrogateescape")
                 if result_file.exists() else "")
     if actual != expected:
         reject = tmp_path / f"{name}.reject"
-        reject.write_text(actual, errors="surrogateescape")
+        reject.write_text(actual, encoding="utf-8", errors="surrogateescape",
+                          newline="")
         diff = "".join(difflib.unified_diff(
             expected.splitlines(True), actual.splitlines(True),
             fromfile=f"r/{name}.result", tofile=f"{name}.reject", n=2))

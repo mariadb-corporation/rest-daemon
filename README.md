@@ -170,7 +170,10 @@ MRSD_BUILD=$PWD/build MYSQL_PACKAGE_DIR=/path/to/mysql-<version>-<platform> \
 Disabled tests are listed in `tests/mrs/disabled.def`, expected failures in
 `tests/mrs/known_failures.def`. On Linux (Ubuntu 24.04 and later), the
 package's `mysqld` needs `libaio.so.1`: point `LD_LIBRARY_PATH` at a directory
-with a `libaio.so.1 -> libaio.so.1t64` link.
+with a `libaio.so.1 -> libaio.so.1t64` link. On Windows, use
+`venv\Scripts\python`, put the DLL directories and a `perl` on `PATH` (Git for
+Windows' `usr\bin` has one), and expect the tests' `exec` commands to run
+through `cmd.exe`, as they do under mtr.
 
 **Smoke test** (`tools/smoke/run_smoke.sh`): starts `mysqld` and mrsd, creates
 a REST view with MySQL Shell and checks that it is served; see the script for

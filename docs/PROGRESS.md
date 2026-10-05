@@ -9,7 +9,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 |---|---|
 | 0: dependency inventory | ✅ done 2026-09-30, verdict GO ([phase0-inventory.md](phase0-inventory.md)) |
 | 1: new repo that builds | ✅ done 2026-09-30: macOS, Linux, Windows (x64), with JIT; smoke test incl. MRS scripts passes on all three |
-| 2: tests and ecosystem validation | 🟡 unit + component tests pass on Linux, macOS, Windows (116/116 each); MRS functional suite passes on Linux and macOS; remaining: MRS suite on Windows, integration tests, CI |
+| 2: tests and ecosystem validation | 🟡 unit + component tests pass on Linux, macOS, Windows (116/116 each); MRS functional suite passes on Linux, macOS, Windows; remaining: integration tests, CI |
 | 3: MRS setup and cleanup | ⏳ not started |
 | 4: packaging and CI | ⏳ not started |
 
@@ -113,6 +113,14 @@ ninja -C build
   served briefly over HTTP on <host-ip>, applied with `git am` (the VM's sshd has no SFTP
   and stdin streaming to PowerShell never sees EOF)
 
+- MRS functional suite: `powershell -File <win-home>\mrsd-pytest.ps1 -q [-k <test>]`
+  (venv `<win-home>\mrsd-venv` from the ARM64 Python 3.14; puts the DLL dirs and Git's
+  `usr\bin` on PATH, for the perl the tests' `--perl` blocks need; ~32 min). Like mysqltest
+  on Windows, `exec` runs through `cmd.exe /c`, with `echo` replaced by a quote-stripping
+  echo (`mrstest/echo.py` in place of mysqltest's `echo.exe`) and `/dev/null` by `NUL`.
+  Redirect pytest's output to a file on the VM and read it back: long runs over SSH lose the
+  end of the output.
+
 Notes for driving the VM over SSH:
 - Processes started with `Start-Process` die when the SSH session ends; run long builds in the foreground.
 - Send PowerShell as `-EncodedCommand` from a quoted heredoc (zsh's `echo` mangles `\U`, `\e` in paths).
@@ -177,7 +185,7 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
 - [x] MTR suite → pytest harness (`tests/mrs`) on macOS: 113 passed, 1 known failure, 7 skipped
       (2 disabled bootstrap tests, 3 for metadata schema v2/v3, 1 needs mysql_no_login, 1 not on macOS)
 - [x] MRS functional suite on Linux: 114 passed, 6 skipped, 1 xpassed
-- [ ] MRS functional suite on Windows
+- [x] MRS functional suite on Windows: 113 passed, 7 skipped, 1 xpassed
 - [ ] integration tests (tests/integration): triage
 - [ ] CI
 
@@ -192,11 +200,9 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
 - Repository: local git repo in `<dev>/mysql/mrsd`, moved to the final remote later.
 
 ## Next steps
-1. Linux test run when the VM is back.
-3. pytest harness for the MRS functional suite: port `router/tests/mrs_client`, write the
-   mysqltest-subset interpreter, replace the bootstrap-based router setup, start with
-   the `table_*` and `mrs_*` tests.
-
+1. Integration tests (`tests/integration`): triage what applies to mrsd.
+2. CI for the three platforms (unit + component tests, MRS functional suite).
+3. Then Phase 3 (`mrsd --setup`, rename, cleanup).
 
 ## Session log
 
@@ -317,3 +323,11 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
   timeout, not a JIT library difference.
 - README.md for mrsd (build, configuration, tests, layout); README.router and
   MRS_README.router marked as upstream docs.
+
+### 2026-10-05: session 2, continued (MRS functional suite on Windows)
+- MRS functional suite on Windows: 113 passed, 7 skipped (the macOS set: `destination_socket`
+  is not_windows), 1 xpassed. Harness fixes: `exec` through `cmd.exe` with mysqltest's
+  Windows replacements (builtin echo, `/dev/null`, `>&-`); `MYSQLTEST_FILE` with forward
+  slashes (MSYS perl's `dirname`); stale pid file removed after TerminateProcess; all harness
+  file I/O as UTF-8 with LF (the locale code page broke binary results on Windows).
+- macOS rerun with these changes: 113 passed, 7 skipped, 1 xpassed.

@@ -318,7 +318,7 @@ class Environment:
     mysql_password: str
     env: dict[str, str]              # exported to exec'd commands, readable as $VAR
     source_roots: list[Path]         # where "include/..." is looked up
-    shell: list[str]                 # e.g. ["bash", "-c"]
+    shell: list[str]                 # e.g. ["bash", "-c"] or ["cmd.exe", "/d", "/s", "/c"]
     tmp_dir: Path
     # internal commands (--mrsd_stop, --mrsd_restart, ...) used by the
     # harness' versions of mtr's router restart includes
@@ -441,8 +441,10 @@ class Interpreter:
     def run_file(self, path: Path) -> None:
         if not self.file_stack:
             # mysqltest exports the path of the test it runs
-            self.envn.env["MYSQLTEST_FILE"] = str(path)
-        cmds = Parser(path.read_text(errors="replace"), path).parse()
+            # forward slashes: perl's dirname() of MSYS perl (Git for
+            # Windows) doesn't split at backslashes
+            self.envn.env["MYSQLTEST_FILE"] = Path(path).as_posix()
+        cmds = Parser(path.read_text(encoding="utf-8", errors="replace"), path).parse()
         self.file_stack.append(path)
         try:
             self.run_block(cmds)
@@ -714,7 +716,7 @@ class Interpreter:
             self.fail(cmd, f"write_file: {p} already exists")
         self.pending_error = None
         p.parent.mkdir(parents=True, exist_ok=True)
-        with open(p, mode) as f:
+        with open(p, mode, encoding="utf-8", newline="") as f:
             f.write(self.expand(cmd.heredoc or ""))
 
     def cmd_append_file(self, cmd: Command) -> None:
@@ -722,7 +724,7 @@ class Interpreter:
 
     def cmd_cat_file(self, cmd: Command) -> None:
         p = Path(self.expand(cmd.arg).rstrip(";").strip())
-        self.emit(p.read_text(errors="surrogateescape"))
+        self.emit(p.read_text(encoding="utf-8", errors="surrogateescape"))
         self.pending_replace = None
 
     def cmd_assert(self, cmd: Command) -> None:
@@ -858,6 +860,20 @@ class Interpreter:
 
     # --- exec -----------------------------------------------------------------
 
+    def shell_command(self, command: str) -> list[str] | str:
+        if sys.platform == "win32":
+            # like do_exec() on Windows: echo is replaced by a "builtin" echo
+            # (no quotes in the output), /dev/null by NUL ...
+            if command.startswith("echo"):
+                echo = Path(__file__).with_name("echo.py")
+                command = command.replace(
+                    "echo", f'"{sys.executable}" "{echo}"', 1)
+            command = command.replace("/dev/null", "NUL").replace(">&-", ">&4")
+            # ... and popen() hands the command line to cmd.exe as is; a list
+            # would be re-quoted by subprocess
+            return subprocess.list2cmdline(self.envn.shell) + f' "{command}"'
+        return self.envn.shell + [command]
+
     def cmd_exec(self, cmd: Command) -> None:
         # like do_exec(): escapes pass through to the shell (not on Windows)
         # and newlines become spaces
@@ -869,7 +885,7 @@ class Interpreter:
         env.update(self.envn.env)
         env.update({k: v for k, v in self.vars.items() if k.isupper()})
         env = {k: v for k, v in env.items() if "\0" not in v and "\0" not in k}
-        p = subprocess.run(self.envn.shell + [command], capture_output=True,
+        p = subprocess.run(self.shell_command(command), capture_output=True,
                            env=env, cwd=self.envn.tmp_dir)
         out = p.stdout.decode("utf-8", errors="surrogateescape").replace("\r\n", "\n")
         if p.returncode != 0:
@@ -890,7 +906,7 @@ class Interpreter:
         env.update(self.envn.env)
         command = self.expand(cmd.arg, pass_through_escapes=sys.platform != "win32")
         self.background.append(subprocess.Popen(
-            self.envn.shell + [command.replace("\n", " ")], env=env,
+            self.shell_command(command.replace("\n", " ")), env=env,
             cwd=self.envn.tmp_dir, stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL))
 

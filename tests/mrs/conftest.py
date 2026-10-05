@@ -230,7 +230,7 @@ def server_options_for(cnf: Path) -> list[str]:
         return []
     opts = []
     section = None
-    for line in cnf.read_text().splitlines():
+    for line in cnf.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith(("#", "!")):
             continue
@@ -336,7 +336,7 @@ class Mrsd:
         # like mtr: tests read HTTP_SERVER_SSL to pick http:// or https://
         ssl_value = cfg["http_server"].get("ssl", "0").strip()
         self.http_ssl = "1" if ssl_value in ("1", "true", "yes", "on") else "0"
-        with open(self.conf, "w") as f:
+        with open(self.conf, "w", encoding="utf-8") as f:
             cfg.write(f)
 
     def start(self, extra_args: list[str] | None = None) -> None:
@@ -360,6 +360,10 @@ class Mrsd:
             except subprocess.TimeoutExpired:
                 self.proc.kill()
                 self.proc.wait()
+            if IS_WINDOWS:
+                # TerminateProcess() gives mrsd no chance to remove it, and
+                # the next start would refuse to run
+                self.pidfile.unlink(missing_ok=True)
 
     # hooks for the harness' versions of mtr's restart includes
     def hook_stop(self, _arg: str) -> None:
@@ -370,7 +374,7 @@ class Mrsd:
             self.proc.wait(60)
 
     def hook_restart(self, _arg: str) -> None:
-        req = self.expect_file.read_text().strip() if self.expect_file.exists() else ""
+        req = self.expect_file.read_text(encoding="utf-8").strip() if self.expect_file.exists() else ""
         if not req.startswith("restart"):
             raise RuntimeError(f"expected 'restart' in {self.expect_file}, got {req!r}")
         extra = req.split(":", 1)[1].split() if ":" in req else []
