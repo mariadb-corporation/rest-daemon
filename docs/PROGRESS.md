@@ -9,7 +9,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 |---|---|
 | 0: dependency inventory | ✅ done 2026-09-30, verdict GO ([phase0-inventory.md](phase0-inventory.md)) |
 | 1: new repo that builds | ✅ done 2026-09-30: macOS, Linux, Windows (x64), with JIT; smoke test incl. MRS scripts passes on all three |
-| 2: tests and ecosystem validation | 🟡 unit + component tests pass on macOS and Windows (116/116 each); Linux VM offline; MRS functional suite (pytest) passes on macOS: 113 passed, 1 known failure (JIT library), 7 skipped |
+| 2: tests and ecosystem validation | 🟡 unit + component tests pass on Linux, macOS, Windows (116/116 each); MRS functional suite passes on Linux and macOS; remaining: MRS suite on Windows, integration tests, CI |
 | 3: MRS setup and cleanup | ⏳ not started |
 | 4: packaging and CI | ⏳ not started |
 
@@ -173,10 +173,11 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
 - [x] component tests: 17 suites pass on macOS (`-DWITH_COMPONENT_TESTS=ON`), 105 cases excluded
 - [x] Windows: 116/116 (duktape shared, plugin dir on test PATH, ws2_32, signal_me→compat,
       crash-handler symbols, eventlog routing case excluded, id_mismatch waits for exit)
-- [ ] Linux: unit + component tests (VM offline)
+- [x] Linux: unit + component tests (116/116)
 - [x] MTR suite → pytest harness (`tests/mrs`) on macOS: 113 passed, 1 known failure, 7 skipped
       (2 disabled bootstrap tests, 3 for metadata schema v2/v3, 1 needs mysql_no_login, 1 not on macOS)
-- [ ] MRS functional suite on Linux and Windows
+- [x] MRS functional suite on Linux: 114 passed, 6 skipped, 1 xpassed
+- [ ] MRS functional suite on Windows
 - [ ] integration tests (tests/integration): triage
 - [ ] CI
 
@@ -299,6 +300,20 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
   statement echo/indentation), harness matched to mtr (server options, reset/restart,
   keyring, router config replacement semantics).
 - Result: 113 passed, 1 known failure, 7 skipped (~18 min).
-- Known difference: `scripting_base_tests` - the JIT library built from the
-  mariadb-shell polyglot sources lets a native callback run with missing parameters
-  instead of raising an error. To compare with the libjitexecutor upstream ships.
+- Known issue: `scripting_base_tests` is intermittent (see `tests/mrs/known_failures.def`):
+  after the `defaultTimeOut` request times out while its script keeps running, a later
+  request can get the previous endpoint's result. Most likely a race in reusing
+  JavaScript contexts after a timeout (upstream MRS code); not the JIT library build
+  (macOS and Linux builds come from the same sources). Not being handled now.
+
+### 2026-10-05: session 2 (Linux tests, README)
+- Linux VM back: unit + component tests 116/116; MRS functional suite 114 passed,
+  6 skipped, 1 xpassed. Fixes on the way: per-test server options (`t/<name>.cnf`),
+  replace_regex semantics (echoed statement; variable only for the whole argument),
+  `__pycache__` no longer tracked. Linux venv: `python3 -m venv --without-pip` +
+  get-pip.py (no python3-venv package on the VM).
+- macOS rerun: 113 passed, 7 skipped, 1 xpassed.
+- `scripting_base_tests` re-diagnosed as an intermittent race after a request
+  timeout, not a JIT library difference.
+- README.md for mrsd (build, configuration, tests, layout); README.router and
+  MRS_README.router marked as upstream docs.

@@ -1,3 +1,7 @@
+NOTE (mrsd): MySQL Router's notes on MRS scripts, kept from upstream. In
+mrsd, the JIT executor library is given with -DMRS_JIT_EXECUTOR_LIB; see
+README.md.
+
 Enabling MRS Script Support
 ===========================
 

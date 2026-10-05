@@ -1,2 +1,2 @@
 # Known failures (reported as xfail): <test> : <reason>
-scripting_base_tests : fails with the macOS libjitexecutor build (workflow-test checkout): a native callback with missing parameters runs ("Hello undefined!") instead of failing; passes with the Linux build of the same polyglot sources
+scripting_base_tests : intermittent: after the defaultTimeOut request times out (its script keeps running), a later request (errorCCallbackMissingParams) can get the previous endpoint's result ("Hello undefined!"); most likely a race in reusing JavaScript contexts after a timeout (upstream MRS), seen on macOS, not yet investigated
