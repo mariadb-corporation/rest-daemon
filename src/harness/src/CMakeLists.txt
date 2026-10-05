@@ -26,43 +26,8 @@ INCLUDE(GenerateExportHeader)
 INCLUDE(Plugin)
 
 
-# Generate dynamic_state_schema.cc and configuration_update_schema.cc
-FUNCTION(ADD_SCHEMA_COMMAND SCHEMA_NAME CLASS_NAME)
-  SET(GENERATED_SOURCES
-    ${CMAKE_CURRENT_BINARY_DIR}/${SCHEMA_NAME}.cc
-    ${CMAKE_CURRENT_BINARY_DIR}/${SCHEMA_NAME}.h
-    )
-  SET(GENERATED_SOURCES
-    ${GENERATED_SOURCES} PARENT_SCOPE)
-  SET_SOURCE_FILES_PROPERTIES(${GENERATED_SOURCES}
-    PROPERTIES GENERATED TRUE)
-
-  ADD_CUSTOM_COMMAND(
-    OUTPUT ${GENERATED_SOURCES}
-    COMMAND json_schema_embedder
-    ${CMAKE_CURRENT_SOURCE_DIR}/${SCHEMA_NAME}.json
-    ${SCHEMA_NAME}.cc
-    ${SCHEMA_NAME}.h
-    ${CLASS_NAME}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating sources for harness library"
-    DEPENDS ${SCHEMA_NAME}.json
-    )
-
-  ADD_CUSTOM_TARGET(json_schema_target_${SCHEMA_NAME}
-    DEPENDS ${GENERATED_SOURCES}
-    )
-  ADD_DEPENDENCIES(clang_tidy_prerequisites
-    json_schema_target_${SCHEMA_NAME}
-    )
-ENDFUNCTION(ADD_SCHEMA_COMMAND)
-
-ADD_SCHEMA_COMMAND(dynamic_state_schema StateFileJsonSchema)
-
-ADD_SCHEMA_COMMAND(
-  configuration_update_schema
-  ConfigurationUpdateJsonSchema
-)
+# mrsd: no generated JSON schemas (dynamic_state and configuration_update
+# were used by the router's cluster metadata code only)
 
 # mrsd: upstream builds a private libmysqlrouter_mysqlclient here, merging
 # clientlib, vio and mysys and re-exporting internal symbols. mrsd links the
@@ -81,7 +46,6 @@ SET(harness_source
   plugin_config.cc
   plugin_state.cc
   designator.cc
-  dynamic_state.cc
   event_state_tracker.cc
   loader_config.cc
   common.cc
@@ -185,10 +149,7 @@ CONFIGURE_FILE(plugin.h.in ${MySQLRouter_BINARY_DIR}/${INSTALL_INCLUDE_DIR}/plug
 
 # create harness library - dynamic version
 ROUTER_ADD_SHARED_LIBRARY(harness-library
-  ${harness_source} ${GENERATED_SOURCES}
-  DEPENDENCIES
-  json_schema_target_dynamic_state_schema
-  json_schema_target_configuration_update_schema
+  ${harness_source}
 
   NO_EXPORT_HEADER  # custom include-path
 

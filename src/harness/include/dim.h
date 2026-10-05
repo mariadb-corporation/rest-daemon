@@ -44,7 +44,6 @@ namespace logging {
 class Registry;
 }  // namespace logging
 class LoaderConfig;
-class DynamicState;
 
 class HARNESS_EXPORT DIM {  // DIM = Dependency Injection Manager
 
@@ -109,20 +108,6 @@ class HARNESS_EXPORT DIM {  // DIM = Dependency Injection Manager
     return loader_config_.get();
   }
 
-  // DynamicState
-
-  void set_DynamicState(
-      mysql_harness::DynamicState *instance,
-      const std::function<void(mysql_harness::DynamicState *)> &deleter) {
-    dynamic_state_.set(instance, deleter);
-  }
-
-  bool is_DynamicState() const { return static_cast<bool>(dynamic_state_); }
-
-  mysql_harness::DynamicState &get_DynamicState() const {
-    return dynamic_state_.get();
-  }
-
  private:
   template <class T>
   class RWLockedUniquePtr {
@@ -171,7 +156,6 @@ class HARNESS_EXPORT DIM {  // DIM = Dependency Injection Manager
 
   RWLockedUniquePtr<mysql_harness::LoaderConfig> loader_config_;
 
-  RWLockedUniquePtr<mysql_harness::DynamicState> dynamic_state_;
 
 };  // class DIM
 

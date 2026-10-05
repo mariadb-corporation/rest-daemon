@@ -38,7 +38,6 @@ static constexpr std::string_view kKeyringPath{"keyring_path"};
 static constexpr std::string_view kMasterKeyPath{"master_key_path"};
 static constexpr std::string_view kMasterKeyReader{"master_key_reader"};
 static constexpr std::string_view kMasterKeyWriter{"master_key_writer"};
-static constexpr std::string_view kDynamicState{"dynamic_state"};
 static constexpr std::string_view kMaxTotalConnections{"max_total_connections"};
 static constexpr std::string_view kPidFile{"pid_file"};
 #ifdef _WIN32
@@ -54,7 +53,6 @@ static constexpr std::array router_supported_options [[maybe_unused]]{
     router::options::kMasterKeyPath,
     router::options::kMasterKeyReader,
     router::options::kMasterKeyWriter,
-    router::options::kDynamicState,
     router::options::kMaxTotalConnections,
     router::options::kPidFile,
 #ifdef _WIN32

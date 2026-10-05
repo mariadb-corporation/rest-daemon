@@ -57,11 +57,6 @@ class RouterMrsConfig : public RouterComponentTest {
         {KeyringEntry{user_, "password", "mysql_test_password"},
          KeyringEntry{"rest-user", "jwt_secret", "mysql_test_password"}});
 
-    const auto state_file = create_state_file(
-        get_test_temp_dir_name(),
-        create_state_file_content("", "", cluster_nodes_ports, 0));
-    default_section["dynamic_state"] = state_file;
-
     const std::string conf_file =
         create_config_file(get_test_temp_dir_name(), config, &default_section,
                            "mysqlrouter.conf", "", enable_logger_debug);

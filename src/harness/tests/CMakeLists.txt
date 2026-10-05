@@ -66,7 +66,6 @@ SET(TESTS
   test_random_generator.cc
   test_mysql_router_thread.cc
   test_mpmc_queue.cc
-  test_dynamic_state.cc
   test_arg_handler.cc
   test_vt100.cc
   test_string_utils.cc
@@ -75,7 +74,6 @@ SET(TESTS
   test_event_state_tracker.cc
   test_config_option.cc
   test_hexify.cc
-  test_configuration_update_schema.cc
   test_dynamic_config.cc
   test_destination.cc
   test_plugin_state.cc

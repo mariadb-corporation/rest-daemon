@@ -379,3 +379,8 @@ In the build tree the config must set `plugin_folder=<build>/plugin_output_direc
 - Stage 2 (next): the config-exposure machinery (DynamicConfig, SectionConfigExposer,
   plugins' `expose_configuration`, dynamic_state, configuration schemas): only consumed
   by the router's cluster metadata code, dead in mrsd.
+- Stage 2a: removed `DynamicState` (the router's cluster state file, `dynamic_state=`
+  option, DIM accessor), the JSON schemas `dynamic_state_schema`,
+  `configuration_update_schema` and the unused `configuration_schema.json`, and their
+  harness tests (114 unit + component test executables now). `test_mrs_config` no longer
+  writes a state file.
