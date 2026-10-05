@@ -435,7 +435,6 @@ LIFECYCLE_API mysql_harness::Plugin harness_plugin_routertestplugin_lifecycle =
         stop,    // stop
         false,   // declares_readiness
         0, nullptr,
-        nullptr,  // expose_configuration
 };
 
 LIFECYCLE_API void lifecycle_init(int flags) {

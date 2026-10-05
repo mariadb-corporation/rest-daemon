@@ -74,7 +74,6 @@ SET(TESTS
   test_event_state_tracker.cc
   test_config_option.cc
   test_hexify.cc
-  test_dynamic_config.cc
   test_destination.cc
   test_plugin_state.cc
 )

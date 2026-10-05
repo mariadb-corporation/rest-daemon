@@ -81,8 +81,6 @@ SET(harness_source
   keyring/master_key_file.cc
   process_state_component.cc
   log_reopen_component.cc
-  dynamic_config.cc
-  section_config_exposer.cc
   destination.cc
   destination_acceptor.cc
   destination_endpoint.cc

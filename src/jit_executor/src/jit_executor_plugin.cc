@@ -39,12 +39,10 @@
 #include "common.h"
 #include "mysql/harness/config_option.h"
 #include "mysql/harness/config_parser.h"
-#include "mysql/harness/dynamic_config.h"
 #include "mysql/harness/loader.h"
 #include "mysql/harness/logging/logging.h"
 #include "mysql/harness/plugin.h"
 #include "mysql/harness/plugin_config.h"
-#include "mysql/harness/section_config_exposer.h"
 #include "mysqlrouter/jit_executor_component.h"
 #include "mysqlrouter/jit_executor_options.h"
 #include "mysqlrouter/jit_executor_plugin_export.h"
@@ -127,43 +125,6 @@ static constexpr std::array required{
     "io",
 };
 
-namespace {
-
-class ConfigExposer : public mysql_harness::SectionConfigExposer {
- public:
-  using DC = mysql_harness::DynamicConfig;
-  ConfigExposer(bool initial, const PluginConfig &plugin_config,
-                const mysql_harness::ConfigSection &default_section)
-      : mysql_harness::SectionConfigExposer(initial, default_section,
-                                            DC::SectionId{kSectionName, ""}),
-        plugin_config_(plugin_config) {}
-
-  void expose() override {
-    expose_option(kMaxContextPoolSize, plugin_config_.max_contexts,
-                  kDefaultMaxGraalVMContexts, true);
-  }
-
- private:
-  const PluginConfig &plugin_config_;
-};
-
-}  // namespace
-
-static void expose_configuration(mysql_harness::PluginFuncEnv *env,
-                                 const char * /*key*/, bool initial) {
-  const mysql_harness::AppInfo *info = get_app_info(env);
-
-  if (!info->config) return;
-
-  for (const mysql_harness::ConfigSection *section : info->config->sections()) {
-    if (section->name == kSectionName) {
-      PluginConfig config{section};
-      ConfigExposer(initial, config, info->config->get_default_section())
-          .expose();
-    }
-  }
-}
-
 extern "C" {
 mysql_harness::Plugin JIT_EXECUTOR_PLUGIN_EXPORT harness_plugin_jit_executor = {
     mysql_harness::PLUGIN_ABI_VERSION,       // abi-version
@@ -183,7 +144,6 @@ mysql_harness::Plugin JIT_EXECUTOR_PLUGIN_EXPORT harness_plugin_jit_executor = {
     false,    // declares_readiness
     options.size(),
     options.data(),
-    expose_configuration,
 };
 }
 }  // namespace jit_executor

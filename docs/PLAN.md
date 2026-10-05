@@ -127,7 +127,7 @@ See [phase0-inventory.md](phase0-inventory.md). **Verdict: GO.** The kept code u
   by the smoke test (REST view and MRS scripts) and the MRS functional suite (CRUD,
   auth apps, scripts).
 
-### Phase 3: MRS-specific setup and cleanup
+### Phase 3: MRS-specific setup and cleanup ✅ done (2026-10-05)
 - ✅ Branding (2026-10-05): program `mariadb-mrsd` (+ `-keyring`, `-passwd`,
   `-plugin-info`), product name "MariaDB REST Service Daemon" (version line, logs,
   Windows service/event log, REST API title, MRS metadata `product_name`), default
@@ -141,7 +141,8 @@ See [phase0-inventory.md](phase0-inventory.md). **Verdict: GO.** The kept code u
   sections. Options without the `mrs-` prefix: `--metadata-account`, `--data-account`,
   `--jwt-secret`, `--developer`, `--developer-debug-port`. Directory deployment only;
   system-wide deployment comes with packaging.
-- Remove leftover routing and cluster code and options from harness/router_lib.
+- ✅ Remove leftover routing and cluster code and options from harness/router_lib
+  (destination_status, metadata_cache/bootstrap paths, DynamicState, config exposure).
 - **Exit criteria:** a fresh install works via `mrsd --setup` alone on each OS.
 
 ### Phase 4: packaging and CI

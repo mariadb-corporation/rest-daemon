@@ -33,12 +33,10 @@
 
 #include "mysql/harness/config_option.h"
 #include "mysql/harness/config_parser.h"
-#include "mysql/harness/dynamic_config.h"
 #include "mysql/harness/loader.h"
 #include "mysql/harness/logging/logging.h"
 #include "mysql/harness/plugin.h"
 #include "mysql/harness/plugin_config.h"
-#include "mysql/harness/section_config_exposer.h"
 #include "mysql/harness/utility/string.h"  // ::join()
 
 #include "mysqlrouter/component/http_server_component.h"
@@ -302,46 +300,6 @@ static constexpr std::array rest_router_plugin_requires = {
     "rest_api",
 };
 
-namespace {
-
-class RestRouterConfigExposer : public mysql_harness::SectionConfigExposer {
- public:
-  using DC = mysql_harness::DynamicConfig;
-  RestRouterConfigExposer(const bool initial,
-                          const RestRouterPluginConfig &plugin_config,
-                          const mysql_harness::ConfigSection &default_section)
-      : mysql_harness::SectionConfigExposer(
-            initial, default_section,
-            DC::SectionId{"rest_configs", kSectionName}),
-        plugin_config_(plugin_config) {}
-
-  void expose() override {
-    expose_option("require_realm", plugin_config_.require_realm,
-                  std::string(kHttpDefaultAuthRealmName));
-  }
-
- private:
-  const RestRouterPluginConfig &plugin_config_;
-};
-
-}  // namespace
-
-static void expose_configuration(mysql_harness::PluginFuncEnv *env,
-                                 const char * /*key*/, bool initial) {
-  const mysql_harness::AppInfo *info = get_app_info(env);
-
-  if (!info->config) return;
-
-  for (const mysql_harness::ConfigSection *section : info->config->sections()) {
-    if (section->name == kSectionName) {
-      RestRouterPluginConfig config{section};
-      RestRouterConfigExposer(initial, config,
-                              info->config->get_default_section())
-          .expose();
-    }
-  }
-}
-
 extern "C" {
 mysql_harness::Plugin DLLEXPORT harness_plugin_rest_router = {
     mysql_harness::PLUGIN_ABI_VERSION,       // abi-version
@@ -361,6 +319,5 @@ mysql_harness::Plugin DLLEXPORT harness_plugin_rest_router = {
     true,     // declares_readiness
     plugin_supported_options.size(),
     plugin_supported_options.data(),
-    expose_configuration,
 };
 }

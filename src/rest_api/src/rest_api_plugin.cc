@@ -34,12 +34,10 @@
 
 #include "mysql/harness/config_option.h"
 #include "mysql/harness/config_parser.h"
-#include "mysql/harness/dynamic_config.h"
 #include "mysql/harness/loader.h"
 #include "mysql/harness/logging/logging.h"
 #include "mysql/harness/plugin.h"
 #include "mysql/harness/plugin_config.h"
-#include "mysql/harness/section_config_exposer.h"
 #include "mysql/harness/utility/string.h"  // ::join()
 #include "mysqlrouter/component/http_server_component.h"
 #include "mysqlrouter/rest_api_utils.h"
@@ -289,44 +287,6 @@ static constexpr std::array plugin_requires{
     "logger",
 };
 
-namespace {
-
-class RestApiConfigExposer : public mysql_harness::SectionConfigExposer {
- public:
-  using DC = mysql_harness::DynamicConfig;
-  RestApiConfigExposer(const bool initial,
-                       const RestApiPluginConfig &plugin_config,
-                       const mysql_harness::ConfigSection &default_section)
-      : mysql_harness::SectionConfigExposer(
-            initial, default_section,
-            DC::SectionId{"rest_configs", kSectionName}),
-        plugin_config_(plugin_config) {}
-
-  void expose() override {
-    expose_option("require_realm", plugin_config_.require_realm, "");
-  }
-
- private:
-  const RestApiPluginConfig &plugin_config_;
-};
-
-}  // namespace
-
-static void expose_configuration(mysql_harness::PluginFuncEnv *env,
-                                 const char * /*key*/, bool initial) {
-  const mysql_harness::AppInfo *info = get_app_info(env);
-
-  if (!info->config) return;
-
-  for (const mysql_harness::ConfigSection *section : info->config->sections()) {
-    if (section->name == kSectionName) {
-      RestApiPluginConfig config{section};
-      RestApiConfigExposer(initial, config, info->config->get_default_section())
-          .expose();
-    }
-  }
-}
-
 extern "C" {
 mysql_harness::Plugin DLLEXPORT harness_plugin_rest_api = {
     mysql_harness::PLUGIN_ABI_VERSION,
@@ -346,6 +306,5 @@ mysql_harness::Plugin DLLEXPORT harness_plugin_rest_api = {
     true,     // declares_readiness
     supported_options.size(),
     supported_options.data(),
-    expose_configuration,
 };
 }

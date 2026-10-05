@@ -49,12 +49,10 @@
 
 // Harness interface include files
 #include "mysql/harness/config_parser.h"
-#include "mysql/harness/dynamic_config.h"
 #include "mysql/harness/loader.h"
 #include "mysql/harness/logging/logging.h"
 #include "mysql/harness/plugin.h"
 #include "mysql/harness/plugin_config.h"
-#include "mysql/harness/section_config_exposer.h"
 #include "mysql/harness/utility/string.h"
 
 #include "mysqlrouter/component/http_auth_backend_component.h"
@@ -203,51 +201,6 @@ static constexpr std::array required{
     "logger",
 };
 
-namespace {
-
-class HttpAuthRealmConfigExposer : public mysql_harness::SectionConfigExposer {
- public:
-  using DC = mysql_harness::DynamicConfig;
-  HttpAuthRealmConfigExposer(
-      const bool initial, const HttpAuthRealmPluginConfig &plugin_config,
-      const mysql_harness::ConfigSection &default_section)
-      : mysql_harness::SectionConfigExposer(
-            initial, default_section,
-            DC::SectionId{"http_authentication_realm", ""}),
-        plugin_config_(plugin_config) {}
-
-  void expose() override {
-    expose_option("name", plugin_config_.name, "default_realm");
-    expose_option("backend", plugin_config_.backend,
-                  std::string(kHttpDefaultAuthBackendName));
-    expose_option("method", plugin_config_.method,
-                  std::string(kHttpDefaultAuthMethod));
-    expose_option("require", plugin_config_.require,
-                  plugin_config_.get_default("require"));
-  }
-
- private:
-  const HttpAuthRealmPluginConfig &plugin_config_;
-};
-
-}  // namespace
-
-static void expose_configuration(mysql_harness::PluginFuncEnv *env,
-                                 const char * /*key*/, bool initial) {
-  const mysql_harness::AppInfo *info = get_app_info(env);
-
-  if (!info->config) return;
-
-  for (const mysql_harness::ConfigSection *section : info->config->sections()) {
-    if (section->name == kSectionName) {
-      HttpAuthRealmPluginConfig config{section};
-      HttpAuthRealmConfigExposer(initial, config,
-                                 info->config->get_default_section())
-          .expose();
-    }
-  }
-}
-
 extern "C" {
 mysql_harness::Plugin HTTP_AUTH_REALM_EXPORT harness_plugin_http_auth_realm = {
     mysql_harness::PLUGIN_ABI_VERSION,       // abi-version
@@ -267,6 +220,5 @@ mysql_harness::Plugin HTTP_AUTH_REALM_EXPORT harness_plugin_http_auth_realm = {
     false,    // declares_readiness
     http_auth_realm_suported_options.size(),
     http_auth_realm_suported_options.data(),
-    expose_configuration,
 };
 }

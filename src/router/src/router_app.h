@@ -492,10 +492,5 @@ class MySQLRouter {
 #endif
 };
 
-/** @brief Expose the configured application-level options (the ones
- * from [DEFAULT] section that are not specific to any particular plugin and are
- * relevant from the Cluster metadata perspective) **/
-void expose_router_configuration(const bool initial,
-                                 const mysql_harness::ConfigSection &section);
 
 #endif  // ROUTER_MYSQL_ROUTER_INCLUDED

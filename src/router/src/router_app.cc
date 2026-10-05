@@ -50,14 +50,12 @@
 #include "mysql/harness/arg_handler.h"
 #include "mysql/harness/config_option.h"
 #include "mysql/harness/config_parser.h"
-#include "mysql/harness/dynamic_config.h"
 #include "mysql/harness/filesystem.h"
 #include "mysql/harness/log_reopen_component.h"
 #include "mysql/harness/logging/logger_plugin.h"
 #include "mysql/harness/logging/logging.h"
 #include "mysql/harness/logging/registry.h"
 #include "mysql/harness/process_state_component.h"
-#include "mysql/harness/section_config_exposer.h"
 #include "mysql/harness/signal_handler.h"
 #include "mysql/harness/string_utils.h"
 #include "mysql/harness/supported_config_options.h"
@@ -393,7 +391,6 @@ void MySQLRouter::init_loader(mysql_harness::LoaderConfig &config) {
   }
 
   loader_->register_supported_app_options(router_supported_options);
-  loader_->register_expose_app_config_callback(expose_router_configuration);
 }
 
 void MySQLRouter::start() {
@@ -941,61 +938,3 @@ void MySQLRouter::show_usage(bool include_options) noexcept {
 
 void MySQLRouter::show_usage() noexcept { show_usage(true); }
 
-namespace {
-
-class RouterAppConfigExposer : public mysql_harness::SectionConfigExposer {
- public:
-  using DC = mysql_harness::DynamicConfig;
-  RouterAppConfigExposer(const bool initial,
-                         const mysql_harness::ConfigSection &default_section)
-      : mysql_harness::SectionConfigExposer(initial, default_section,
-                                            DC::SectionId{"common", ""}) {}
-
-  void expose() override {
-    // set "global" router options from DEFAULT section
-    auto expose_int_option = [&](std::string_view option,
-                                 const int64_t default_val) {
-      auto value = default_val;
-      if (default_section_.has(option)) {
-        try {
-          value = mysql_harness::option_as_int<int64_t>(
-              default_section_.get(option), "");
-        } catch (...) {
-          // if it failed fallback to setting default
-        }
-      }
-
-      expose_option(option, value, default_val);
-    };
-
-    auto expose_str_option = [&](std::string_view option,
-                                 const std::string &default_val,
-                                 bool skip_if_empty = false) {
-      auto value = default_val;
-      if (default_section_.has(option)) {
-        value = default_section_.get(option);
-      }
-
-      const OptionValue op_val = (skip_if_empty && value.empty())
-                                     ? OptionValue(std::monostate{})
-                                     : value;
-      const OptionValue op_default_val = (skip_if_empty && default_val.empty())
-                                             ? OptionValue(std::monostate{})
-                                             : default_val;
-
-      expose_option(option, op_val, op_default_val);
-    };
-
-    expose_str_option(router::options::kName, kSystemRouterName);
-    // only share a user if it is not empty
-    expose_str_option(router::options::kUser, kDefaultSystemUserName, true);
-    expose_str_option("unknown_config_option", "error");
-  }
-};
-
-}  // namespace
-
-void expose_router_configuration(const bool initial,
-                                 const mysql_harness::ConfigSection &section) {
-  RouterAppConfigExposer(initial, section).expose();
-}

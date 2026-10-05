@@ -116,6 +116,5 @@ mysql_harness::Plugin DLLEXPORT harness_plugin_keepalive = {
     // TODO: should it be service maybe?
     false,  // declares_readiness
     supported_options.size(), supported_options.data(),
-    nullptr,  // expose_configuration
 };
 }

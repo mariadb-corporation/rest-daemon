@@ -377,6 +377,5 @@ mysql_harness::Plugin MOCK_SERVER_EXPORT harness_plugin_mock_server = {
     nullptr,  // stop
     true,     // declares_readiness
     supported_options.size(), supported_options.data(),
-    nullptr,  // expose_configuration
 };
 }

@@ -417,6 +417,5 @@ mysql_harness::Plugin MYSQL_REST_SERVICE_EXPORT
         false,   // signals ready
         mysql_rest_service_supported_options.size(),
         mysql_rest_service_supported_options.data(),
-        nullptr  // TODO(lkotula): add (Shouldn't be in review)
 };
 }

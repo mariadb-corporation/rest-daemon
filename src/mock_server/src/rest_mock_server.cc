@@ -365,6 +365,5 @@ mysql_harness::Plugin DLLEXPORT harness_plugin_rest_mock_server = {
     nullptr,  // stop
     true,     // declares_readiness
     0, nullptr,
-    nullptr,  // expose_configuration
 };
 }

@@ -46,7 +46,6 @@
 #include "mysql/harness/config_option.h"
 #include "mysql/harness/config_parser.h"
 #include "mysql/harness/destination.h"
-#include "mysql/harness/dynamic_config.h"
 #include "mysql/harness/loader.h"
 #include "mysql/harness/logging/logging.h"
 #include "mysql/harness/net_ts/impl/socket_error.h"
@@ -61,7 +60,6 @@
 
 #include "http/http_server_context.h"
 #include "http_auth.h"
-#include "mysql/harness/section_config_exposer.h"
 #include "mysql/harness/tls_server_context.h"
 #include "mysqlrouter/component/http_auth_realm_component.h"
 #include "mysqlrouter/component/http_server_component.h"
@@ -380,70 +378,6 @@ static constexpr std::array required{
     "io",
 };
 
-namespace {
-
-class HttpServerConfigExposer : public mysql_harness::SectionConfigExposer {
- public:
-  using DC = mysql_harness::DynamicConfig;
-  HttpServerConfigExposer(const bool initial,
-                          const HttpServerPluginConfig &plugin_config,
-                          const mysql_harness::ConfigSection &default_section)
-      : mysql_harness::SectionConfigExposer(
-            initial, default_section,
-            DC::SectionId{kHttpServerSectionName, ""}),
-        plugin_config_(plugin_config) {}
-
-  void expose() override {
-    expose_option("static_folder", plugin_config_.static_basedir_, "");
-    expose_option("bind_address", plugin_config_.srv_address_,
-                  kDefaultBindAddress);
-    expose_option("require_realm", plugin_config_.require_realm_, "");
-    expose_option("ssl_cert", plugin_config_.ssl_cert_, "");
-    expose_option("ssl_key", plugin_config_.ssl_key_, "");
-    expose_option("ssl_cipher", plugin_config_.ssl_cipher_,
-                  plugin_config_.get_default_ciphers());
-    expose_option("ssl_dh_params", plugin_config_.ssl_dh_params_, "");
-    expose_option("ssl_curves", plugin_config_.ssl_curves_, "");
-    expose_option("ssl", plugin_config_.with_ssl_,
-                  (kHttpPluginDefaultSslBootstrap == 1));
-    expose_option("port", plugin_config_.srv_port_,
-                  kHttpPluginDefaultPortBootstrap);
-    expose_option(
-        "max_http_connections",
-        static_cast<int64_t>(plugin_config_.max_http_connections_),
-        static_cast<int64_t>(http::server::kDefaultMaxHttpConnections));
-    expose_option(
-        "max_request_body_size",
-        static_cast<int64_t>(plugin_config_.max_request_body_size_),
-        static_cast<int64_t>(http::server::kDefaultMaxRequestBodySize));
-    expose_option(
-        "max_response_body_size",
-        static_cast<int64_t>(plugin_config_.max_response_body_size_),
-        static_cast<int64_t>(http::server::kDefaultMaxResponseBodySize));
-  }
-
- private:
-  const HttpServerPluginConfig &plugin_config_;
-};
-
-}  // namespace
-
-static void expose_configuration(mysql_harness::PluginFuncEnv *env,
-                                 const char * /*key*/, bool initial) {
-  const mysql_harness::AppInfo *info = get_app_info(env);
-
-  if (!info->config) return;
-
-  for (const mysql_harness::ConfigSection *section : info->config->sections()) {
-    if (section->name == kHttpServerSectionName) {
-      HttpServerPluginConfig config{section};
-      HttpServerConfigExposer(initial, config,
-                              info->config->get_default_section())
-          .expose();
-    }
-  }
-}
-
 extern "C" {
 mysql_harness::Plugin HTTP_SERVER_EXPORT harness_plugin_http_server = {
     mysql_harness::PLUGIN_ABI_VERSION,       // abi-version
@@ -463,6 +397,5 @@ mysql_harness::Plugin HTTP_SERVER_EXPORT harness_plugin_http_server = {
     true,     // declares_readiness
     http_server_supported_options.size(),
     http_server_supported_options.data(),
-    expose_configuration,
 };
 }

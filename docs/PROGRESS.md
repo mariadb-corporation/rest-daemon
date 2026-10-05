@@ -10,7 +10,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 | 0: dependency inventory | ✅ done 2026-09-30, verdict GO ([phase0-inventory.md](phase0-inventory.md)) |
 | 1: new repo that builds | ✅ done 2026-09-30: macOS, Linux, Windows (x64), with JIT; smoke test incl. MRS scripts passes on all three |
 | 2: tests and ecosystem validation | ✅ done 2026-10-05: unit + component tests (116/116) and MRS functional suite pass on Linux, macOS, Windows; CI moved to the end (Phase 4) |
-| 3: MRS setup and cleanup | 🟡 branding (`mariadb-mrsd`) and `--setup` done; next: cleanup of routing/cluster leftovers |
+| 3: MRS setup and cleanup | ✅ done 2026-10-05: branding (`mariadb-mrsd`), `--setup`, routing/cluster cleanup; tests pass on all three platforms |
 | 4: packaging and CI | ⏳ not started; CI is the last step, once the final remote exists |
 
 ## How to build and test (macOS)
@@ -194,7 +194,7 @@ In the build tree the config must set `plugin_folder=<build>/plugin_output_direc
 - [x] `--setup` verified on all three platforms (MRS suite, smoke test incl. MRS scripts):
       macOS 116 passed/5 skipped, Linux 117/4, Windows 116/5 (each + 1 xpassed); unit +
       component 116/116 everywhere
-- [ ] cleanup of routing/cluster leftovers
+- [x] cleanup of routing/cluster leftovers (stages 1, 2a, 2b)
 
 ## Open questions
 - None blocking.
@@ -207,8 +207,9 @@ In the build tree the config must set `plugin_folder=<build>/plugin_output_direc
 - Repository: local git repo in `<dev>/mysql/mrsd`, moved to the final remote later.
 
 ## Next steps
-1. Phase 3 cleanup: remove leftover routing/cluster code and options (harness,
-   router_lib, `router_app.cc`'s metadata_cache/bootstrap remnants, unused test data).
+1. Phase 4: packaging (deb/rpm + systemd unit, MSI + service, macOS pkg/tarball; install
+   layout incl. the remaining `mysqlrouter` paths; system-wide `--setup`).
+2. CI, last, once the final remote exists.
 
 ## Session log
 
@@ -384,3 +385,11 @@ In the build tree the config must set `plugin_folder=<build>/plugin_output_direc
   `configuration_update_schema` and the unused `configuration_schema.json`, and their
   harness tests (114 unit + component test executables now). `test_mrs_config` no longer
   writes a state file.
+- Stage 2b: removed the config-exposure machinery (`DynamicConfig`,
+  `SectionConfigExposer`, `Loader::expose_config_all()`, the app-level exposure
+  callback, the plugins' `expose_configuration` hook and the last `Plugin` field): it
+  published the configuration for the router's cluster metadata and nothing in mrsd read
+  it. 113 unit + component test executables.
+- After the cleanup: macOS 116 passed/5 skipped, Linux 117/4, Windows 116/5 (each + 1
+  xpassed); unit + component 113/113 and smoke test (incl. MRS scripts) on all three.
+  Phase 3 done.

@@ -112,6 +112,5 @@ mysql_harness::Plugin LIFECYCLE2_API
         stop,    // stop
         false,   // declares_readiness
         0, nullptr,
-        nullptr,  // expose_configuration
 };
 }

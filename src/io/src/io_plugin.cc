@@ -45,13 +45,11 @@
 #include "my_thread.h"  // my_thread_self_setname
 #include "mysql/harness/config_option.h"
 #include "mysql/harness/config_parser.h"
-#include "mysql/harness/dynamic_config.h"
 #include "mysql/harness/loader.h"
 #include "mysql/harness/logging/logging.h"
 #include "mysql/harness/net_ts/io_context.h"
 #include "mysql/harness/plugin.h"
 #include "mysql/harness/plugin_config.h"
-#include "mysql/harness/section_config_exposer.h"
 #include "mysql/harness/utility/string.h"  // join
 #include "mysqlrouter/io_component.h"
 #include "mysqlrouter/io_export.h"
@@ -212,45 +210,6 @@ static constexpr std::array required{
     "logger",
 };
 
-namespace {
-
-class IoConfigExposer : public mysql_harness::SectionConfigExposer {
- public:
-  using DC = mysql_harness::DynamicConfig;
-  IoConfigExposer(const bool initial, const IoPluginConfig &plugin_config,
-                  const mysql_harness::ConfigSection &default_section)
-      : mysql_harness::SectionConfigExposer(initial, default_section,
-                                            DC::SectionId{kSectionName, ""}),
-        plugin_config_(plugin_config) {}
-
-  void expose() override {
-    // we do not expose the default backend as this backed depends on the OS
-    // where the Router is bootstrapped
-    expose_option("backend", plugin_config_.backend, std::monostate{});
-    expose_option("threads", plugin_config_.num_threads, 0);
-  }
-
- private:
-  const IoPluginConfig &plugin_config_;
-};
-
-}  // namespace
-
-static void expose_configuration(mysql_harness::PluginFuncEnv *env,
-                                 const char * /*key*/, bool initial) {
-  const mysql_harness::AppInfo *info = get_app_info(env);
-
-  if (!info->config) return;
-
-  for (const mysql_harness::ConfigSection *section : info->config->sections()) {
-    if (section->name == kSectionName) {
-      IoPluginConfig config{section};
-      IoConfigExposer(initial, config, info->config->get_default_section())
-          .expose();
-    }
-  }
-}
-
 extern "C" {
 mysql_harness::Plugin IO_EXPORT harness_plugin_io = {
     mysql_harness::PLUGIN_ABI_VERSION,       // abi-version
@@ -270,6 +229,5 @@ mysql_harness::Plugin IO_EXPORT harness_plugin_io = {
     false,    // signals ready
     supported_options.size(),
     supported_options.data(),
-    expose_configuration,
 };
 }
