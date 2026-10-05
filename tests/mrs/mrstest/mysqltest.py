@@ -603,7 +603,12 @@ class Interpreter:
         self.pending_error = [e.strip() for e in self.expand(cmd.arg).split(",")]
 
     def cmd_replace_regex(self, cmd: Command) -> None:
-        arg = self.expand(cmd.arg)
+        # like do_get_replace_regex(): a variable may hold the *entire* list;
+        # no expansion inside the patterns ('$USER' stays literal)
+        arg = cmd.arg.strip()
+        if arg.startswith("$"):
+            m = re.match(r"^\$([A-Za-z0-9_]+)", arg)
+            arg = self.get_var(m.group(1)) if m else arg
         pats = []
         # /from/to/[flags] ...; any delimiter char after a space
         i = 0
@@ -795,7 +800,8 @@ class Interpreter:
         expected = self.pending_error
         self.pending_error = None
         if self.query_log:
-            self.out.append(sql + cmd.delimiter + "\n")
+            # a pending replace_regex applies to the echoed statement too
+            self.out.append(self.replace(sql) + cmd.delimiter + "\n")
         buf: list[str] = []
         try:
             with self.current.conn.cursor() as cur:
