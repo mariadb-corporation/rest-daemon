@@ -25,7 +25,6 @@
 INCLUDE_DIRECTORIES(SYSTEM ${GMOCK_INCLUDE_DIRS})
 
 OPTION(WITH_COMPONENT_TESTS "Build the component tests (tests/component)" OFF)
-OPTION(WITH_INTEGRATION_TESTS "Build the integration tests (tests/integration)" OFF)
 
 SET(helper_sources
   helpers/filesystem_utils.cc
@@ -41,9 +40,9 @@ SET(helper_sources
   # used by the MRS database tests (src/mysql_rest_service/tests)
   helpers/shared_server.cc
 )
-# mrsd: helpers of the component/integration suites; they still depend on
-# routing and cluster metadata code and are ported with those suites.
-IF(WITH_COMPONENT_TESTS OR WITH_INTEGRATION_TESTS)
+# mrsd: helpers of the component suites; they still depend on routing and
+# cluster metadata code.
+IF(WITH_COMPONENT_TESTS)
   LIST(APPEND helper_sources
     helpers/mock_server_testutils.cc
     helpers/router_component_clusterset.cc
@@ -78,17 +77,13 @@ TARGET_INCLUDE_DIRECTORIES(routertest_helpers
   ${PROJECT_SOURCE_DIR}/src/harness/shared/include/
   )
 
-# mrsd: component/integration suites are being triaged (routing, cluster and
-# bootstrap tests don't apply); off until that is done.
+# mrsd: the cases that test routing, clusters or bootstrap are excluded in
+# component/excluded_cases.cmake
 IF(WITH_COMPONENT_TESTS)
   ADD_SUBDIRECTORY(component)
 ENDIF()
 # REST client used by the MRS functional tests (tests/mrs)
 ADD_SUBDIRECTORY(mrs_client)
-
-IF(WITH_INTEGRATION_TESTS)
-  ADD_SUBDIRECTORY(integration)
-ENDIF()
 
 ADD_DEFINITIONS(
   -DCOMPONENT_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/component/data/")

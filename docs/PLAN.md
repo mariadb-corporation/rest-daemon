@@ -101,7 +101,7 @@ See [phase0-inventory.md](phase0-inventory.md). **Verdict: GO.** The kept code u
   with and without JIT, and `tools/smoke/run_smoke.sh` passes (`mysql_server_mock`
   moved to Phase 2).
 
-### Phase 2: tests and validation in the MySQL ecosystem
+### Phase 2: tests and validation in the MySQL ecosystem ✅ done (2026-10-05)
 - ✅ duktape 2.7.0 restored from git history (`214f378700f^:extra/duktape`) into
   `extra/duktape`; mock server without X (step 1.7).
 - **MRS functional suite (mysql-test/suite/router, ~115 tests after dropping
@@ -116,12 +116,16 @@ See [phase0-inventory.md](phase0-inventory.md). **Verdict: GO.** The kept code u
   `SSL_TEST_DATA_DIR`. Copy the `unittest/gunit/benchmark.h` helper.
 - Get the unit suites green: MRS, HTTP, harness, router_lib, jit_executor.
 - Get the component tests green against `mysql_server_mock`.
-- Get the integration tests green against a real MySQL 9.x `mysqld`.
+- ~~Get the integration tests green against a real MySQL 9.x `mysqld`.~~ Dropped:
+  they all test routing (see the decision log).
 - Triage `mysql-test/suite/router` (137 tests) and port the MRS-related ones.
 - Manual end-to-end check: MySQL Shell `mrs` plugin creates the metadata schema and a
   service; configure `mrsd` by hand (config plus keyring); verify CRUD, auth apps,
   and JavaScript endpoints.
-- **Exit criteria:** CI green on 3 OSes; end-to-end checklist passes.
+- **Exit criteria:** unit, component and MRS functional tests pass on 3 OSes (run
+  on the local machine and VMs; CI moved to the end, see Phase 4); end-to-end checked
+  by the smoke test (REST view and MRS scripts) and the MRS functional suite (CRUD,
+  auth apps, scripts).
 
 ### Phase 3: MRS-specific setup and cleanup
 - `mrsd --setup`: reuse `BootstrapConfigurator::configure_mrs()` logic
@@ -137,7 +141,9 @@ See [phase0-inventory.md](phase0-inventory.md). **Verdict: GO.** The kept code u
 - Windows: MSI (from `packaging/WiX/router`, new upgrade codes) and service installation.
 - macOS: pkg/tarball, dylib handling.
 - Ship the JIT library in `private/`.
-- CI matrix: 3 OSes × JIT on/off × MySQL 9.x server.
+- CI matrix: 3 OSes × JIT on/off × MySQL 9.x server: unit + component tests, MRS
+  functional suite, smoke test. Last step of the whole work, once the final remote
+  repository exists (it decides the CI system).
 
 ## Target repository layout
 
@@ -151,7 +157,7 @@ mrsd/
     rapidjson/  libcno/     vendored third-party
   src/                      router/src modules (same names as upstream)
     mrsd/                   new front end (main, config, Windows service)
-  tests/                    helpers, component, integration, data/ssl
+  tests/                    helpers, component, mrs, mrs_client, data/ssl
   packaging/
   docs/                     PLAN.md, PROGRESS.md, inventories
   tools/analysis/           dependency analysis scripts
@@ -163,7 +169,7 @@ mrsd/
 |---|---|
 | Stock client library lacks symbols Router needs | **Resolved in Phase 0:** 10 internal symbols, replaced by `compat/` |
 | JIT library per platform | **Resolved:** the builder provides it through `MRS_JIT_EXECUTOR_LIB` (lib + headers); each platform's CI needs its own build of it |
-| Windows build infrastructure (MSVC flags, DLL exports, OpenSSL/ICU) | Budget time in Phase 1; get Windows CI running early |
+| Windows build infrastructure (MSVC flags, DLL exports, OpenSSL/ICU) | Budget time in Phase 1. Resolved: builds and tests pass on the Windows VM; CI comes at the end |
 | Hidden dependencies in test code (mock_server, test helpers) | Re-run `tools/analysis/include_closure.py --tests` after copying |
 | Behaviour differences from replacing `my_gcvt` (JIT number formatting) | **Done:** vendored `strings/dtoa.cc` in `mrsd_compat` |
 | Two OpenSSL copies in one process: libmysqlclient uses the package's bundled OpenSSL (3.5.7 in 26.7.0), mrsd code uses the system's (3.6.3 on the dev Mac) | Works on macOS (two-level namespace). On Linux/Windows the shared soname/DLL name means only one gets loaded. Revisit if TLS problems appear; option: link mrsd against the package's OpenSSL |
@@ -201,3 +207,10 @@ mrsd/
   and `test_mock_server` dropped.
 - 2026-09-30: MTR suite → pytest harness interpreting the mysqltest subset,
   golden `.result` files kept.
+- 2026-10-05: `tests/integration` removed. All 11 files (`test_routing_*`) test
+  the routing plugin and connection pool (`[routing:...]`, `[connection_pool]`,
+  `rest_routing`) and link the X protocol client; none touch MRS. Testing mrsd
+  against a real `mysqld` is the MRS functional suite (`tests/mrs`).
+- 2026-10-05: CI waits for the final remote repository and is the last step of the
+  work (Phase 4). Phase 2 closed with the test suites passing on the three platforms
+  in local runs.

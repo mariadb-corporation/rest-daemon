@@ -9,9 +9,9 @@ tick tasks, add a session entry, and rewrite "Next steps".
 |---|---|
 | 0: dependency inventory | ✅ done 2026-09-30, verdict GO ([phase0-inventory.md](phase0-inventory.md)) |
 | 1: new repo that builds | ✅ done 2026-09-30: macOS, Linux, Windows (x64), with JIT; smoke test incl. MRS scripts passes on all three |
-| 2: tests and ecosystem validation | 🟡 unit + component tests pass on Linux, macOS, Windows (116/116 each); MRS functional suite passes on Linux, macOS, Windows; remaining: integration tests, CI |
+| 2: tests and ecosystem validation | ✅ done 2026-10-05: unit + component tests (116/116) and MRS functional suite pass on Linux, macOS, Windows; CI moved to the end (Phase 4) |
 | 3: MRS setup and cleanup | ⏳ not started |
-| 4: packaging and CI | ⏳ not started |
+| 4: packaging and CI | ⏳ not started; CI is the last step, once the final remote exists |
 
 ## How to build and test (macOS)
 
@@ -186,8 +186,8 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
       (2 disabled bootstrap tests, 3 for metadata schema v2/v3, 1 needs mysql_no_login, 1 not on macOS)
 - [x] MRS functional suite on Linux: 114 passed, 6 skipped, 1 xpassed
 - [x] MRS functional suite on Windows: 113 passed, 7 skipped, 1 xpassed
-- [ ] integration tests (tests/integration): triage
-- [ ] CI
+- [x] integration tests (tests/integration): triaged, all routing tests, removed
+- [x] CI: moved to the end of the work (Phase 4), waits for the final remote
 
 ## Open questions
 - None blocking.
@@ -200,9 +200,10 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
 - Repository: local git repo in `<dev>/mysql/mrsd`, moved to the final remote later.
 
 ## Next steps
-1. Integration tests (`tests/integration`): triage what applies to mrsd.
-2. CI for the three platforms (unit + component tests, MRS functional suite).
-3. Then Phase 3 (`mrsd --setup`, rename, cleanup).
+1. Phase 3: `mrsd --setup` (from `BootstrapConfigurator::configure_mrs()`, against a single
+   standalone server; re-enables the two disabled bootstrap tests in `tests/mrs`).
+2. Phase 3: remove leftover routing/cluster code and options; branding (binary, config
+   sections, log domains, Windows service/event log names).
 
 ## Session log
 
@@ -331,3 +332,9 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
   slashes (MSYS perl's `dirname`); stale pid file removed after TerminateProcess; all harness
   file I/O as UTF-8 with LF (the locale code page broke binary results on Windows).
 - macOS rerun with these changes: 113 passed, 7 skipped, 1 xpassed.
+
+### 2026-10-05: session 2, continued (integration tests triage)
+- `tests/integration` removed: all 11 suites test routing/connection pooling over
+  `[routing:...]` sections (plus X protocol client libraries); no MRS coverage.
+  `WITH_INTEGRATION_TESTS` option dropped. See the PLAN decision log.
+- CI deferred to the end of the work (waits for the final remote). Phase 2 closed.
