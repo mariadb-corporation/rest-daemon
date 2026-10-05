@@ -1,0 +1,3 @@
+# mariadb-mrsd --setup without --name: the metadata gets <hostname>:<port>,
+# the name the MRS plugin computes at runtime
+--source setup_mrs.inc

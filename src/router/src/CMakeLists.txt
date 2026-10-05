@@ -137,14 +137,21 @@ IF(WIN32)
     ../../harness/src/logging/eventlog_rc/MSG00001.bin)
 ENDIF()
 
+# mrsd: --setup (mrsd_setup.cc; bootstrap_mysql_account.cc is upstream's
+# router/src/bootstrap/src/bootstrap_mysql_account.cc)
 MYSQL_ADD_EXECUTABLE(mysqlrouter
   main.cc
+  mrsd_setup.cc
+  bootstrap_mysql_account.cc
   ${router_rc_files}
   COMPONENT Router
   LINK_LIBRARIES
   harness-library
   router_lib
   router_frontend_lib
+  router_mysql
+  mysql_rest_service_if
+  mysql_rest_service_db
   ${CMAKE_DL_LIBS}
   )
 

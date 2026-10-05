@@ -1,3 +1,1 @@
 # mtr-style list of disabled tests: <test> : <reason>
-bootstrap_mrs_default_name : bootstrap is replaced by mrsd --setup (Phase 3)
-bootstrap_mrs_standalone   : bootstrap is replaced by mrsd --setup (Phase 3)

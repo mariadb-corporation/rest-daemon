@@ -18,9 +18,10 @@
 #
 # 1. starts a throwaway mysqld from a MySQL server package
 # 2. deploys the MRS metadata schema (from mysql-shell-plugins)
-# 3. creates an MRS account, keyring and mrsd config
+# 3. configures mrsd with --setup (MRS account, keyring, config)
 # 4. starts mrsd, creates + publishes a REST view with MySQL Shell
-# 5. checks that GET /smoke/smoke/city returns the rows
+# 5. checks that GET /smoke/smoke/city returns the rows and that the
+#    running instance uses the registration of --setup
 #
 # Usage:
 #   MRSD_BUILD=<mrsd build dir> MYSQL_PACKAGE_DIR=<server package> \
@@ -61,7 +62,7 @@ SCHEMA_DIR=$SHELL_PLUGINS/mrs_plugin/db_schema
 TASKS_SQL=$(ls "$SCHEMA_DIR"/mysql_tasks.msm.project/releases/deployment/*.sql | sort -V | tail -1)
 MRS_SQL=$(ls "$SCHEMA_DIR"/mysql_rest_service_metadata.msm.project/releases/deployment/*.sql | sort -V | tail -1)
 
-mkdir -p "$WORK"/{data,run,log,shellhome}
+mkdir -p "$WORK"/{log,shellhome}
 echo "workdir: $WORK"
 
 mysql_cli() { "$MYSQL_PACKAGE_DIR/bin/mysql" -uroot -h127.0.0.1 -P"$PORT" "$@"; }
@@ -88,48 +89,24 @@ done
 mysql_cli < "$TASKS_SQL"
 mysql_cli < "$MRS_SQL"
 mysql_cli -e "
-  CREATE USER 'mrs_user'@'%' IDENTIFIED BY 'mrs-pass-1';
-  GRANT 'mysql_rest_service_meta_provider','mysql_rest_service_data_provider'
-    TO 'mrs_user'@'%';
-  SET DEFAULT ROLE ALL TO 'mrs_user'@'%';
   CREATE SCHEMA smoke;
   CREATE TABLE smoke.city (id INT PRIMARY KEY, name VARCHAR(64));
   INSERT INTO smoke.city VALUES (1,'Lisbon'),(2,'Helsinki');"
 
-# --- keyring + config --------------------------------------------------------
+# --- mrsd --setup ------------------------------------------------------------
 # the program name is set in cmake/settings.cmake
 PROG=$(sed -n 's/^#define MRSD_PROGRAM_NAME "\(.*\)"$/\1/p' "$MRSD_BUILD/router_config.h")
 BIN="$MRSD_BUILD/runtime_output_directory"
-K="$BIN/$PROG-keyring"
-KEY="--master-key-file=$WORK/$PROG.key"
-"$K" init "$WORK/data/keyring" "$KEY"
-"$K" set "$WORK/data/keyring" mrs_user password mrs-pass-1 "$KEY"
-"$K" set "$WORK/data/keyring" rest-user jwt_secret 0123456789abcdef0123456789abcdef "$KEY"
+DEPLOY="$WORK/mrsd"
+# root has no password: the prompt reads an empty line
+echo | "$BIN/$PROG" --setup "root@127.0.0.1:$PORT" -d "$DEPLOY" \
+  --jwt-secret 0123456789abcdef0123456789abcdef \
+  --conf-set-option=DEFAULT.plugin_folder="$MRSD_BUILD/plugin_output_directory" \
+  --conf-set-option=http_server.port="$HTTP_PORT" \
+  --conf-set-option=http_server.ssl=0 \
+  --conf-set-option=logger.level=debug
 
-cat > "$WORK/mrsd.conf" <<EOF
-[DEFAULT]
-logging_folder=$WORK/log
-plugin_folder=$MRSD_BUILD/plugin_output_directory
-runtime_folder=$WORK/run
-data_folder=$WORK/data
-keyring_path=$WORK/data/keyring
-master_key_path=$WORK/$PROG.key
-
-[logger]
-level=debug
-
-[http_server]
-port=$HTTP_PORT
-ssl=0
-
-[mysql_rest_service]
-mysql_user=mrs_user
-mysql_read_write_destinations=127.0.0.1:$PORT
-router_id=1
-EOF
-
-"$BIN/$PROG" -c "$WORK/mrsd.conf" \
-  > "$WORK/log/mrsd.stdout" 2>&1 &
+"$BIN/$PROG" -c "$DEPLOY/$PROG.conf" > "$WORK/log/mrsd.stdout" 2>&1 &
 MRSD_PID=$!
 sleep 3
 
@@ -144,7 +121,7 @@ MYSQLSH_USER_CONFIG_HOME="$WORK/shellhome" "$MYSQLSH" --no-wizard --sql \
 
 fail() {
   echo "FAILED: $1" >&2
-  grep -E ' (ERROR|WARNING) ' "$WORK/log/$PROG.log" >&2 || true
+  grep -E ' (ERROR|WARNING) ' "$DEPLOY/log/$PROG.log" >&2 || true
   exit 1
 }
 
@@ -160,6 +137,11 @@ for _ in $(seq 1 20); do
   sleep 1
 done
 [ -n "$ok" ] || fail "REST view, last response: $body"
+
+# the running instance uses the registration of --setup: still one row
+routers=$(mysql_cli -N -e "SELECT COUNT(*) FROM mysql_rest_service_metadata.router")
+[ "$routers" = 1 ] || fail "expected 1 registered instance, found $routers"
+echo "OK (one registered instance)"
 
 # --- optional: MRS scripts (JIT executor) ------------------------------------
 # MRS_SCRIPTS_DIR: a built copy of mysql-shell-plugins'

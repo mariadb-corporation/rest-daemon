@@ -135,7 +135,7 @@ See [phase0-inventory.md](phase0-inventory.md). **Verdict: GO.** The kept code u
   `cmake/settings.cmake`. Config section names and log domains are kept (router-style
   configs stay valid). Install layout (`lib/mysqlrouter`, `/var/lib/mysqlrouter`,
   `C:\ProgramData\MySQL\MySQL Router`) is renamed with packaging (Phase 4).
-- `mariadb-mrsd --setup <server URI> -d <dir>`: from `BootstrapConfigurator::configure_mrs()`
+- ✅ `mariadb-mrsd --setup <server URI> -d <dir>` (2026-10-05): from `BootstrapConfigurator::configure_mrs()`
   (check_mrs_metadata, register_mrs_router_instance, create_mrs_users, keyring,
   config writing) against a single standalone server; no router account and no routing
   sections. Options without the `mrs-` prefix: `--metadata-account`, `--data-account`,
@@ -229,3 +229,11 @@ mrsd/
 - 2026-10-05: `--setup` design: options without the `mrs-` prefix; directory
   deployment only for now; MRS metadata registration as upstream except
   `product_name`/`version` (MySQL Shell doesn't read them).
+- 2026-10-05: `--setup` is handled in `main.cc` (first argument) by `MrsdSetup`
+  (`src/router/src/mrsd_setup.cc`), not by the router app; upstream's
+  `bootstrap_mysql_account.cc` is reused as is. `--force` re-runs reuse the accounts
+  and JWT secret of the existing deployment (from its keyring) so no accounts are
+  orphaned; upstream instead skipped the MRS configuration when the section existed.
+  The generated account is `<program name with _>_<router id>_<random>`. The tests
+  `bootstrap_mrs_*` are replaced by `setup_mrs_name`, `setup_mrs_default_name` and
+  `setup_mrs_errors`; the smoke test configures mrsd with `--setup`.

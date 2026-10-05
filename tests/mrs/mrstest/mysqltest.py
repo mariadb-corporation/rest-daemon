@@ -885,8 +885,11 @@ class Interpreter:
         env.update(self.envn.env)
         env.update({k: v for k, v in self.vars.items() if k.isupper()})
         env = {k: v for k, v in env.items() if "\0" not in v and "\0" not in k}
+        # no stdin: a password prompt reads an empty line instead of
+        # waiting for pytest's stdin
         p = subprocess.run(self.shell_command(command), capture_output=True,
-                           env=env, cwd=self.envn.tmp_dir)
+                           stdin=subprocess.DEVNULL, env=env,
+                           cwd=self.envn.tmp_dir)
         out = p.stdout.decode("utf-8", errors="surrogateescape").replace("\r\n", "\n")
         if p.returncode != 0:
             if not expected or not (str(p.returncode) in expected or

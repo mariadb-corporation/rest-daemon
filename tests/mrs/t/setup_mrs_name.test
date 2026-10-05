@@ -1,0 +1,5 @@
+# mariadb-mrsd --setup with --name: the name is in the configuration and in
+# the MRS metadata
+--let $setup_name_cmd = --name MyName
+
+--source setup_mrs.inc

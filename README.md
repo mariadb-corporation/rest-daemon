@@ -11,8 +11,7 @@ without the router's connection routing, InnoDB Cluster/ClusterSet support,
 bootstrap and X protocol. It is built against a stock MySQL client library.
 
 > **Status:** work in progress. mrsd builds and passes its tests on Linux,
-> macOS and Windows against MySQL 26.7. `mariadb-mrsd --setup` (replacing the
-> router's `--bootstrap`) and packaging don't exist yet. See [docs/PLAN.md](docs/PLAN.md) and
+> macOS and Windows against MySQL 26.7. There are no packages yet. See [docs/PLAN.md](docs/PLAN.md) and
 > [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Building
@@ -83,9 +82,46 @@ In the build directory:
 The program name (`mariadb-mrsd`) and the product name are set in
 `cmake/settings.cmake`.
 
+## Setting up a deployment
+
+`mariadb-mrsd --setup` prepares a self-contained deployment directory for a
+MySQL server that has the MRS metadata schema (created, for example, with
+MySQL Shell's `CONFIGURE REST METADATA`):
+
+```sh
+mariadb-mrsd --setup admin@db1.example.com:3306 -d /srv/mrsd
+/srv/mrsd/start.sh          # start.ps1 on Windows; stop.sh / stop.ps1 to stop
+```
+
+It registers the instance in the MRS metadata, creates a MySQL account with
+the `mysql_rest_service_meta_provider` and `mysql_rest_service_data_provider`
+roles, stores its password and the JWT secret in a keyring, creates a
+self-signed TLS certificate and writes `mariadb-mrsd.conf` (HTTPS on port
+8443). The account in the URI needs to create accounts, grant those roles and
+write the MRS metadata; passwords that aren't given are prompted for. If
+anything fails, what was created is removed again.
+
+| Option | |
+|---|---|
+| `-d`, `--directory` | **required**, the deployment directory (created if needed) |
+| `--name` | name of the instance in the MRS metadata (default: `<hostname>:<HTTP port>`) |
+| `--report-host` | host name stored in the MRS metadata (default: the local host name) |
+| `--metadata-account`, `--data-account` | use these MySQL accounts (passwords prompted for) instead of a generated one |
+| `--jwt-secret` | secret for signing JSON Web Tokens; the same for all instances of the same MRS metadata |
+| `--developer`, `--developer-debug-port` | also serve the services in development by this developer |
+| `--socket` | connect through a Unix socket (URI host `localhost`); the deployment uses it too |
+| `--ssl-mode`, `--ssl-ca`, `--ssl-capath`, `--ssl-crl`, `--ssl-crlpath`, `--ssl-cipher`, `--tls-version` | TLS to the MySQL server, for the setup and the deployment |
+| `--conf-set-option=<section>.<option>=<value>` | set or add an option of the generated configuration, e.g. `http_server.port=8080` |
+| `--master-key-reader`, `--master-key-writer` | commands that read/store the keyring's master key, instead of a key file |
+| `--force` | overwrite an existing deployment, keeping its accounts and JWT secret |
+
+`mariadb-mrsd --setup --help` describes all options. System-wide deployments
+(default paths, a service user) come with the packages.
+
 ## Configuration
 
-mrsd reads a router-style configuration file. A minimal one:
+`--setup` writes the configuration; it can also be written by hand. mrsd reads
+a router-style configuration file. A minimal one:
 
 ```ini
 [DEFAULT]
@@ -181,9 +217,9 @@ with a `libaio.so.1 -> libaio.so.1t64` link. On Windows, use
 Windows' `usr\bin` has one), and expect the tests' `exec` commands to run
 through `cmd.exe`, as they do under mtr.
 
-**Smoke test** (`tools/smoke/run_smoke.sh`): starts `mysqld` and mrsd, creates
-a REST view with MySQL Shell and checks that it is served; see the script for
-its parameters.
+**Smoke test** (`tools/smoke/run_smoke.sh`): starts `mysqld`, configures mrsd
+with `--setup`, starts it, creates a REST view with MySQL Shell and checks that
+it is served; see the script for its parameters.
 
 ## Repository layout
 

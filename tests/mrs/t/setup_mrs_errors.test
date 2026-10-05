@@ -1,0 +1,91 @@
+# mariadb-mrsd --setup: invalid arguments, a server without the MRS metadata,
+# an existing deployment (--force) and the rollback of a failed setup
+
+--echo # invalid arguments
+--error 1
+--exec $MYSQLROUTER --setup 2>&1
+--error 1
+--exec $MYSQLROUTER --setup localhost 2>&1
+--error 1
+--exec $MYSQLROUTER --core-file --setup 2>&1
+--error 1
+--exec $MYSQLROUTER --setup localhost -d setup_x --developer-debug-port 1 2>&1
+--error 1
+--exec $MYSQLROUTER --setup localhost -d setup_x --conf-set-option=foo 2>&1
+--error 1
+--exec $MYSQLROUTER --setup localhost -d setup_x --conf-set-option=mysql_rest_service.router_id=5 2>&1
+--error 1
+--exec $MYSQLROUTER --setup localhost -d setup_x --ssl-mode=SOMETIMES 2>&1
+--error 1
+--exec $MYSQLROUTER --setup localhost -d setup_x --master-key-reader=foo 2>&1
+
+CREATE USER setup_admin IDENTIFIED BY 'pass';
+GRANT ALL ON *.* TO setup_admin WITH GRANT OPTION;
+
+--let $setup_cmd = $MYSQLROUTER --setup setup_admin:pass@127.0.0.1:$MASTER_MYPORT -d $MYSQL_TMP_DIR/setup_folder --conf-set-option=DEFAULT.plugin_folder=$ROUTER_PLUGIN_DIRECTORY --jwt-secret something_important
+
+--echo # wrong password
+--replace_regex /[^ \x27]*setup_folder/DIRECTORY/ /127\.0\.0\.1:[0-9]+/127.0.0.1:PORT/ /@\x27[^\x27]*\x27/@HOST/
+--error 1
+--exec $MYSQLROUTER --setup setup_admin:wrong@127.0.0.1:$MASTER_MYPORT -d $MYSQL_TMP_DIR/setup_folder 2>&1
+
+--echo # no MRS metadata on the server
+--source setup_mrs_replace.inc
+--error 1
+--exec $setup_cmd 2>&1
+# nothing is left behind
+--error 1
+--file_exists $MYSQL_TMP_DIR/setup_folder
+
+--source ../include/mrs/initialize_schema.inc
+
+--echo # the directory has other files
+--mkdir $MYSQL_TMP_DIR/setup_folder
+--write_file $MYSQL_TMP_DIR/setup_folder/other.txt
+something
+EOF
+--source setup_mrs_replace.inc
+--error 1
+--exec $setup_cmd 2>&1
+--force-rmdir $MYSQL_TMP_DIR/setup_folder
+
+--echo # a failed setup is rolled back: here the keyring step fails, after
+--echo # the account was created
+--source setup_mrs_replace.inc
+--error 1
+--exec $setup_cmd --master-key-reader=no_such_command_mrsd --master-key-writer=no_such_command_mrsd 2>&1
+--error 1
+--file_exists $MYSQL_TMP_DIR/setup_folder
+select count(*) from mysql.user where user like 'mariadb\_mrsd%';
+
+--echo # a deployment
+--disable_result_log
+--exec $setup_cmd
+--enable_result_log
+--let $first_user=`SELECT user FROM mysql.user WHERE user LIKE 'mariadb\_mrsd%'`
+
+--echo # it exists already
+--source setup_mrs_replace.inc
+--error 1
+--exec $setup_cmd 2>&1
+
+--echo # --force: overwrites the configuration, backs it up and reuses the
+--echo # instance, the account and the JWT secret of the existing deployment
+--source setup_mrs_replace.inc
+--exec $MYSQLROUTER --setup setup_admin:pass@127.0.0.1:$MASTER_MYPORT -d $MYSQL_TMP_DIR/setup_folder --conf-set-option=DEFAULT.plugin_folder=$ROUTER_PLUGIN_DIRECTORY --force
+--file_exists $MYSQL_TMP_DIR/setup_folder/mariadb-mrsd.conf.bak
+select id, product_name from mysql_rest_service_metadata.router;
+--let $second_user=`SELECT user FROM mysql.user WHERE user LIKE 'mariadb\_mrsd%'`
+--let $assert_text= --force reuses the account of the existing deployment
+--let $assert_cond= "$first_user" = "$second_user"
+--source include/assert.inc
+
+# Cleanup
+--disable_query_log
+eval DROP USER $first_user@'%';
+--enable_query_log
+DROP USER setup_admin;
+--force-rmdir $MYSQL_TMP_DIR/setup_folder
+
+--let $cleanup_arg_mrs_skip_service_disable=1
+--source ../include/mrs/cleanup.inc

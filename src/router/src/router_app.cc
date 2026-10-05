@@ -870,6 +870,14 @@ void MySQLRouter::prepare_command_options() noexcept {
       CmdOptionValueReq::required, "path", [this](const std::string &value) {
         check_and_add_conf(extra_config_files_, value);
       });
+  // mrsd: --setup is handled in main.cc when it is the first argument
+  arg_handler_.add_option(
+      OptionNames({"--setup"}),
+      "Prepare a deployment directory for a MySQL server and exit; must be "
+      "the first option. See --setup --help.",
+      CmdOptionValueReq::none, "", [](const std::string &) {
+        throw std::runtime_error("--setup must be the first option");
+      });
   arg_handler_.add_option(
       OptionNames({"-V", "--version"}), "Display version information and exit.",
       CmdOptionValueReq::none, "", [this](const std::string &) {
@@ -1056,8 +1064,10 @@ void MySQLRouter::show_usage(bool include_options) noexcept {
               << Vt100::render(Vt100::Render::Bold) << "# Examples"
               << Vt100::render(Vt100::Render::Normal) << "\n\n";
 
-  // mrsd: the examples of the router's --bootstrap don't apply
-  out_stream_ << "Start with a configuration file\n\n"
+  out_stream_ << "Set up a deployment directory for a MySQL server\n\n"
+              << "    " << kProgramName << " --setup admin@db1:3306 -d myconfig"
+              << "\n\n"
+              << "Start with a configuration file\n\n"
               << "    " << kProgramName << " -c " << "myconfig" << dir_sep
               << MRSD_PROGRAM_NAME ".conf\n\n";
 }

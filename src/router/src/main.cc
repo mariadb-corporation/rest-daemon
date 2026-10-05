@@ -88,6 +88,7 @@
 #include "mysql/harness/vt100_filter.h"
 #include "mysqlrouter/mysql_client_thread_token.h"
 #include "mysqlrouter/mysql_session.h"
+#include "mrsd_setup.h"
 #include "random_generator.h"
 #include "router_app.h"
 #include "windows/main-windows.h"
@@ -155,6 +156,22 @@ int real_main(int argc, char **argv, bool use_os_logger_initially) {
       std::cerr.rdbuf(), !(cerr_tty.is_tty() && cerr_tty.ensure_vt100()));
   std::ostream filtered_err_stream(&filtered_err_streambuf);
   int result = 0;
+
+  // mrsd: --setup prepares a deployment instead of running the daemon
+  if (argc > 1 && std::string(argv[1]) == "--setup") {
+    try {
+      MrsdSetup setup(filtered_out_stream, filtered_err_stream);
+      setup.init(argv[0], {argv + 2, argv + argc});
+      setup.run();
+    } catch (const std::exception &exc) {
+      log_error("Error: %s", exc.what());
+      result = 1;
+    }
+    mysql_library_end();
+    u_cleanup();
+    return result;
+  }
+
   try {
     MySQLRouter router(argc, argv, filtered_out_stream, filtered_err_stream);
     // This nested try/catch block is necessary in Windows, to

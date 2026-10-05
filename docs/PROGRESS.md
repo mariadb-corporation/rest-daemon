@@ -10,7 +10,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 | 0: dependency inventory | ✅ done 2026-09-30, verdict GO ([phase0-inventory.md](phase0-inventory.md)) |
 | 1: new repo that builds | ✅ done 2026-09-30: macOS, Linux, Windows (x64), with JIT; smoke test incl. MRS scripts passes on all three |
 | 2: tests and ecosystem validation | ✅ done 2026-10-05: unit + component tests (116/116) and MRS functional suite pass on Linux, macOS, Windows; CI moved to the end (Phase 4) |
-| 3: MRS setup and cleanup | 🟡 branding done (`mariadb-mrsd`); next: `--setup` |
+| 3: MRS setup and cleanup | 🟡 branding (`mariadb-mrsd`) and `--setup` done; next: cleanup of routing/cluster leftovers |
 | 4: packaging and CI | ⏳ not started; CI is the last step, once the final remote exists |
 
 ## How to build and test (macOS)
@@ -188,6 +188,14 @@ In the build tree the config must set `plugin_folder=<build>/plugin_output_direc
 - [x] integration tests (tests/integration): triaged, all routing tests, removed
 - [x] CI: moved to the end of the work (Phase 4), waits for the final remote
 
+## Phase 3 checklist
+- [x] branding: `mariadb-mrsd`, "MariaDB REST Service Daemon" (names in `cmake/settings.cmake`)
+- [x] `--setup` (directory deployment), tests `setup_mrs_*`, smoke test uses it
+- [x] `--setup` verified on all three platforms (MRS suite, smoke test incl. MRS scripts):
+      macOS 116 passed/5 skipped, Linux 117/4, Windows 116/5 (each + 1 xpassed); unit +
+      component 116/116 everywhere
+- [ ] cleanup of routing/cluster leftovers
+
 ## Open questions
 - None blocking.
 
@@ -199,10 +207,8 @@ In the build tree the config must set `plugin_folder=<build>/plugin_output_direc
 - Repository: local git repo in `<dev>/mysql/mrsd`, moved to the final remote later.
 
 ## Next steps
-1. Phase 3: `mrsd --setup` (from `BootstrapConfigurator::configure_mrs()`, against a single
-   standalone server; re-enables the two disabled bootstrap tests in `tests/mrs`).
-2. Phase 3: remove leftover routing/cluster code and options; branding (binary, config
-   sections, log domains, Windows service/event log names).
+1. Phase 3 cleanup: remove leftover routing/cluster code and options (harness,
+   router_lib, `router_app.cc`'s metadata_cache/bootstrap remnants, unused test data).
 
 ## Session log
 
@@ -347,3 +353,16 @@ In the build tree the config must set `plugin_folder=<build>/plugin_output_direc
   the name from `router_config.h`. `--help` examples no longer show `--bootstrap`.
 - Stale `mysqlrouter*` binaries in old build trees must be deleted by hand (ninja
   doesn't remove them).
+
+### 2026-10-05: session 2, continued (Phase 3: --setup)
+- `mariadb-mrsd --setup <uri> -d <dir>`: `MrsdSetup` in `src/router/src/mrsd_setup.cc`,
+  dispatched from `main.cc`; upstream `bootstrap_mysql_account.cc` copied unchanged.
+  Writes config (HTTPS 8443, self-signed cert in `data/`), keyring + master key,
+  start/stop scripts; registers the instance with the name the MRS plugin computes at
+  runtime (verified by the smoke test: one `router` row after start). Rollback via
+  AutoCleaner/MySQLAccountsCleaner; `--force` reuses accounts and JWT secret.
+- `Vt100Filter::sync()` forwards flushes (std::flush on the filtered stdout was a no-op).
+- `tests/mrs`: `exec` gets an empty stdin; bootstrap tests replaced by `setup_mrs_*`.
+- Verified on Linux (117 passed, 4 skipped, 1 xpassed; smoke incl. MRS scripts) and
+  Windows (116 passed, 5 skipped, 1 xpassed; smoke incl. MRS scripts); unit + component
+  116/116 on both. Phase 3 exit criterion (fresh install via `--setup`) met; cleanup remains.

@@ -1,3 +1,0 @@
---let $bootstrap_name_cmd = --name MyRouterName
-
---source bootstrap_mrs_standalone.inc

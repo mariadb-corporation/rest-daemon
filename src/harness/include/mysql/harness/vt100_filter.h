@@ -38,6 +38,8 @@ class HARNESS_EXPORT Vt100Filter : public std::streambuf {
 
  protected:
   int_type overflow(int_type ch) override;
+  // mrsd: pass flushes on, so that std::flush/std::unitbuf reach the sink
+  int sync() override { return sbuf_->pubsync(); }
 
  private:
   enum class State { PLAIN, ESC, CSI, CSI_PARAM, CSI_INTERMEDIATE, OSC, ST };
