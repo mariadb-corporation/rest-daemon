@@ -92,7 +92,7 @@ static std::pair<std::string, std::string> get_master_key(
       throw std::runtime_error(
           "Keyring file '" + keyring_file_path +
           "' was created in an old version and needs to be recreated. Please "
-          "delete and bootstrap again.");
+          "delete it and run --setup again.");
     }
   } catch (const std::system_error &e) {
     if (e.code() != std::errc::no_such_file_or_directory || !create_if_needed) {

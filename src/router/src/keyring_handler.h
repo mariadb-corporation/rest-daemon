@@ -51,12 +51,13 @@ class KeyringHandler {
   KeyringInfo &get_ki() { return ki_; }
 
  private:
+  // ROUTER_ID for the master key reader (mrsd: [mysql_rest_service])
   static uint32_t get_router_id(const mysql_harness::Config &config) {
-    uint32_t result = 0;  // TODO
+    uint32_t result = 0;
 
-    if (config.has_any("metadata_cache")) {
-      const auto &metadata_caches = config.get("metadata_cache");
-      for (const auto &section : metadata_caches) {
+    if (config.has_any("mysql_rest_service")) {
+      const auto &mrs_sections = config.get("mysql_rest_service");
+      for (const auto &section : mrs_sections) {
         if (section->has("router_id")) {
           std::istringstream iss(section->get("router_id"));
           iss >> result;

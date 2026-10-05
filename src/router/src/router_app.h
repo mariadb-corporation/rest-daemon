@@ -378,14 +378,6 @@ class MySQLRouter {
    */
   void show_help();
 
-  /**
-   * @brief verify that option given by user is not used with bootstrap option
-   * (--bootstrap or -B).
-   *
-   * @throw std::runtime_error if called in bootstrap mode.
-   */
-  void assert_not_bootstrap_mode(const std::string &option_name) const;
-
   /** @brief Shows command line usage and option description
    *
    * Shows command line usage and all available options together with their
@@ -429,16 +421,8 @@ class MySQLRouter {
    */
   void set_default_config_files(const char *locations) noexcept;
 
-  /*
-   * @brief returns id of the router.
-   *
-   * @throw bad_section
-   */
-  uint32_t get_router_id(mysql_harness::Config &config);
-
   void init_keyring(mysql_harness::Config &config);
 
-  void init_dynamic_state(mysql_harness::Config &config);
   // throws std::runtime_error
   void init_loader(mysql_harness::LoaderConfig &config);
 
@@ -489,15 +473,11 @@ class MySQLRouter {
   bool core_file_{false};
 
 #ifndef _WIN32
-  /** @brief Value of the --user parameter given on the command line if router
-   * is launched in bootstrap mode **/
+  /** @brief Value of the --user parameter given on the command line **/
   std::string user_cmd_line_;
 
-  /** @brief Value of the --user parameter given on the command line. It is used
-   *to buffer the value of --user parameter till all command line parameters are
-   *parsed. If router is launched in bootstrap mode, then username_ is copied to
-   *user_cmd_line_, otherwise it is copied to bootstrap_options_["user"]
-   **/
+  /** @brief Value of the --user parameter, buffered till all command line
+   * parameters are parsed, then copied to user_cmd_line_ **/
   std::string username_;
 
   /** @brief Pointer to the object to be used to perform system specific

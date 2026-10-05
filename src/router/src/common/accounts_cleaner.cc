@@ -97,8 +97,8 @@ A fatal error occurred while we tried to determine which account(s) were new,
 therefore to be safe, we did not erase any accounts while cleaning-up before
 exiting.
 You may want to clean those up yourself, if you deem it appropriate.
-Here's a full list of accounts that bootstrap tried to create (some of which
-might have already existed before bootstrapping):
+Here's a full list of accounts that --setup tried to create (some of which
+might have already existed before):
 
   )"s << account_list
             << std::endl;
@@ -117,7 +117,7 @@ might have already existed before bootstrapping):
         err_stream_ << "\n"
                     << Vt100::foreground(Vt100::Color::Red) << "ERROR: "
                     << Vt100::render(Vt100::Render::ForegroundDefault) <<
-            R"(As part of cleanup after bootstrap failure, we tried to erase account(s)
+            R"(As part of cleanup after a --setup failure, we tried to erase account(s)
 that we created.  Unfortunately the cleanup failed with error:
 
   )"s << e.what() << R"(

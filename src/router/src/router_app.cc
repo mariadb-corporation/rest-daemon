@@ -51,7 +51,6 @@
 #include "mysql/harness/config_option.h"
 #include "mysql/harness/config_parser.h"
 #include "mysql/harness/dynamic_config.h"
-#include "mysql/harness/dynamic_state.h"
 #include "mysql/harness/filesystem.h"
 #include "mysql/harness/log_reopen_component.h"
 #include "mysql/harness/logging/logger_plugin.h"
@@ -134,8 +133,8 @@ void check_and_add_conf(std::vector<std::string> &configs,
   }
 }
 
-void check_config_overwrites(const CmdArgHandler::ConfigOverwrites &overwrites,
-                             bool is_bootstrap) {
+void check_config_overwrites(
+    const CmdArgHandler::ConfigOverwrites &overwrites) {
   for (const auto &overwrite : overwrites) {
     const std::string &section = overwrite.first.first;
     const std::string &key = overwrite.first.second;
@@ -143,32 +142,7 @@ void check_config_overwrites(const CmdArgHandler::ConfigOverwrites &overwrites,
       throw std::runtime_error("Invalid argument '--" + section + ":" + key +
                                "'. Key not allowed on DEFAULT section");
     }
-
-    if (!is_bootstrap) continue;
-    // only --logger.level config overwrite is allowed currently for bootstrap
-    for (const auto &option : overwrite.second) {
-      const std::string name = section + "." + option.first;
-      if (name != "logger.level" && name != "DEFAULT.plugin_folder") {
-        throw std::runtime_error(
-            "Invalid argument '--" + name +
-            "'. Only '--logger.level' configuration option can be "
-            "set with a command line parameter when bootstrapping.");
-      }
-    }
   }
-}
-
-std::string get_plugin_folder_overwrite(
-    const CmdArgHandler::ConfigOverwrites &overwrites) {
-  const auto default_key = std::make_pair("DEFAULT"s, ""s);
-  if (overwrites.count(default_key) != 0) {
-    const auto &default_overwrites = overwrites.at(default_key);
-    if (default_overwrites.count("plugin_folder") != 0) {
-      return default_overwrites.at("plugin_folder");
-    }
-  }
-
-  return "";
 }
 
 }  // namespace
@@ -237,7 +211,7 @@ void MySQLRouter::parse_command_options(
 
 // throws MySQLSession::Error, std::runtime_error, std::out_of_range,
 // std::logic_error, ...?
-void MySQLRouter::init(const std::string &program_name,
+void MySQLRouter::init(const std::string & /* program_name */,
                        const std::vector<std::string> &arguments) {
   set_default_config_files(CONFIG_FILES);
 
@@ -279,29 +253,11 @@ void MySQLRouter::init(const std::string &program_name,
   signal_handler_.register_ctrl_c_handler();
 #endif
 
-  // mrsd: no --bootstrap (InnoDB Cluster bootstrap is out of scope)
-  const auto config_overwrites = arg_handler_.get_config_overwrites();
-  check_config_overwrites(config_overwrites,
-                          false);  // throws std::runtime_error
+  // throws std::runtime_error
+  check_config_overwrites(arg_handler_.get_config_overwrites());
 
   check_config_files();
   can_start_ = true;
-}
-
-uint32_t MySQLRouter::get_router_id(mysql_harness::Config &config) {
-  uint32_t result = 0;
-
-  if (config.has_any("metadata_cache")) {
-    const auto &metadata_caches = config.get("metadata_cache");
-    for (const auto &section : metadata_caches) {
-      if (section->has("router_id")) {
-        std::istringstream iss(section->get("router_id"));
-        iss >> result;
-        break;
-      }
-    }
-  }
-  return result;
 }
 
 static bool option_has_value(mysql_harness::ConfigSection *section,
@@ -318,17 +274,7 @@ static bool option_has_value(mysql_harness::ConfigSection *section,
 void MySQLRouter::init_keyring(mysql_harness::Config &config) {
   bool needs_keyring = false;
 
-  if (config.has_any("metadata_cache")) {
-    auto metadata_caches = config.get("metadata_cache");
-    for (auto &section : metadata_caches) {
-      if (section->has("user")) {
-        needs_keyring = true;
-        break;
-      }
-    }
-  }
-
-  if (!needs_keyring && config.has_any("mysql_rest_service")) {
+  if (config.has_any("mysql_rest_service")) {
     auto mysql_rest_service = config.get("mysql_rest_service");
     for (auto &section : mysql_rest_service) {
       if (section->has("mysql_user") ||
@@ -342,16 +288,6 @@ void MySQLRouter::init_keyring(mysql_harness::Config &config) {
 
   if (needs_keyring) {
     keyring_.init(config, false);
-  }
-}
-
-void MySQLRouter::init_dynamic_state(mysql_harness::Config &config) {
-  if (config.has_default(router::options::kDynamicState)) {
-    using mysql_harness::DynamicState;
-
-    DIM::instance().set_DynamicState(
-        new DynamicState(config.get_default(router::options::kDynamicState)),
-        std::default_delete<mysql_harness::DynamicState>());
   }
 }
 
@@ -640,17 +576,7 @@ void MySQLRouter::start() {
   create_plugin_loggers(config, DIM::instance().get_LoggingRegistry(),
                         mysql_harness::logging::get_default_log_level(config));
 
-  // there can be at most one metadata_cache section because
-  // currently the router supports only one metadata_cache instance
-  if (config.has_any("metadata_cache") &&
-      config.get("metadata_cache").size() > 1)
-    throw std::runtime_error(
-        "MySQL Router currently supports only one metadata_cache instance. "
-        "There is more than one metadata_cache section in the router "
-        "configuration. Exiting.");
-
   init_keyring(config);
-  init_dynamic_state(config);
 
 #if !defined(_WIN32)
   //
@@ -793,22 +719,8 @@ std::vector<std::string> MySQLRouter::check_config_files() {
   return res.value();
 }
 
-void MySQLRouter::assert_not_bootstrap_mode(
-    const std::string &option_name) const {
-  // mrsd: there is no bootstrap mode.
-  (void)option_name;
-}
-
 void MySQLRouter::prepare_command_options() noexcept {
   using OptionNames = CmdOption::OptionNames;
-
-  // General guidelines for naming command line options:
-  //
-  // Option names that start with --conf are meant to affect
-  // configuration only and used during bootstrap.
-  // If an option affects the bootstrap process itself, it should
-  // omit the --conf prefix, even if it affects both the bootstrap
-  // and the configuration.
 
   arg_handler_.clear_options();
 
@@ -836,9 +748,6 @@ void MySQLRouter::prepare_command_options() noexcept {
           throw std::runtime_error("Invalid empty value for --pid-file option");
         }
         this->pid_file_path_ = pidfile_url;
-      },
-      [this](const std::string &) {
-        this->assert_not_bootstrap_mode("--pid-file");
       });
 
 #ifndef _WIN32
@@ -959,7 +868,7 @@ static std::pair<bool, CmdOption> cmd_option_acceptor(
     if (accepted_opts.find(name) != accepted_opts.end()) {
       if ((section == "help" && name == "--help") ||
           (section == "version" && name == "--version") ||
-          (section == "bootstrap" && name == "--bootstrap")) {
+          (section == "setup" && name == "--setup")) {
         CmdOption req_opt(opt);
         req_opt.required = true;
         return {true, req_opt};
@@ -979,49 +888,7 @@ void MySQLRouter::show_usage(bool include_options) noexcept {
   std::vector<std::pair<std::string, std::set<std::string>>> usage_sections{
       {"help", {"--help"}},
       {"version", {"--version"}},
-      {"bootstrap",
-       {"--account-host",
-        "--bootstrap",
-        "--bootstrap-socket",
-        "--conf-use-sockets",
-        "--conf-set-option",
-        "--conf-skip-tcp",
-        "--conf-base-port",
-        "--conf-use-gr-notifications",
-        "--conf-local-cluster",
-        "--connect-timeout",
-        "--client-ssl-cert",
-        "--client-ssl-cipher",
-        "--client-ssl-curves",
-        "--client-ssl-key",
-        "--client-ssl-mode",
-        "--core-file",
-        "--directory",
-        "--force",
-        "--force-password-validation",
-        "--name",
-        "--master-key-reader",
-        "--master-key-writer",
-        "--password-retries",
-        "--read-timeout",
-        "--report-host",
-        "--server-ssl-ca",
-        "--server-ssl-capath",
-        "--server-ssl-cipher",
-        "--server-ssl-crl",
-        "--server-ssl-crlpath",
-        "--server-ssl-curves",
-        "--server-ssl-mode",
-        "--server-ssl-verify",
-        "--ssl-ca",
-        "--ssl-cert",
-        "--ssl-cipher",
-        "--ssl-crl",
-        "--ssl-crlpath",
-        "--ssl-key",
-        "--ssl-mode",
-        "--tls-version",
-        "--user"}},
+      {"setup", {"--setup"}},
       {"run",
        {
            "--user",

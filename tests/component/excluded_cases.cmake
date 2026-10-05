@@ -108,6 +108,7 @@ EXCLUDE_TEST_CASES(routertest_component_router_configuration_errors
   "Spec/RouterTestBrokenConfig.ensure/routing_client_connect_timeout_is_too_large"
   "Spec/RouterTestBrokenConfig.ensure/metadata_cache_user_is_required"
   "Spec/RouterTestBrokenConfig.ensure/metadata_cache_gr_notifications_for_rs_cluster"
+  "Spec/RouterTestBrokenConfig.ensure/metadata_cache_must_be_single"
   "Spec/RouterTestBrokenConfig.ensure/metadata_cache_invalid_cluster_type"
   "Spec/RouterTestBrokenConfig.ensure/metadata_cache_invalid_cluster_type2"
   "Spec/RouterTestBrokenConfig.ensure/routing_no_bind_nor_socket"

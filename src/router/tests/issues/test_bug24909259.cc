@@ -101,7 +101,7 @@ TEST(Bug24909259, PasswordPrompt_plain) {
         return my_prompt_password(prompt, &num_password_prompts);
       });
 
-  // metadata_cache
+  // mrsd: [mysql_rest_service] instead of the router's [metadata_cache]
   mysql_harness::reset_keyring();
   EXPECT_TRUE(mysql_harness::get_keyring() == nullptr);
   {
@@ -109,7 +109,7 @@ TEST(Bug24909259, PasswordPrompt_plain) {
 
     mysql_harness::Config config(mysqlrouter::get_default_paths(g_origin),
                                  mysql_harness::Config::allow_keys);
-    std::stringstream ss("[metadata_cache]\n");
+    std::stringstream ss("[mysql_rest_service]\n");
     config.read(ss);
 
     router.init_keyring(config);
@@ -122,7 +122,7 @@ TEST(Bug24909259, PasswordPrompt_plain) {
     MySQLRouter router;
     mysql_harness::Config config(mysqlrouter::get_default_paths(g_origin),
                                  mysql_harness::Config::allow_keys);
-    std::stringstream ss("[metadata_cache]\nuser=foo\n");
+    std::stringstream ss("[mysql_rest_service]\nmysql_user=foo\n");
     config.read(ss);
 
     try {
@@ -144,7 +144,7 @@ TEST(Bug24909259, PasswordPrompt_plain) {
     mysql_harness::Config config(mysqlrouter::get_default_paths(g_origin),
                                  mysql_harness::Config::allow_keys);
     std::stringstream ss("[DEFAULT]\nkeyring_path=" + kTestKRFile2 +
-                         "\n[metadata_cache]\nuser=foo\n");
+                         "\n[mysql_rest_service]\nmysql_user=foo\n");
     config.read(ss);
 
     router.init_keyring(config);
@@ -159,7 +159,7 @@ TEST(Bug24909259, PasswordPrompt_plain) {
                                  mysql_harness::Config::allow_keys);
     std::stringstream ss("[DEFAULT]\nkeyring_path=" + kTestKRFile +
                          "\nmaster_key_path=" + kTestKRFile +
-                         ".master\n[metadata_cache]\nuser=foo\n");
+                         ".master\n[mysql_rest_service]\nmysql_user=foo\n");
     config.read(ss);
 
     router.init_keyring(config);
@@ -179,14 +179,14 @@ TEST(Bug24909259, PasswordPrompt_keyed) {
         return my_prompt_password(prompt, &num_password_prompts);
       });
 
-  // metadata_cache
+  // mrsd: [mysql_rest_service] instead of the router's [metadata_cache]
   mysql_harness::reset_keyring();
   EXPECT_TRUE(mysql_harness::get_keyring() == nullptr);
   {
     MySQLRouter router;
     mysql_harness::Config config(mysqlrouter::get_default_paths(g_origin),
                                  mysql_harness::Config::allow_keys);
-    std::stringstream ss("[metadata_cache:foo]\n");
+    std::stringstream ss("[mysql_rest_service:foo]\n");
     config.read(ss);
 
     router.init_keyring(config);
@@ -199,7 +199,7 @@ TEST(Bug24909259, PasswordPrompt_keyed) {
     MySQLRouter router;
     mysql_harness::Config config(mysqlrouter::get_default_paths(g_origin),
                                  mysql_harness::Config::allow_keys);
-    std::stringstream ss("[metadata_cache:foo]\nuser=foo\n");
+    std::stringstream ss("[mysql_rest_service:foo]\nmysql_user=foo\n");
     config.read(ss);
 
     try {
@@ -221,7 +221,7 @@ TEST(Bug24909259, PasswordPrompt_keyed) {
     mysql_harness::Config config(mysqlrouter::get_default_paths(g_origin),
                                  mysql_harness::Config::allow_keys);
     std::stringstream ss("[DEFAULT]\nkeyring_path=" + kTestKRFile2 +
-                         "\n[metadata_cache:foo]\nuser=foo\n");
+                         "\n[mysql_rest_service:foo]\nmysql_user=foo\n");
     config.read(ss);
 
     router.init_keyring(config);
@@ -236,7 +236,7 @@ TEST(Bug24909259, PasswordPrompt_keyed) {
                                  mysql_harness::Config::allow_keys);
     std::stringstream ss("[DEFAULT]\nkeyring_path=" + kTestKRFile +
                          "\nmaster_key_path=" + kTestKRFile +
-                         ".master\n[metadata_cache:foo]\nuser=foo\n");
+                         ".master\n[mysql_rest_service:foo]\nmysql_user=foo\n");
     config.read(ss);
 
     router.init_keyring(config);

@@ -366,3 +366,16 @@ In the build tree the config must set `plugin_folder=<build>/plugin_output_direc
 - Verified on Linux (117 passed, 4 skipped, 1 xpassed; smoke incl. MRS scripts) and
   Windows (116 passed, 5 skipped, 1 xpassed; smoke incl. MRS scripts); unit + component
   116/116 on both. Phase 3 exit criterion (fresh install via `--setup`) met; cleanup remains.
+
+### 2026-10-05: session 2, continued (Phase 3 cleanup, stage 1)
+- Removed: `src/destination_status` (routing quarantine plugin, no users); the
+  metadata_cache/bootstrap/dynamic_state paths of `router_app.cc` (router id from
+  `[metadata_cache]`, single-metadata_cache check, `--bootstrap` usage section, bootstrap
+  overwrite rules); 77 component test data files only used by the removed cluster and
+  bootstrap tests. "bootstrap" in user messages now says `--setup`.
+- `KeyringHandler` takes ROUTER_ID for a master key reader from `[mysql_rest_service]`.
+- Tests: `metadata_cache_must_be_single` excluded; `test_bug24909259` uses
+  `[mysql_rest_service] mysql_user` to check when the keyring is opened.
+- Stage 2 (next): the config-exposure machinery (DynamicConfig, SectionConfigExposer,
+  plugins' `expose_configuration`, dynamic_state, configuration schemas): only consumed
+  by the router's cluster metadata code, dead in mrsd.
