@@ -351,7 +351,7 @@ TEST_F(AppTest, CmdLineVersionShort) {
   std::ostream filtered_out_stream(&filtered_out_streambuf);
 
   MySQLRouter r(g_program_name, argv, filtered_out_stream);
-  ASSERT_THAT(out_stream.str(), StartsWith("MySQL Router"));
+  ASSERT_THAT(out_stream.str(), StartsWith(MYSQL_ROUTER_PACKAGE_NAME));
 }
 
 TEST_F(AppTest, CmdLineHelp) {
@@ -364,12 +364,12 @@ TEST_F(AppTest, CmdLineHelp) {
   MySQLRouter r(g_program_name, argv, filtered_out_stream);
 
   // several substrings from help output that are unlikely to change soon
-  EXPECT_THAT(out_stream.str(), HasSubstr("MySQL Router  V"));
+  EXPECT_THAT(out_stream.str(), HasSubstr(MYSQL_ROUTER_PACKAGE_NAME "  V"));
   EXPECT_THAT(
       out_stream.str(),
       HasSubstr(
           "Oracle is a registered trademark of Oracle Corporation and/or its"));
-  EXPECT_THAT(out_stream.str(), HasSubstr("Usage\n\nmysqlrouter"));
+  EXPECT_THAT(out_stream.str(), HasSubstr("Usage\n\n" MRSD_PROGRAM_NAME));
 }
 
 TEST_F(AppTest, CmdLineHelpShort) {
@@ -380,12 +380,12 @@ TEST_F(AppTest, CmdLineHelpShort) {
   MySQLRouter r(g_program_name, argv, filtered_out_stream);
 
   // several substrings from help output that are unlikely to change soon
-  EXPECT_THAT(out_stream.str(), HasSubstr("MySQL Router  V"));
+  EXPECT_THAT(out_stream.str(), HasSubstr(MYSQL_ROUTER_PACKAGE_NAME "  V"));
   EXPECT_THAT(
       out_stream.str(),
       HasSubstr(
           "Oracle is a registered trademark of Oracle Corporation and/or its"));
-  EXPECT_THAT(out_stream.str(), HasSubstr("Usage\n\nmysqlrouter"));
+  EXPECT_THAT(out_stream.str(), HasSubstr("Usage\n\n" MRSD_PROGRAM_NAME));
 }
 
 TEST_F(AppTest, ConfigFileParseError) {
@@ -599,7 +599,7 @@ TEST_F(AppTest, ShowingInfoTrue) {
       MySQLRouter r(g_program_name, argv, filtered_out_stream);
       r.start();
     });
-    ASSERT_THAT(out_stream.str(), HasSubstr("MySQL Router  V")) << argv[0];
+    ASSERT_THAT(out_stream.str(), HasSubstr(MYSQL_ROUTER_PACKAGE_NAME "  V")) << argv[0];
   }
 }
 

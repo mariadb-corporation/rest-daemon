@@ -29,8 +29,12 @@
 
 #include <string_view>
 
-constexpr const std::string_view kDefaultServiceName{"MySQLRouter"};
-constexpr const std::string_view kDefaultServiceDisplayName{"MySQL Router"};
-constexpr const std::string_view kServiceProductName{"Router"};
+#include "router_config.h"  // MRSD_PROGRAM_NAME, MYSQL_ROUTER_PACKAGE_NAME
+
+constexpr const std::string_view kDefaultServiceName{MRSD_PROGRAM_NAME};
+constexpr const std::string_view kDefaultServiceDisplayName{
+    MYSQL_ROUTER_PACKAGE_NAME};
+constexpr const std::string_view kServiceProductName{
+    MYSQL_ROUTER_PACKAGE_NAME};
 
 #endif  // SRC_ROUTER_INCLUDE_MYSQLROUTER_WINDOWS_ROUTER_SERVICE_NAMES_H_

@@ -208,6 +208,8 @@ MYSQL_ADD_EXECUTABLE(mysqlrouter_passwd
   router_utils
   http_auth_backend_lib
   )
+SET_TARGET_PROPERTIES(mysqlrouter_passwd PROPERTIES
+  OUTPUT_NAME "${MRSD_PROGRAM_NAME}-passwd")
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/harness/include/)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/router/include/)

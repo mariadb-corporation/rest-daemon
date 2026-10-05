@@ -55,6 +55,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "router_component_testutils.h"
 #include "router_test_helpers.h"
 #include "stdx_expected_no_error.h"
+#include "router_config.h"  // MRSD_PROGRAM_NAME
 
 using mysql_harness::ConfigBuilder;
 using mysqlrouter::ClusterType;
@@ -176,7 +177,7 @@ class NotifyTest : public RestApiComponentTest {
     auto &router =
         launch_command(get_mysqlrouter_exec().str(), params, expected_exit_code,
                        /*catch_stderr*/ true, env_vars, output_responder);
-    router.set_logging_path(get_logging_dir().str(), "mysqlrouter.log");
+    router.set_logging_path(get_logging_dir().str(), MRSD_PROGRAM_NAME ".log");
 
     return router;
   }

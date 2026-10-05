@@ -34,6 +34,9 @@ MYSQL_ADD_EXECUTABLE(mysqlrouter_plugin_info
   ${CMAKE_DL_LIBS}
   )
 
+SET_TARGET_PROPERTIES(mysqlrouter_plugin_info PROPERTIES
+  OUTPUT_NAME "${MRSD_PROGRAM_NAME}-plugin-info")
+
 TARGET_INCLUDE_DIRECTORIES(
   mysqlrouter_plugin_info
   PRIVATE

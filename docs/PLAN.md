@@ -128,12 +128,20 @@ See [phase0-inventory.md](phase0-inventory.md). **Verdict: GO.** The kept code u
   auth apps, scripts).
 
 ### Phase 3: MRS-specific setup and cleanup
-- `mrsd --setup`: reuse `BootstrapConfigurator::configure_mrs()` logic
+- ✅ Branding (2026-10-05): program `mariadb-mrsd` (+ `-keyring`, `-passwd`,
+  `-plugin-info`), product name "MariaDB REST Service Daemon" (version line, logs,
+  Windows service/event log, REST API title, MRS metadata `product_name`), default
+  `mariadb-mrsd.conf` / `mariadb-mrsd.log`. Both names are set only in
+  `cmake/settings.cmake`. Config section names and log domains are kept (router-style
+  configs stay valid). Install layout (`lib/mysqlrouter`, `/var/lib/mysqlrouter`,
+  `C:\ProgramData\MySQL\MySQL Router`) is renamed with packaging (Phase 4).
+- `mariadb-mrsd --setup <server URI> -d <dir>`: from `BootstrapConfigurator::configure_mrs()`
   (check_mrs_metadata, register_mrs_router_instance, create_mrs_users, keyring,
-  config writing) against a single standalone server.
+  config writing) against a single standalone server; no router account and no routing
+  sections. Options without the `mrs-` prefix: `--metadata-account`, `--data-account`,
+  `--jwt-secret`, `--developer`, `--developer-debug-port`. Directory deployment only;
+  system-wide deployment comes with packaging.
 - Remove leftover routing and cluster code and options from harness/router_lib.
-- Branding: binary, config section names, log domains, Windows service and
-  event log names. The MRS router registration stays compatible.
 - **Exit criteria:** a fresh install works via `mrsd --setup` alone on each OS.
 
 ### Phase 4: packaging and CI
@@ -214,3 +222,10 @@ mrsd/
 - 2026-10-05: CI waits for the final remote repository and is the last step of the
   work (Phase 4). Phase 2 closed with the test suites passing on the three platforms
   in local runs.
+- 2026-10-05: names: program `mariadb-mrsd`, product "MariaDB REST Service Daemon"
+  (the final name may still change, hence one place in `cmake/settings.cmake`; tests,
+  the pytest harness and the smoke test derive the names from the build). CMake
+  target names stay the router's (internal). Config sections and log domains kept.
+- 2026-10-05: `--setup` design: options without the `mrs-` prefix; directory
+  deployment only for now; MRS metadata registration as upstream except
+  `product_name`/`version` (MySQL Shell doesn't read them).

@@ -44,6 +44,7 @@
 #include "process_wrapper.h"
 #include "router_test_helpers.h"
 #include "test/temp_directory.h"
+#include "router_config.h"  // MRSD_PROGRAM_NAME
 
 using mysql_harness::Path;
 
@@ -196,12 +197,12 @@ class ProcessManager {
   Spawner spawner(std::string executable, std::string logging_file = "");
 
   Spawner router_spawner() {
-    return spawner(mysqlrouter_exec_.str(), "mysqlrouter.log")
+    return spawner(mysqlrouter_exec_.str(), MRSD_PROGRAM_NAME ".log")
         .with_core_dump(true);
   }
 
   Spawner router_bootstrap_spawner() {
-    return spawner(mysqlrouter_bootstrap_exec_.str(), "mysqlrouter.log");
+    return spawner(mysqlrouter_bootstrap_exec_.str(), MRSD_PROGRAM_NAME ".log");
   }
 
   class MockServerCmdline {

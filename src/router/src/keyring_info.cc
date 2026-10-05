@@ -43,6 +43,7 @@
 #include "mysqlrouter/supported_router_options.h"
 #include "process_launcher.h"
 #include "random_generator.h"
+#include "router_config.h"  // MRSD_PROGRAM_NAME
 
 IMPORT_LOG_FUNCTIONS()
 
@@ -117,8 +118,9 @@ bool KeyringInfo::read_master_key() noexcept {
               "This may be caused by insufficient rights or AppArmor "
               "settings.\n"
               "If you have AppArmor enabled try adding MySQLRouter rights to "
-              "execute your keyring reader in the mysqlrouter profile file:\n"
-              "/etc/apparmor.d/usr.bin.mysqlrouter\n\n"
+              "execute your keyring reader in the " MRSD_PROGRAM_NAME
+              " profile file:\n"
+              "/etc/apparmor.d/usr.bin." MRSD_PROGRAM_NAME "\n\n"
               "Example:\n\n"
               "  /path/to/your/master-key-reader Ux,\n");
         }
@@ -150,8 +152,9 @@ bool KeyringInfo::write_master_key() const noexcept {
               "This may be caused by insufficient rights or AppArmor "
               "settings.\n"
               "If you have AppArmor enabled try adding MySQLRouter rights to "
-              "execute your keyring writer in the mysqlrouter profile file:\n"
-              "/etc/apparmor.d/usr.bin.mysqlrouter\n\n"
+              "execute your keyring writer in the " MRSD_PROGRAM_NAME
+              " profile file:\n"
+              "/etc/apparmor.d/usr.bin." MRSD_PROGRAM_NAME "\n\n"
               "Example:\n\n"
               "  /path/to/your/master-key-writer Ux,\n");
         }

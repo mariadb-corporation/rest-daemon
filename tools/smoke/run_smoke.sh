@@ -97,8 +97,11 @@ mysql_cli -e "
   INSERT INTO smoke.city VALUES (1,'Lisbon'),(2,'Helsinki');"
 
 # --- keyring + config --------------------------------------------------------
-K="$MRSD_BUILD/runtime_output_directory/mysqlrouter_keyring"
-KEY="--master-key-file=$WORK/mysqlrouter.key"
+# the program name is set in cmake/settings.cmake
+PROG=$(sed -n 's/^#define MRSD_PROGRAM_NAME "\(.*\)"$/\1/p' "$MRSD_BUILD/router_config.h")
+BIN="$MRSD_BUILD/runtime_output_directory"
+K="$BIN/$PROG-keyring"
+KEY="--master-key-file=$WORK/$PROG.key"
 "$K" init "$WORK/data/keyring" "$KEY"
 "$K" set "$WORK/data/keyring" mrs_user password mrs-pass-1 "$KEY"
 "$K" set "$WORK/data/keyring" rest-user jwt_secret 0123456789abcdef0123456789abcdef "$KEY"
@@ -110,7 +113,7 @@ plugin_folder=$MRSD_BUILD/plugin_output_directory
 runtime_folder=$WORK/run
 data_folder=$WORK/data
 keyring_path=$WORK/data/keyring
-master_key_path=$WORK/mysqlrouter.key
+master_key_path=$WORK/$PROG.key
 
 [logger]
 level=debug
@@ -125,7 +128,7 @@ mysql_read_write_destinations=127.0.0.1:$PORT
 router_id=1
 EOF
 
-"$MRSD_BUILD/runtime_output_directory/mysqlrouter" -c "$WORK/mrsd.conf" \
+"$BIN/$PROG" -c "$WORK/mrsd.conf" \
   > "$WORK/log/mrsd.stdout" 2>&1 &
 MRSD_PID=$!
 sleep 3
@@ -141,7 +144,7 @@ MYSQLSH_USER_CONFIG_HOME="$WORK/shellhome" "$MYSQLSH" --no-wizard --sql \
 
 fail() {
   echo "FAILED: $1" >&2
-  grep -E ' (ERROR|WARNING) ' "$WORK/log/mysqlrouter.log" >&2 || true
+  grep -E ' (ERROR|WARNING) ' "$WORK/log/$PROG.log" >&2 || true
   exit 1
 }
 

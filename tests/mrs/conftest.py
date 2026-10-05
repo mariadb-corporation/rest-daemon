@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import configparser
 import os
+import re
 import shutil
 import signal
 import socket
@@ -85,8 +86,12 @@ class Paths:
         self.package = Path(pkg).resolve()
         self.bin = self.build / "runtime_output_directory"
         self.plugins = self.build / "plugin_output_directory"
-        self.mrsd = self.bin / f"mysqlrouter{EXE}"
-        self.keyring = self.bin / f"mysqlrouter_keyring{EXE}"
+        # the program name is set in cmake/settings.cmake
+        m = re.search(r'#define MRSD_PROGRAM_NAME "([^"]+)"',
+                      (self.build / "router_config.h").read_text(encoding="utf-8"))
+        self.program = m.group(1)
+        self.mrsd = self.bin / f"{self.program}{EXE}"
+        self.keyring = self.bin / f"{self.program}-keyring{EXE}"
         self.mrs_client = self.bin / f"mysqlrouter_mrs_client{EXE}"
         self.mysqld = self.package / "bin" / f"mysqld{EXE}"
         for p in (self.mrsd, self.keyring, self.mrs_client, self.mysqld):
@@ -256,9 +261,10 @@ class Mrsd:
         for d in ("log", "run", "data", "tmp"):
             (base / d).mkdir(parents=True, exist_ok=True)
         self.http_port = free_port()
-        self.logfile = base / "log" / "mysqlrouter.log"
-        self.pidfile = base / "run" / "mysqlrouter.pid"
-        self.conf = base / "mysqlrouter.conf"
+        program = paths.program
+        self.logfile = base / "log" / f"{program}.log"
+        self.pidfile = base / "run" / f"{program}.pid"
+        self.conf = base / f"{program}.conf"
         self.expect_file = base / "tmp" / "mysqlrouter.expect"
         self.proc: subprocess.Popen | None = None
         self._init_keyring()
@@ -266,7 +272,7 @@ class Mrsd:
 
     def _init_keyring(self) -> None:
         kr = str(self.base / "data" / "keyring")
-        mk = f"--master-key-file={self.base / 'mysqlrouter.key'}"
+        mk = f"--master-key-file={self.base / (self.paths.program + '.key')}"
         run = lambda *a: subprocess.run([str(self.paths.keyring), *a],
                                         check=True, capture_output=True)
         run("init", kr, mk)
@@ -291,7 +297,7 @@ class Mrsd:
             "runtime_folder": str(self.base / "run"),
             "data_folder": str(self.base / "data"),
             "keyring_path": str(self.base / "data" / "keyring"),
-            "master_key_path": str(self.base / "mysqlrouter.key"),
+            "master_key_path": str(self.base / f"{self.paths.program}.key"),
             "pid_file": str(self.pidfile),
         }
         cfg["logger"] = {"level": "DEBUG"}

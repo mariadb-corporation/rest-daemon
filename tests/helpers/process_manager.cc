@@ -69,6 +69,7 @@
 #include "process_wrapper.h"
 #include "random_generator.h"
 #include "stdx_expected_no_error.h"
+#include "router_config.h"  // MRSD_PROGRAM_NAME
 
 #ifdef USE_STD_REGEX
 #include <regex>
@@ -816,7 +817,7 @@ void ProcessManager::set_origin(const Path &dir) {
     return path.real_path();
   };
 
-  mysqlrouter_exec_ = get_exe_path("mysqlrouter");
+  mysqlrouter_exec_ = get_exe_path(MRSD_PROGRAM_NAME);
   mysqlrouter_bootstrap_exec_ = get_exe_path("mysqlrouter_bootstrap");
   mysqlserver_mock_exec_ = get_exe_path("mysql_server_mock");
 

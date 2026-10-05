@@ -29,6 +29,7 @@
 #include "config_builder.h"
 #include "router_component_test.h"
 #include "test/temp_directory.h"
+#include "router_config.h"  // MYSQL_ROUTER_PACKAGE_NAME
 
 using namespace std::chrono_literals;
 
@@ -411,7 +412,7 @@ TEST_F(RouterCmdlineTest, help_output_is_sane) {
   check_exit_code(router, EXIT_SUCCESS);
 
   EXPECT_THAT(router.get_full_output(),
-              ::testing::StartsWith("MySQL Router  Ver "));
+              ::testing::StartsWith(MYSQL_ROUTER_PACKAGE_NAME "  Ver "));
   EXPECT_THAT(
       router.get_full_output(),
       ::testing::HasSubstr("Oracle is a registered trademark of Oracle"));

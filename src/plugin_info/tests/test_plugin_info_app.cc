@@ -74,7 +74,7 @@ class PluginInfoAppTest : public ::testing::Test {
   Path plugin_dir_;
 };
 
-const char *kPluginInfoAppExeFileName = "mysqlrouter_plugin_info";
+const char *kPluginInfoAppExeFileName = MRSD_PROGRAM_NAME "-plugin-info";
 
 void PluginInfoAppTest::SetUp() {
   out_stream_.str("");
@@ -103,16 +103,16 @@ static void verify_help_output(std::stringstream &out_stream) {
   const std::string kHelpOutput =
       (WithVt100 ? Vt100::render(Vt100::Render::Bold) : "") +
       "Usage: " + (WithVt100 ? Vt100::render(Vt100::Render::Normal) : "") +
-      "mysqlrouter_plugin_info <mysqlrouter_plugin_file> " +
+      MRSD_PROGRAM_NAME "-plugin-info <mysqlrouter_plugin_file> " +
       "<plugin_name>\n\n" +
       (WithVt100 ? Vt100::render(Vt100::Render::Bold) : "") + "# Examples" +
       (WithVt100 ? Vt100::render(Vt100::Render::Normal) : "") +
       "\n\n"
       "Print plugin information:\n\n"
 #ifndef _WIN32
-      "    mysqlrouter_plugin_info /usr/lib/mysqlrouter/routing.so routing\n"
+      "    " MRSD_PROGRAM_NAME "-plugin-info /usr/lib/mysqlrouter/routing.so routing\n"
 #else
-      "    mysqlrouter_plugin_info \"c:\\Program Files\\MySQL\\MySQL "
+      "    " MRSD_PROGRAM_NAME "-plugin-info \"c:\\Program Files\\MySQL\\MySQL "
       "Router 8.0\\lib\\routing.dll\" routing\n"
 #endif
       "\n" +

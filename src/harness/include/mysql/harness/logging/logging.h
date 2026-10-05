@@ -36,6 +36,7 @@
 #include "mysql/harness/compiler_attributes.h"
 #include "mysql/harness/filesystem.h"
 #include "mysql/harness/stdx/process.h"
+#include "router_config.h"  // MRSD_PROGRAM_NAME
 
 #include <chrono>
 #include <cstdarg>
@@ -81,7 +82,7 @@ constexpr char kSqlLogger[] = "sql";
 /**
  * Default log filename
  */
-constexpr char kDefaultLogFilename[] = "mysqlrouter.log";
+constexpr char kDefaultLogFilename[] = MRSD_PROGRAM_NAME ".log";
 /**
  * Log level values.
  *

@@ -38,6 +38,7 @@
 #include "process_wrapper.h"
 #include "router_component_test.h"
 #include "tcp_port_pool.h"
+#include "router_config.h"  // MRSD_PROGRAM_NAME
 
 using namespace std::chrono_literals;
 
@@ -90,7 +91,7 @@ class RouterPidfileTest : public RouterComponentTest {
 
     // default logfile path
     logfile =
-        mysql_harness::Path(logging_folder.name()).join("mysqlrouter.log");
+        mysql_harness::Path(logging_folder.name()).join(MRSD_PROGRAM_NAME ".log");
 
     // default pid file path
     pidfile = mysql_harness::Path(PIDFILE);

@@ -1,6 +1,7 @@
-# mrsd: MySQL REST Service daemon
+# mariadb-mrsd: MariaDB REST Service Daemon
 
-mrsd is a standalone daemon for the **MySQL REST Service (MRS)**: it serves
+mariadb-mrsd ("mrsd" for short) is a standalone daemon for the **MySQL REST
+Service (MRS)**: it serves
 REST endpoints for MySQL tables, views, stored procedures, functions and
 JavaScript/TypeScript scripts, as defined in the MRS metadata schema
 (`mysql_rest_service_metadata`) of a MySQL server.
@@ -10,9 +11,8 @@ without the router's connection routing, InnoDB Cluster/ClusterSet support,
 bootstrap and X protocol. It is built against a stock MySQL client library.
 
 > **Status:** work in progress. mrsd builds and passes its tests on Linux,
-> macOS and Windows against MySQL 26.7, but the executable is still called
-> `mysqlrouter`, and `mrsd --setup` (replacing the router's `--bootstrap`) and
-> packaging don't exist yet. See [docs/PLAN.md](docs/PLAN.md) and
+> macOS and Windows against MySQL 26.7. `mariadb-mrsd --setup` (replacing the
+> router's `--bootstrap`) and packaging don't exist yet. See [docs/PLAN.md](docs/PLAN.md) and
 > [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Building
@@ -73,11 +73,15 @@ At run time, the DLLs of the MySQL client library, OpenSSL and ICU must be on
 
 In the build directory:
 
-- `runtime_output_directory/`: `mysqlrouter` (the daemon), `mysqlrouter_keyring`,
-  `mysqlrouter_passwd` and, with the tests, `mysql_server_mock` and
+- `runtime_output_directory/`: `mariadb-mrsd` (the daemon), `mariadb-mrsd-keyring`
+  (keyring tool), `mariadb-mrsd-passwd` (password file tool for HTTP basic
+  auth), `mariadb-mrsd-plugin-info` and, with the tests, `mysql_server_mock` and
   `mysqlrouter_mrs_client`
 - `plugin_output_directory/`: the plugins (`mysql_rest_service`,
   `http_server`, `jit_executor`, ...)
+
+The program name (`mariadb-mrsd`) and the product name are set in
+`cmake/settings.cmake`.
 
 ## Configuration
 
@@ -86,17 +90,17 @@ mrsd reads a router-style configuration file. A minimal one:
 ```ini
 [DEFAULT]
 plugin_folder=/path/to/build/plugin_output_directory
-logging_folder=/var/log/mrsd
-runtime_folder=/var/run/mrsd
-data_folder=/var/lib/mrsd
-keyring_path=/var/lib/mrsd/keyring
-master_key_path=/etc/mrsd/mrsd.key
+logging_folder=/var/log/mariadb-mrsd
+runtime_folder=/var/run/mariadb-mrsd
+data_folder=/var/lib/mariadb-mrsd
+keyring_path=/var/lib/mariadb-mrsd/keyring
+master_key_path=/etc/mariadb-mrsd/mariadb-mrsd.key
 
 [http_server]
 port=8443
 ssl=1
-ssl_cert=/etc/mrsd/server-cert.pem
-ssl_key=/etc/mrsd/server-key.pem
+ssl_cert=/etc/mariadb-mrsd/server-cert.pem
+ssl_key=/etc/mariadb-mrsd/server-key.pem
 
 [mysql_rest_service]
 mysql_user=mrs_user
@@ -109,14 +113,16 @@ The account in `mysql_user` needs the `mysql_rest_service_meta_provider` and
 to sign JWTs, are read from the keyring:
 
 ```sh
-mysqlrouter_keyring init /var/lib/mrsd/keyring --master-key-file=/etc/mrsd/mrsd.key
-mysqlrouter_keyring set  /var/lib/mrsd/keyring mrs_user password '<password>' \
-  --master-key-file=/etc/mrsd/mrsd.key
-mysqlrouter_keyring set  /var/lib/mrsd/keyring rest-user jwt_secret '<secret>' \
-  --master-key-file=/etc/mrsd/mrsd.key
+mariadb-mrsd-keyring init /var/lib/mariadb-mrsd/keyring --master-key-file=/etc/mariadb-mrsd/mariadb-mrsd.key
+mariadb-mrsd-keyring set  /var/lib/mariadb-mrsd/keyring mrs_user password '<password>' \
+  --master-key-file=/etc/mariadb-mrsd/mariadb-mrsd.key
+mariadb-mrsd-keyring set  /var/lib/mariadb-mrsd/keyring rest-user jwt_secret '<secret>' \
+  --master-key-file=/etc/mariadb-mrsd/mariadb-mrsd.key
 ```
 
-Start it with `mysqlrouter -c <config file>`.
+Start it with `mariadb-mrsd -c <config file>`. Without `-c`, it reads
+`mariadb-mrsd.conf` from its configuration folder (`mariadb-mrsd --help` lists
+the locations). It logs to `mariadb-mrsd.log` in `logging_folder`.
 
 ### Differences from MySQL Router's MRS configuration
 
@@ -152,7 +158,7 @@ Configure with `-DWITH_UNIT_TESTS=ON -DWITH_COMPONENT_TESTS=ON`.
 ctest --test-dir build -j8
 ```
 
-The component tests start `mysqlrouter` and `mysql_server_mock` processes;
+The component tests start `mariadb-mrsd` and `mysql_server_mock` processes;
 cases that exercise features mrsd doesn't have are excluded in
 [tests/component/excluded_cases.cmake](tests/component/excluded_cases.cmake).
 

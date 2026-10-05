@@ -44,6 +44,7 @@
 #include "rest_api_testutils.h"
 
 #include "config_builder.h"
+#include "router_config.h"  // MRSD_PROGRAM_NAME
 
 static const std::chrono::milliseconds kMaxRestEndpointNotAvailableCheckTime{
     1500};
@@ -249,7 +250,7 @@ std::string RestApiComponentTest::create_password_file() {
         }};
 
     auto &cmd =
-        launch_command(get_origin().join("mysqlrouter_passwd").str(),
+        launch_command(get_origin().join(MRSD_PROGRAM_NAME "-passwd").str(),
                        {"set", userfile, kRestApiUsername}, EXIT_SUCCESS, true,
                        std::chrono::milliseconds(-1), responder);
     check_exit_code(cmd, EXIT_SUCCESS);
@@ -308,13 +309,13 @@ static void verify_swagger_content(
   ASSERT_TRUE(info.HasMember("title"));
   const auto &title = info["title"];
   ASSERT_TRUE(title.IsString());
-  ASSERT_STREQ(title.GetString(), "MySQL Router");
+  ASSERT_STREQ(title.GetString(), MYSQL_ROUTER_PACKAGE_NAME);
 
   // info/description
   ASSERT_TRUE(info.HasMember("description"));
   const auto &descr = info["description"];
   ASSERT_TRUE(descr.IsString());
-  ASSERT_STREQ(descr.GetString(), "API of MySQL Router");
+  ASSERT_STREQ(descr.GetString(), "API of " MYSQL_ROUTER_PACKAGE_NAME);
 
   // info/version
   ASSERT_TRUE(info.HasMember("version"));

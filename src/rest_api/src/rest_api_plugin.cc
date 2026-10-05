@@ -45,6 +45,7 @@
 #include "mysqlrouter/rest_api_utils.h"
 
 #include "rest_api.h"
+#include "router_config.h"  // MYSQL_ROUTER_PACKAGE_NAME
 IMPORT_LOG_FUNCTIONS()
 
 static const char kSectionName[]{"rest_api"};
@@ -139,8 +140,9 @@ RestApi::RestApi(const std::string &uri_prefix,
       .AddMember("swagger", "2.0", allocator)
       .AddMember("info",
                  RestApiComponent::JsonValue(rapidjson::kObjectType)
-                     .AddMember("title", "MySQL Router", allocator)
-                     .AddMember("description", "API of MySQL Router", allocator)
+                     .AddMember("title", MYSQL_ROUTER_PACKAGE_NAME, allocator)
+                     .AddMember("description", "API of " MYSQL_ROUTER_PACKAGE_NAME,
+                                allocator)
                      .AddMember("version", kRestAPIVersion, allocator),
                  allocator)
       .AddMember("basePath",

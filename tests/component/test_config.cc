@@ -29,6 +29,7 @@
 #include "config_builder.h"
 #include "router_component_test.h"
 #include "tcp_port_pool.h"
+#include "router_config.h"  // MYSQL_ROUTER_PACKAGE_NAME
 
 using namespace std::chrono_literals;
 using testing::StartsWith;
@@ -158,7 +159,7 @@ TEST_P(RouterConfigServiceTest, IsErrorReturnedWhenDefaultServiceDoesNotExist) {
   std::string service_name = GetParam();
   const std::string param =
       service_name.empty() ? "--service" : ("--service=" + service_name);
-  if (service_name.empty()) service_name = "MySQLRouter";
+  if (service_name.empty()) service_name = MRSD_PROGRAM_NAME;
 
   // first we need to make sure the service really is not installed on the
   // system that the test is running on. If it is we can't do much about it and
@@ -358,7 +359,7 @@ TEST_F(UnknownConfigOptionValidConfigTest, UnknownConfigOptionValidConfig) {
   auto conf_writer =
 #ifdef _WIN32
       create_config({keepalive_section(), routing_section("test"),
-                     default_section({{"event_source_name", "MySQL Router"}})});
+                     default_section({{"event_source_name", MYSQL_ROUTER_PACKAGE_NAME}})});
 #else
       create_config({keepalive_section(), routing_section("test")});
 #endif

@@ -148,6 +148,10 @@ MYSQL_ADD_EXECUTABLE(mysqlrouter
   ${CMAKE_DL_LIBS}
   )
 
+# mrsd: the targets keep the router's names; the files get mrsd's
+SET_TARGET_PROPERTIES(mysqlrouter PROPERTIES
+  OUTPUT_NAME "${MRSD_PROGRAM_NAME}")
+
 IF(SOLARIS)
   TARGET_LINK_LIBRARIES(mysqlrouter -lnsl -lsocket)
 ENDIF()
@@ -165,3 +169,5 @@ MYSQL_ADD_EXECUTABLE(mysqlrouter_keyring
   router_utils
   extra::rapidjson
   )
+SET_TARGET_PROPERTIES(mysqlrouter_keyring PROPERTIES
+  OUTPUT_NAME "${MRSD_PROGRAM_NAME}-keyring")

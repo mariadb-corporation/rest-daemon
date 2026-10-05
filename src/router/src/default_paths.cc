@@ -46,7 +46,7 @@ const char dir_sep = '\\';
 // const std::string path_sep = ";";
 #endif
 
-static const char kProgramName[] = "mysqlrouter";
+static const char kProgramName[] = MRSD_PROGRAM_NAME;
 
 /** @brief Returns `<path>` if it is absolute[*], `<basedir>/<path>` otherwise
  *

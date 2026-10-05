@@ -108,7 +108,7 @@ TEST_F(RouterLoggingTest, log_start_stop_with_version) {
   router.wait_for_exit();
 
   auto file_content =
-      router.get_logfile_content("mysqlrouter.log", logging_folder.name());
+      router.get_logfile_content(MRSD_PROGRAM_NAME ".log", logging_folder.name());
   auto lines = mysql_harness::split_string(file_content, '\n');
 
 #if defined(_WIN32)
@@ -124,11 +124,11 @@ TEST_F(RouterLoggingTest, log_start_stop_with_version) {
       file_content,
       ::testing::AllOf(
           ::testing::ContainsRegex(
-              "main SYSTEM .* Starting 'MySQL Router', version: "s +
+              "main SYSTEM .* Starting '" MYSQL_ROUTER_PACKAGE_NAME "', version: "s +
               MYSQL_ROUTER_VERSION + " \\(" + MYSQL_ROUTER_VERSION_EDITION +
               "\\)"),
           ::testing::ContainsRegex(
-              "main SYSTEM .* Stopping 'MySQL Router', version: "s +
+              "main SYSTEM .* Stopping '" MYSQL_ROUTER_PACKAGE_NAME "', version: "s +
               MYSQL_ROUTER_VERSION + " \\(" + MYSQL_ROUTER_VERSION_EDITION +
               "\\), reason: REQUESTED" + stopping_info)));
 }
@@ -180,7 +180,7 @@ TEST_F(RouterLoggingTest, log_startup_failure_to_logfile) {
   // 2018-12-19 03:54:04 main ERROR [7f539f628780] Configuration error: option
   // destinations in [routing] is required
   auto file_content =
-      router.get_logfile_content("mysqlrouter.log", logging_folder.name());
+      router.get_logfile_content(MRSD_PROGRAM_NAME ".log", logging_folder.name());
   auto lines = mysql_harness::split_string(file_content, '\n');
 
   EXPECT_THAT(lines,
@@ -532,7 +532,7 @@ TEST_P(RouterLoggingTestConfig, check) {
 
   // check the file log if it contains what's expected
   const std::string file_log_txt =
-      router.get_logfile_content("mysqlrouter.log", tmp_dir.name());
+      router.get_logfile_content(MRSD_PROGRAM_NAME ".log", tmp_dir.name());
 
   if (test_params.filelog_expected_level >= LogLevel::kDebug &&
       test_params.filelog_expected_level != LogLevel::kNotSet) {
@@ -1303,7 +1303,7 @@ TEST_P(RouterLoggingTestTimestampPrecisionConfig, check) {
 
   // check the file log if it contains what's expected
   std::string file_log_txt =
-      router.get_logfile_content("mysqlrouter.log", tmp_dir.name());
+      router.get_logfile_content(MRSD_PROGRAM_NAME ".log", tmp_dir.name());
 
   // strip first line before checking if needed
   if (std::mismatch(file_log_txt.begin(), file_log_txt.end(), prefix.begin(),
@@ -1898,7 +1898,7 @@ TEST_F(RouterLoggingTest, is_debug_logs_written_to_file_if_logging_folder) {
   //
   // SQL queries are logged with host:port at the start.
   auto file_content =
-      router.get_logfile_content("mysqlrouter.log", bootstrap_conf.name());
+      router.get_logfile_content(MRSD_PROGRAM_NAME ".log", bootstrap_conf.name());
   auto lines = mysql_harness::split_string(file_content, '\n');
 
   EXPECT_THAT(lines, ::testing::Contains(::testing::HasSubstr(
@@ -2282,13 +2282,13 @@ TEST_F(MetadataCacheLoggingTest, log_rotation_by_HUP_signal) {
                     EXIT_SUCCESS);
 
   auto logging_dir = get_logging_dir();
-  auto log_file = Path(logging_dir).join("mysqlrouter.log");
+  auto log_file = Path(logging_dir).join(MRSD_PROGRAM_NAME ".log");
 
   EXPECT_TRUE(retry_for([&log_file]() { return log_file.exists(); }, 1000ms));
 
   // now let's simulate what logrotate script does
   // move the log_file appending '.1' to its name
-  auto log_file_1 = Path(logging_dir).join("mysqlrouter.log.1");
+  auto log_file_1 = Path(logging_dir).join(MRSD_PROGRAM_NAME ".log.1");
 
   mysql_harness::rename_file(log_file.str(), log_file_1.str());
   ::kill(router.get_pid(), SIGHUP);
@@ -2318,7 +2318,7 @@ TEST_F(MetadataCacheLoggingTest, log_rotation_by_HUP_signal_no_file_move) {
           .spawn({"-c", init_keyring_and_config_file(conf_dir.name())});
 
   auto logging_dir = get_logging_dir();
-  auto log_file = Path(logging_dir).join("mysqlrouter.log");
+  auto log_file = Path(logging_dir).join(MRSD_PROGRAM_NAME ".log");
 
   ASSERT_TRUE(retry_for([&log_file]() { return log_file.exists(); }, 1000ms));
 
@@ -2359,7 +2359,7 @@ TEST_F(MetadataCacheLoggingTest, log_rotation_when_router_restarts) {
                     EXIT_SUCCESS);
 
   auto log_file = get_logging_dir();
-  log_file.append("mysqlrouter.log");
+  log_file.append(MRSD_PROGRAM_NAME ".log");
 
   EXPECT_TRUE(retry_for([&log_file]() { return log_file.exists(); }, 500ms));
 
@@ -2369,7 +2369,7 @@ TEST_F(MetadataCacheLoggingTest, log_rotation_when_router_restarts) {
 
   // move the log_file appending '.1' to its name
   auto log_file_1 = get_logging_dir();
-  log_file_1.append("mysqlrouter.log.1");
+  log_file_1.append(MRSD_PROGRAM_NAME ".log.1");
   mysql_harness::rename_file(log_file.str(), log_file_1.str());
 
   // make the new file read-only
@@ -2397,14 +2397,14 @@ TEST_F(MetadataCacheLoggingTest, log_rotation_read_only) {
                     EXIT_FAILURE);
 
   auto logging_dir = get_logging_dir();
-  auto log_file = Path(logging_dir).join("mysqlrouter.log");
+  auto log_file = Path(logging_dir).join(MRSD_PROGRAM_NAME ".log");
 
   SCOPED_TRACE("// wait for logfile " + log_file.str() + " to appear");
 
   EXPECT_TRUE(retry_for([log_file]() { return log_file.exists(); }, 500ms));
 
   SCOPED_TRACE("// move the log_file appending '.1' to its name");
-  auto log_file_1 = Path(logging_dir).join("mysqlrouter.log.1");
+  auto log_file_1 = Path(logging_dir).join(MRSD_PROGRAM_NAME ".log.1");
   mysql_harness::rename_file(log_file.str(), log_file_1.str());
 
   SCOPED_TRACE("// 'manually' recreate the log file and make it read only");
@@ -2465,7 +2465,7 @@ TEST_F(MetadataCacheLoggingTest, log_rotation_stdout) {
 /* Tests for valid logger filename configurations */
 /**************************************************/
 
-#define DEFAULT_LOGFILE_NAME "mysqlrouter.log"
+#define DEFAULT_LOGFILE_NAME MRSD_PROGRAM_NAME ".log"
 #define USER_LOGFILE_NAME "foo.log"
 #define USER_LOGFILE_NAME_2 "bar.log"
 
@@ -3203,7 +3203,7 @@ TEST_F(RouterLoggingTest, log_console_destination_empty) {
   EXPECT_FALSE(console_log_txt.empty()) << "\nconsole:\n" << console_log_txt;
 
   // expect no default router file created in tmp_dir
-  Path shouldnotexist = Path(tmp_dir.name()).join("mysqlrouter.log");
+  Path shouldnotexist = Path(tmp_dir.name()).join(MRSD_PROGRAM_NAME ".log");
   EXPECT_FALSE(shouldnotexist.exists());
 }
 
@@ -3286,7 +3286,7 @@ TEST_F(RouterLoggingTest, log_filename_dev_null_ugly) {
   check_exit_code(router, EXIT_FAILURE);
 
   // expect no default router file created in /dev
-  Path shouldnotexist("/dev/mysqlrouter.log");
+  Path shouldnotexist("/dev/" MRSD_PROGRAM_NAME ".log");
   EXPECT_FALSE(shouldnotexist.exists());
 
   EXPECT_TRUE(dev_null.exists());

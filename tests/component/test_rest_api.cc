@@ -47,6 +47,7 @@
 #include "router_component_test.h"
 #include "tcp_port_pool.h"
 #include "test/temp_directory.h"
+#include "router_config.h"  // MYSQL_ROUTER_PACKAGE_NAME
 
 using namespace std::chrono_literals;
 
@@ -134,14 +135,14 @@ static const RestApiTestParams rest_api_valid_methods[]{
             ASSERT_NE(value, nullptr);
 
             ASSERT_TRUE(value->IsString());
-            ASSERT_STREQ(value->GetString(), "MySQL Router");
+            ASSERT_STREQ(value->GetString(), MYSQL_ROUTER_PACKAGE_NAME);
           }},
          {"/info/description",
           [](const JsonValue *value) -> void {
             ASSERT_NE(value, nullptr);
 
             ASSERT_TRUE(value->IsString());
-            ASSERT_STREQ(value->GetString(), "API of MySQL Router");
+            ASSERT_STREQ(value->GetString(), "API of " MYSQL_ROUTER_PACKAGE_NAME);
           }},
          {"/info/version",
           [](const JsonValue *value) -> void {

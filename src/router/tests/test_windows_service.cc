@@ -40,6 +40,7 @@
 #include "filesystem_utils.h"
 #include "router_test_helpers.h"  // EXPECT_THROW_LIKE
 #include "scope_guard.h"
+#include "router_config.h"  // MRSD_PROGRAM_NAME
 
 // these tests are Windows-specific
 #ifdef _WIN32
@@ -187,7 +188,7 @@ class AllowWindowsServiceToWriteLogsTest : public ::testing::Test {
  */
 TEST_F(AllowWindowsServiceToWriteLogsTest, log_dir_and_file_exist) {
   init_dirs_and_config();
-  const Path path_to_log_file{Path{log_dir_}.join("mysqlrouter.log")};
+  const Path path_to_log_file{Path{log_dir_}.join(MRSD_PROGRAM_NAME ".log")};
 
   // create log file
   std::ofstream of(path_to_log_file.c_str());

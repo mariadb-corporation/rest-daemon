@@ -30,9 +30,10 @@
 #include "mysql/harness/logging/handler.h"
 #include "mysql/harness/logging/logging.h"
 #include "mysql/harness/plugin.h"
+#include "router_config.h"  // MYSQL_ROUTER_PACKAGE_NAME
 
 constexpr const char *kEventlogPluginName = "eventlog";
-constexpr const char *kDefaultEventSourceName = "MySQL Router";
+constexpr const char *kDefaultEventSourceName = MYSQL_ROUTER_PACKAGE_NAME;
 extern "C" mysql_harness::Plugin harness_plugin_eventlog;
 
 /**

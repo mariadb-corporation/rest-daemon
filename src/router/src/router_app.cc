@@ -101,7 +101,7 @@ using mysql_harness::utility::wrap_string;
 using mysqlrouter::SysUserOperationsBase;
 #endif
 
-static const char kProgramName[] = "mysqlrouter";
+static const char kProgramName[] = MRSD_PROGRAM_NAME;
 
 static const std::set<std::string> kSupportedExternalLoggingHandlerNames{
     "mysql_rest_service"};
@@ -813,7 +813,7 @@ void MySQLRouter::prepare_command_options() noexcept {
   arg_handler_.clear_options();
 
   arg_handler_.add_option(
-      OptionNames({"--core-file"}), "Write a core file if mysqlrouter dies.",
+      OptionNames({"--core-file"}), "Write a core file if " MRSD_PROGRAM_NAME " dies.",
       CmdOptionValueReq::optional, "", [this](const std::string &value) {
         if (value.empty() || value == "1") {
           this->core_file_ = true;
@@ -844,7 +844,7 @@ void MySQLRouter::prepare_command_options() noexcept {
 #ifndef _WIN32
   arg_handler_.add_option(
       OptionNames({"-u", "--user"}),
-      "Run the mysqlrouter as the user having the name user_name.",
+      "Run " MRSD_PROGRAM_NAME " as the user having the name user_name.",
       CmdOptionValueReq::required, "username",
       [this](const std::string &username) { this->username_ = username; },
       [this](const std::string &) {
@@ -1032,7 +1032,7 @@ void MySQLRouter::show_usage(bool include_options) noexcept {
 
   for (const auto &section : usage_sections) {
     for (auto line : arg_handler_.usage_lines_if(
-             "mysqlrouter", "", kHelpScreenWidth,
+             kProgramName, "", kHelpScreenWidth,
              [&section](const CmdOption &opt) {
                return cmd_option_acceptor(section.first, section.second, opt);
              })) {
@@ -1056,31 +1056,10 @@ void MySQLRouter::show_usage(bool include_options) noexcept {
               << Vt100::render(Vt100::Render::Bold) << "# Examples"
               << Vt100::render(Vt100::Render::Normal) << "\n\n";
 
-#ifdef _WIN32
-  constexpr const char kStartWithSudo[]{""};
-  constexpr const char kStartWithUser[]{""};
-  constexpr const char kStartScript[]{"start.ps1"};
-#else
-  constexpr const char kStartWithSudo[]{"sudo "};
-  constexpr const char kStartWithUser[]{" --user=mysqlrouter"};
-  constexpr const char kStartScript[]{"start.sh"};
-#endif
-
-  out_stream_ << "Bootstrap for use with InnoDB cluster into system-wide "
-                 "installation\n\n"
-              << "    " << kStartWithSudo
-              << "mysqlrouter --bootstrap root@clusterinstance01"
-              << kStartWithUser << "\n\n"
-              << "Start router\n\n"
-              << "    " << kStartWithSudo << "mysqlrouter" << kStartWithUser
-              << "\n\n"
-              << "Bootstrap for use with InnoDb cluster in a self-contained "
-                 "directory\n\n"
-              << "    "
-              << "mysqlrouter --bootstrap root@clusterinstance01 -d myrouter"
-              << "\n\n"
-              << "Start router\n\n"
-              << "    myrouter" << dir_sep << kStartScript << "\n\n";
+  // mrsd: the examples of the router's --bootstrap don't apply
+  out_stream_ << "Start with a configuration file\n\n"
+              << "    " << kProgramName << " -c " << "myconfig" << dir_sep
+              << MRSD_PROGRAM_NAME ".conf\n\n";
 }
 
 void MySQLRouter::show_usage() noexcept { show_usage(true); }

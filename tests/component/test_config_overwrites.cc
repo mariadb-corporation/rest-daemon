@@ -36,6 +36,7 @@
 #include "router_component_testutils.h"
 #include "stdx_expected_no_error.h"
 #include "tcp_port_pool.h"
+#include "router_config.h"  // MRSD_PROGRAM_NAME
 
 using namespace std::chrono_literals;
 using namespace std::string_literals;
@@ -248,7 +249,7 @@ TEST_P(OverwriteLogLevelTest, OverwriteLogLevel) {
   auto &router =
       launch_router({"-c", conf_file, log_dir_overwrite, log_level_overwrite},
                     EXIT_SUCCESS, 5s);
-  router.set_logging_path(log_dir.name(), "mysqlrouter.log");
+  router.set_logging_path(log_dir.name(), MRSD_PROGRAM_NAME ".log");
 
   // check that the Router logs the debug level despite the conf file does not
   // configure it
@@ -303,7 +304,7 @@ TEST_F(RouterConfigOwerwriteTestOldExe, OverwriteLoggingFolder) {
 
   // check that the Router logs the debug level despite the conf file does not
   // configure it
-  EXPECT_TRUE(wait_file_exists(logging_dir.name() + "/" + "mysqlrouter.log"));
+  EXPECT_TRUE(wait_file_exists(logging_dir.name() + "/" + MRSD_PROGRAM_NAME ".log"));
 }
 
 /* @test Sunny-day scenario, we check that overwriting an option in the

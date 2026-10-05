@@ -25,10 +25,13 @@
 # Settings for building MySQL Router
 
 # General
-SET(MYSQL_ROUTER_NAME "MySQL Router"
-  CACHE STRING "MySQL Router project name")
-SET(MYSQL_ROUTER_INI "mysqlrouter.conf"
-  CACHE STRING "Name of default configuration file")
+# mrsd: the program and product names are set here only; the executables,
+# the default configuration and log file names, the Windows service and the
+# MRS metadata registration derive from them. Plain variables, so that a
+# change also reaches existing build directories.
+SET(MRSD_PROGRAM_NAME "mariadb-mrsd")
+SET(MYSQL_ROUTER_NAME "MariaDB REST Service Daemon")
+SET(MYSQL_ROUTER_INI "${MRSD_PROGRAM_NAME}.conf")
 
 # MySQL Harness
 SET(HARNESS_NAME "mysqlrouter" CACHE STRING "Name of Harness")

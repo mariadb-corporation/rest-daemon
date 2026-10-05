@@ -10,7 +10,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 | 0: dependency inventory | ✅ done 2026-09-30, verdict GO ([phase0-inventory.md](phase0-inventory.md)) |
 | 1: new repo that builds | ✅ done 2026-09-30: macOS, Linux, Windows (x64), with JIT; smoke test incl. MRS scripts passes on all three |
 | 2: tests and ecosystem validation | ✅ done 2026-10-05: unit + component tests (116/116) and MRS functional suite pass on Linux, macOS, Windows; CI moved to the end (Phase 4) |
-| 3: MRS setup and cleanup | ⏳ not started |
+| 3: MRS setup and cleanup | 🟡 branding done (`mariadb-mrsd`); next: `--setup` |
 | 4: packaging and CI | ⏳ not started; CI is the last step, once the final remote exists |
 
 ## How to build and test (macOS)
@@ -154,8 +154,7 @@ The VM has no passwordless sudo, so there are three workarounds, none of them ne
 - ICU headers: `apt-get download libicu-dev` unpacked into `deps/icu` (78.2, matches the installed runtime)
 - no ninja: Makefiles generator
 - `deps/lib/libaio.so.1 -> libaio.so.1t64` for the package's mysqld (Ubuntu 24.04+ renamed it)
-The binary is still called `mysqlrouter` (renamed in Phase 3); in the build tree
-the config must set `plugin_folder=<build>/plugin_output_directory`.
+In the build tree the config must set `plugin_folder=<build>/plugin_output_directory`.
 
 ## Phase 1 checklist
 - [x] 1.1 skeleton: layout, top-level CMake, `cmake/compat/` macro replacements
@@ -338,3 +337,13 @@ the config must set `plugin_folder=<build>/plugin_output_directory`.
   `[routing:...]` sections (plus X protocol client libraries); no MRS coverage.
   `WITH_INTEGRATION_TESTS` option dropped. See the PLAN decision log.
 - CI deferred to the end of the work (waits for the final remote). Phase 2 closed.
+
+### 2026-10-05: session 2, continued (Phase 3: branding)
+- Program `mariadb-mrsd` (`-keyring`, `-passwd`, `-plugin-info`), product name
+  "MariaDB REST Service Daemon", default `mariadb-mrsd.conf`/`.log`, Windows service
+  `mariadb-mrsd`; set in `cmake/settings.cmake` (`MRSD_PROGRAM_NAME`,
+  `MYSQL_ROUTER_NAME`), exported as `MRSD_PROGRAM_NAME` / `MYSQL_ROUTER_PACKAGE_NAME`
+  in `router_config.h`. Tests use the macros; `tests/mrs` and the smoke test read
+  the name from `router_config.h`. `--help` examples no longer show `--bootstrap`.
+- Stale `mysqlrouter*` binaries in old build trees must be deleted by hand (ninja
+  doesn't remove them).

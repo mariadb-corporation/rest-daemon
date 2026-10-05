@@ -61,6 +61,7 @@ extern "C" bool g_windows_service = false;
 #include "mysql/harness/stdx/expected.h"
 #include "mysql/harness/string_utils.h"
 #include "mysql/harness/utility/string.h"
+#include "router_config.h"  // MYSQL_ROUTER_PACKAGE_NAME
 
 using mysql_harness::trim;
 using mysql_harness::utility::string_format;
@@ -233,7 +234,7 @@ std::string prompt_password(const std::string &prompt) {
 bool is_running_as_service() { return ::g_windows_service; }
 
 void write_windows_event_log(const std::string &msg) {
-  static const std::string event_source_name = "MySQL Router";
+  static const std::string event_source_name = MYSQL_ROUTER_PACKAGE_NAME;
   HANDLE event_src = nullptr;
   LPCSTR strings[2] = {nullptr, nullptr};
   event_src = RegisterEventSourceA(nullptr, event_source_name.c_str());

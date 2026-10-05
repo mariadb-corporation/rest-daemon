@@ -30,9 +30,11 @@
 #include <ostream>
 
 #include "mysql/harness/arg_handler.h"
+#include "router_config.h"  // MYSQL_ROUTER_PACKAGE_NAME
 
 // name displayed with --version request
-const std::string kPluginInfoAppName = "MySQL Router - Plugin Info App";
+const std::string kPluginInfoAppName =
+    MYSQL_ROUTER_PACKAGE_NAME " - Plugin Info App";
 
 /**
  * exception thrown by the frontend.

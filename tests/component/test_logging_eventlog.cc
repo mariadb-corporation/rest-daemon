@@ -44,6 +44,7 @@
 #include "my_compiler.h"
 #include "mysqlrouter/utils.h"
 #include "router_component_test.h"
+#include "router_config.h"  // MYSQL_ROUTER_PACKAGE_NAME
 
 #pragma comment( \
     lib, "wevtapi.lib")  // needed for linker to see stuff from winevt.h
@@ -190,7 +191,7 @@ class EventlogSubscription {
     // clang-format on
     const wchar_t *query =
         L"*[System[(Level <= 3)"  // log level, 3 = ERROR
-        " and Provider[@Name = 'MySQL Router']"
+        " and Provider[@Name = '" MYSQL_ROUTER_PACKAGE_NAME "']"
         " and TimeCreated[timediff(@SystemTime) <= 10000]]]";  // backlog, value
                                                                // in ms
 
@@ -521,7 +522,8 @@ TEST_F(RouterEventlogTest, wrapper_running_as_unknown) {
       "command-line?): The service process "
       "could not connect to the service controller.";
   constexpr char expected_message_not_registered[] =
-      "Could not find service 'MySQLRouter'!\nUse --install-service or "
+      "Could not find service '" MRSD_PROGRAM_NAME
+      "'!\nUse --install-service or "
       "--install-service-manual option to install the service first.";
 
   // start sniffing Eventlog

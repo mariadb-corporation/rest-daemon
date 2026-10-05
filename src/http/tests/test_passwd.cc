@@ -43,7 +43,7 @@
 #include "router_config.h"                 // MYSQL_ROUTER_PACKAGE_NAME
 #include "welcome_copyright_notice.h"      // ORACLE_WELCOME_COPYRIGHT_NOTICE
 
-constexpr const char kAppExeFileName[]{"mysqlrouter_passwd"};
+constexpr const char kAppExeFileName[]{MRSD_PROGRAM_NAME "-passwd"};
 
 using mysql_harness::join;
 

@@ -29,6 +29,7 @@
 
 #include "mysql/harness/filesystem.h"
 #include "mysql/harness/logging/registry.h"
+#include "router_config.h"  // MRSD_PROGRAM_NAME
 
 #include <memory>
 
@@ -47,9 +48,9 @@ class ConsoleOutputTest : public ::testing::Test {
 
     app_mysqlrouter.reset(new Path(*origin_dir));
 #ifdef _WIN32
-    app_mysqlrouter->append("mysqlrouter.exe");
+    app_mysqlrouter->append(MRSD_PROGRAM_NAME ".exe");
 #else
-    app_mysqlrouter->append("mysqlrouter");
+    app_mysqlrouter->append(MRSD_PROGRAM_NAME);
 #endif
     mysql_server_mock.reset(new Path(*origin_dir));
 #ifdef _WIN32

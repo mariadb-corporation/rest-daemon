@@ -32,6 +32,7 @@
 #include "mysql/harness/logging/supported_logger_options.h"
 #include "mysql/harness/plugin.h"
 #include "scope_guard.h"
+#include "router_config.h"  // MYSQL_ROUTER_PACKAGE_NAME
 
 #include <Windows.h>
 #include <cstdarg>
@@ -120,7 +121,7 @@ static void create_eventlog_registry_entry(
   if ((dwError != ERROR_SUCCESS) && (dwError != ERROR_ACCESS_DENIED)) {
     throw std::runtime_error(
         "Could not create or access the registry key needed "
-        "for the MySQL Router application\n"
+        "for the " MYSQL_ROUTER_PACKAGE_NAME " application\n"
         "Error: " +
         std::to_string(dwError));
   }
@@ -135,7 +136,7 @@ static void create_eventlog_registry_entry(
   if ((dwError != ERROR_SUCCESS) && (dwError != ERROR_ACCESS_DENIED)) {
     throw std::runtime_error(
         "Could not create or access the registry key needed "
-        "for the MySQL Router application\n"
+        "for the " MYSQL_ROUTER_PACKAGE_NAME " application\n"
         "Error: " +
         std::to_string(dwError));
   }
