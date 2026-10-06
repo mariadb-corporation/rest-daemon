@@ -94,7 +94,11 @@ configured layout. Build them without `WITH_UNIT_TESTS`.
 
 The packages bundle `libmysqlclient` (from `MYSQL_PACKAGE_DIR`) and the JIT
 executor library; the `STANDALONE` packages also bundle OpenSSL and ICU, which
-deb/rpm take from the system.
+deb/rpm take from the system. The deb/rpm packages add a systemd unit, a
+`mariadb-mrsd` service account (sysusers.d) and its folders (tmpfiles.d); the
+service is enabled after `--setup`. Building packages needs `patchelf` on
+Linux, `dpkg-shlibdeps` for deb and `rpmbuild` for rpm. The Windows packages
+include the MSVC runtime.
 
 ## Setting up a deployment
 
@@ -117,7 +121,8 @@ anything fails, what was created is removed again.
 
 | Option | |
 |---|---|
-| `-d`, `--directory` | **required**, the deployment directory (created if needed) |
+| `-d`, `--directory` | the deployment directory (created if needed); without it, the default folders (`mariadb-mrsd --help` lists them; `/etc/mariadb-mrsd`, `/var/lib/mariadb-mrsd`, ... for deb/rpm) |
+| `-u`, `--user` | the system account that runs mrsd, owner of the created files (needed when running as root without `-d`) |
 | `--name` | name of the instance in the MRS metadata (default: `<hostname>:<HTTP port>`) |
 | `--report-host` | host name stored in the MRS metadata (default: the local host name) |
 | `--metadata-account`, `--data-account` | use these MySQL accounts (passwords prompted for) instead of a generated one |
@@ -129,8 +134,15 @@ anything fails, what was created is removed again.
 | `--master-key-reader`, `--master-key-writer` | commands that read/store the keyring's master key, instead of a key file |
 | `--force` | overwrite an existing deployment, keeping its accounts and JWT secret |
 
-`mariadb-mrsd --setup --help` describes all options. System-wide deployments
-(default paths, a service user) come with the packages.
+`mariadb-mrsd --setup --help` describes all options.
+
+With the deb/rpm packages, which create the `mariadb-mrsd` service account and
+a systemd unit:
+
+```sh
+sudo mariadb-mrsd --setup admin@db1.example.com:3306 --user mariadb-mrsd
+sudo systemctl enable --now mariadb-mrsd
+```
 
 ## Configuration
 

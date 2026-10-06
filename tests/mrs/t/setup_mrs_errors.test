@@ -5,7 +5,7 @@
 --error 1
 --exec $MYSQLROUTER --setup 2>&1
 --error 1
---exec $MYSQLROUTER --setup localhost 2>&1
+--exec $MYSQLROUTER --setup db.example.com --socket /tmp/mysql.sock 2>&1
 --error 1
 --exec $MYSQLROUTER --core-file --setup 2>&1
 --error 1

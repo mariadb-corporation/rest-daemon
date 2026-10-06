@@ -1,6 +1,6 @@
 # invalid arguments
 Error: --setup needs the URI of the MySQL server as its first argument: --setup [<user>[:<password>]@]<host>[:<port>]
-Error: --setup needs the deployment directory: -d <directory>
+Error: --socket needs 'localhost' as the host of the server URI, not 'db.example.com'
 Error: --setup must be the first option
 Error: --developer-debug-port needs --developer
 Error: --conf-set-option: invalid option 'foo': expected section.option_name=value

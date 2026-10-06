@@ -37,12 +37,14 @@
 #include "mysql/harness/config_option.h"
 #include "mysql/harness/config_parser.h"
 #include "mysql/harness/filesystem.h"
+#include "mysql/harness/supported_config_options.h"
 #include "mysql/harness/vt100.h"
 #include "mysqld_error.h"
 #include "mysqlrouter/default_paths.h"
 #include "mysqlrouter/http_constants.h"
 #include "mysqlrouter/router_config_utils.h"
 #include "mysqlrouter/server_compatibility.h"
+#include "mysqlrouter/sys_user_operations.h"
 #include "mysqlrouter/utils.h"
 #include "print_version.h"
 #include "random_generator.h"
@@ -156,7 +158,8 @@ void MrsdSetup::prepare_command_options() {
       OptionNames({"-d", "--directory"}),
       "Directory of the deployment: configuration, keyring, TLS "
       "certificates, logs and start/stop scripts. Created if it doesn't "
-      "exist.",
+      "exist. Without it, the deployment uses the default folders (see "
+      MRSD_PROGRAM_NAME " --help), e.g. for the deb/rpm packages.",
       CmdOptionValueReq::required, "directory",
       [this](const std::string &value) {
         if (value.empty()) {
@@ -164,6 +167,20 @@ void MrsdSetup::prepare_command_options() {
         }
         directory_ = value;
       });
+#ifndef _WIN32
+  arg_handler_.add_option(
+      OptionNames({"-u", "--user"}),
+      "System account that runs " MRSD_PROGRAM_NAME
+      " (e.g. the packages' service account): owner of the files the setup "
+      "creates. Needs root.",
+      CmdOptionValueReq::required, "username",
+      [this](const std::string &value) {
+        if (value.empty()) {
+          throw std::runtime_error("Value for --user can't be empty");
+        }
+        user_ = value;
+      });
+#endif
   arg_handler_.add_option(
       OptionNames({"--force"}),
       "Overwrite an existing configuration in the directory (it is backed "
@@ -363,7 +380,7 @@ void MrsdSetup::show_help() {
   out_stream_ << Vt100::render(Vt100::Render::Bold) << "# Usage"
               << Vt100::render(Vt100::Render::Normal) << "\n\n";
   out_stream_ << MRSD_PROGRAM_NAME
-      " --setup [<user>[:<password>]@]<host>[:<port>] -d <directory> "
+      " --setup [<user>[:<password>]@]<host>[:<port>] [-d <directory>] "
       "[options]\n\n"
       "Prepares a deployment directory for the MySQL REST Service of the "
       "given\nMySQL server, which must have the MRS metadata schema. The "
@@ -409,10 +426,17 @@ void MrsdSetup::init(const std::string &program_name,
         "--setup needs the URI of the MySQL server as its first argument: "
         "--setup [<user>[:<password>]@]<host>[:<port>]");
   }
-  if (directory_.empty()) {
+#ifndef _WIN32
+  if (!user_.empty()) {
+    // throws std::runtime_error if the user doesn't exist or we aren't root
+    mysqlrouter::check_user(user_, true,
+                            mysqlrouter::SysUserOperations::instance());
+  } else if (directory_.empty() && ::geteuid() == 0) {
     throw std::runtime_error(
-        "--setup needs the deployment directory: -d <directory>");
+        "set up as root without --user: the files would only be readable by "
+        "root; use --user <account that runs " MRSD_PROGRAM_NAME ">");
   }
+#endif
   if (!developer_debug_port_.empty() && developer_.empty()) {
     throw std::runtime_error("--developer-debug-port needs --developer");
   }
@@ -640,11 +664,70 @@ void MrsdSetup::prepare_directory() {
   for (const auto &dir : {logdir_, rundir_, datadir_}) {
     make_directory(dir, auto_cleaner_, !new_directory);
   }
+  created_paths_.insert(created_paths_.end(),
+                        {directory_, logdir_, rundir_, datadir_});
 
   keyring_info_.set_keyring_file(Path(datadir_).join(kKeyringFileName).str());
   if (keyring_info_.get_master_key_reader().empty()) {
     keyring_info_.set_master_key_file(path.join(kMasterKeyFileName).str());
   }
+}
+
+void MrsdSetup::prepare_system_paths() {
+  const auto defaults =
+      mysqlrouter::get_default_paths(Path(program_path_).dirname());
+  const auto folder = [&defaults](std::string_view name) {
+    const auto it = defaults.find(std::string(name));
+    if (it == defaults.end() || it->second.empty()) {
+      throw std::runtime_error("no default " + std::string(name) +
+                               "; use -d <directory>");
+    }
+    return it->second;
+  };
+  namespace opt = mysql_harness::loader::options;
+  const std::string config_dir = folder(opt::kConfigFolder);
+  logdir_ = folder(opt::kLoggingFolder);
+  rundir_ = folder(opt::kRuntimeFolder);
+  datadir_ = folder(opt::kDataFolder);
+
+  config_path_ = Path(config_dir).join(kConfigFileName).str();
+  if (Path(config_path_).exists()) {
+    if (!force_) {
+      throw std::runtime_error(config_path_ +
+                               " exists already; use --force to overwrite it");
+    }
+    load_existing_deployment();
+  }
+
+  for (const auto &dir : {config_dir, logdir_, rundir_, datadir_}) {
+    if (Path(dir).exists()) continue;
+    const int err = mysql_harness::mkdir(dir, 0755, true);
+    if (err != 0) {
+      throw std::system_error(std::error_code{err, std::generic_category()},
+                              "Could not create directory '" + dir + "'");
+    }
+    auto_cleaner_.add_directory_delete(dir, true);
+  }
+  created_paths_.insert(created_paths_.end(), {logdir_, rundir_, datadir_});
+
+  keyring_info_.set_keyring_file(Path(datadir_).join(kKeyringFileName).str());
+  if (keyring_info_.get_master_key_reader().empty()) {
+    keyring_info_.set_master_key_file(
+        Path(config_dir).join(kMasterKeyFileName).str());
+  }
+}
+
+void MrsdSetup::set_owner() {
+#ifndef _WIN32
+  if (user_.empty()) return;
+
+  auto *sys_user_operations = mysqlrouter::SysUserOperations::instance();
+  auto *user_info = mysqlrouter::check_user(user_, true, sys_user_operations);
+  for (const auto &path : created_paths_) {
+    mysqlrouter::set_owner_if_file_exists(path, user_, user_info,
+                                          sys_user_operations);
+  }
+#endif
 }
 
 /**
@@ -850,6 +933,9 @@ bool MrsdSetup::prepare_tls_certificates() {
   const Path router_cert = data.join(kRouterCertFileName);
 
   CertificateHandler cert_handler{ca_key, ca_cert, router_key, router_cert};
+  for (const auto &file : {ca_key, ca_cert, router_key, router_cert}) {
+    created_paths_.push_back(file.str());
+  }
   if (cert_handler.router_cert_files_exists()) {
     out_stream_ << "- Using the existing TLS certificate in '" << datadir_
                 << "'\n";
@@ -944,6 +1030,8 @@ void MrsdSetup::store_secrets_in_keyring(uint64_t router_id) {
     throw std::runtime_error("Storing the keyring failed: "s + e.what());
   }
   mysql_harness::reset_keyring();
+  created_paths_.insert(created_paths_.end(),
+                        {keyring_file, keyring_info_.get_master_key_file()});
 }
 
 void MrsdSetup::write_config(uint64_t router_id) {
@@ -1030,6 +1118,7 @@ void MrsdSetup::write_config(uint64_t router_id) {
   }
   if (!overwrite) auto_cleaner_.add_file_delete(config_path_);
   make_private(config_path_, true);
+  created_paths_.push_back(config_path_);
 }
 
 void MrsdSetup::write_scripts() {
@@ -1039,6 +1128,7 @@ void MrsdSetup::write_scripts() {
   {
     const std::string script = Path(directory_).join("start.ps1").str();
     auto_cleaner_.add_file_delete(script);
+    created_paths_.push_back(script);
     auto os = open_for_writing(script);
     os << "[Environment]::SetEnvironmentVariable(\"ROUTER_PID\", \""
        << pid_file << "\", \"Process\")\n"
@@ -1048,6 +1138,7 @@ void MrsdSetup::write_scripts() {
   {
     const std::string script = Path(directory_).join("stop.ps1").str();
     auto_cleaner_.add_file_delete(script);
+    created_paths_.push_back(script);
     auto os = open_for_writing(script);
     os << "$filename = \"" << pid_file << "\"\n"
        << "If (Test-Path $filename) {\n"
@@ -1061,6 +1152,7 @@ void MrsdSetup::write_scripts() {
                                    const std::string &body) {
     const std::string script = Path(directory_).join(name).str();
     auto_cleaner_.add_file_delete(script);
+    created_paths_.push_back(script);
     {
       auto os = open_for_writing(script);
       os << "#!/bin/sh\n" << body;
@@ -1090,10 +1182,18 @@ void MrsdSetup::print_report() const {
               << "' configured for the MySQL server at '"
               << mysql_destination() << "'"
               << Vt100::render(Vt100::Render::ForegroundDefault) << "\n\n"
-              << "Start it with\n\n"
-              << "    " << Path(directory_).join(IF_WIN("start.ps1", "start.sh")).str()
-              << "\n\nor\n\n"
-              << "    " << program_path_ << " -c " << config_path_ << "\n\n"
+              << "Start it with\n\n";
+  if (!directory_.empty()) {
+    out_stream_ << "    "
+                << Path(directory_).join(IF_WIN("start.ps1", "start.sh")).str()
+                << "\n\nor\n\n";
+  } else if (Path("/usr/lib/systemd/system/" MRSD_PROGRAM_NAME ".service")
+                 .exists() ||
+             Path("/lib/systemd/system/" MRSD_PROGRAM_NAME ".service")
+                 .exists()) {
+    out_stream_ << "    systemctl start " MRSD_PROGRAM_NAME "\n\nor\n\n";
+  }
+  out_stream_ << "    " << program_path_ << " -c " << config_path_ << "\n\n"
               << "The MySQL REST Service can then be reached at\n\n"
               << "    " << url << "\n";
 }
@@ -1105,7 +1205,9 @@ void MrsdSetup::run() {
   out_stream_ << std::unitbuf;
 
   out_stream_ << Vt100::foreground(Vt100::Color::Yellow) << "# Setting up "
-              << MRSD_PROGRAM_NAME << " in '" << directory_ << "'"
+              << MRSD_PROGRAM_NAME
+              << (directory_.empty() ? std::string(" in the default folders")
+                                     : " in '" + directory_ + "'")
               << Vt100::render(Vt100::Render::ForegroundDefault) << "\n\n";
 
   connect();
@@ -1113,7 +1215,11 @@ void MrsdSetup::run() {
   out_stream_ << "- Checking the MRS metadata\n";
   check_mrs_metadata();
 
-  prepare_directory();
+  if (directory_.empty()) {
+    prepare_system_paths();
+  } else {
+    prepare_directory();
+  }
 
   out_stream_ << "- Registering the instance in the MRS metadata\n";
   const auto router_id = register_instance();
@@ -1125,7 +1231,8 @@ void MrsdSetup::run() {
   prepare_tls_certificates();
   store_secrets_in_keyring(router_id);
   write_config(router_id);
-  write_scripts();
+  if (!directory_.empty()) write_scripts();
+  set_owner();
 
   // success: keep what was created
   auto_cleaner_.clear();

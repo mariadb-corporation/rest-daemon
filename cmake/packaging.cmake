@@ -43,8 +43,60 @@ SET(CPACK_PACKAGE_FILE_NAME
 IF(INSTALL_LAYOUT STREQUAL "SYSTEM")
   SET(CPACK_GENERATOR "DEB;RPM")
   SET(CPACK_PACKAGING_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
+
+  # systemd unit, service account (sysusers.d), folders (tmpfiles.d) and the
+  # install/remove scripts shared by deb and rpm
+  SET(_src "${CMAKE_SOURCE_DIR}/packaging/linux")
+  SET(_gen "${CMAKE_BINARY_DIR}/packaging/linux")
+  FOREACH(_f service sysusers.conf tmpfiles.conf)
+    CONFIGURE_FILE("${_src}/${_f}.in" "${_gen}/${_f}" @ONLY)
+  ENDFOREACH()
+  INSTALL(FILES "${_gen}/service" DESTINATION lib/systemd/system
+    RENAME ${MRSD_PROGRAM_NAME}.service COMPONENT Router)
+  INSTALL(FILES "${_gen}/sysusers.conf" DESTINATION lib/sysusers.d
+    RENAME ${MRSD_PROGRAM_NAME}.conf COMPONENT Router)
+  INSTALL(FILES "${_gen}/tmpfiles.conf" DESTINATION lib/tmpfiles.d
+    RENAME ${MRSD_PROGRAM_NAME}.conf COMPONENT Router)
+  FOREACH(_f postinst prerm postrm)
+    CONFIGURE_FILE("${_src}/${_f}.in" "${_gen}/${_f}" @ONLY
+      FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                       GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+  ENDFOREACH()
+
+  # deb
+  SET(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+  SET(CPACK_DEBIAN_PACKAGE_SECTION "database")
+  SET(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+  # libraries the package ships itself
+  SET(CPACK_DEBIAN_PACKAGE_SHLIBDEPS_PRIVATE_DIRS
+    "${CMAKE_INSTALL_PREFIX}/${ROUTER_INSTALL_LIBDIR}"
+    "${CMAKE_INSTALL_PREFIX}/${ROUTER_INSTALL_PLUGINDIR}")
+  SET(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+    "${_gen}/postinst" "${_gen}/prerm" "${_gen}/postrm")
+  SET(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
+
+  # rpm
+  SET(CPACK_RPM_FILE_NAME RPM-DEFAULT)
+  SET(CPACK_RPM_PACKAGE_LICENSE "GPL-2.0-only")
+  SET(CPACK_RPM_PACKAGE_GROUP "Applications/Databases")
+  SET(CPACK_RPM_PACKAGE_URL "${MRSD_PACKAGE_HOMEPAGE}")
+  SET(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${_gen}/postinst")
+  SET(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE "${_gen}/prerm")
+  SET(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE "${_gen}/postrm")
+  # no automatic provides/requires for what the package ships itself
+  # (libmysqlclient, libjitexecutor, the internal libraries and the plugins)
+  SET(CPACK_RPM_SPEC_MORE_DEFINE
+"%global __provides_exclude_from ^${CMAKE_INSTALL_PREFIX}/lib/${MRSD_PROGRAM_NAME}/.*$
+%global __requires_exclude ^(lib(mysqlclient|jitexecutor|mysqlharness|mysqlrouter)[^(]*|[a-z_]+[.]so)[(]")
+  SET(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
+    /usr/lib/systemd /usr/lib/systemd/system /usr/lib/sysusers.d
+    /usr/lib/tmpfiles.d /usr/share/doc)
 ELSEIF(WIN32)
   SET(CPACK_GENERATOR "ZIP")
+  # the MSVC runtime DLLs next to the executables, no separate redistributable
+  SET(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${ROUTER_INSTALL_BINDIR}")
+  SET(CMAKE_INSTALL_SYSTEM_RUNTIME_COMPONENT Router)
+  INCLUDE(InstallRequiredSystemLibraries)
 ELSE()
   SET(CPACK_GENERATOR "TGZ")
 ENDIF()

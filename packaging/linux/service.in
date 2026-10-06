@@ -1,0 +1,39 @@
+# Copyright (c) 2026, MariaDB plc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License, version 2.0,
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+# systemd unit of the deb/rpm packages. Configure first:
+#   sudo @MRSD_PROGRAM_NAME@ --setup <user>@<host>:<port> --user @MRSD_PROGRAM_NAME@
+#   sudo systemctl enable --now @MRSD_PROGRAM_NAME@
+
+[Unit]
+Description=@MYSQL_ROUTER_NAME@
+Documentation=file:///usr/share/doc/@MRSD_PROGRAM_NAME@/README.md
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=@ROUTER_INSTALL_CONFIGDIR@/@MRSD_PROGRAM_NAME@.conf
+
+[Service]
+Type=notify
+User=@MRSD_PROGRAM_NAME@
+Group=@MRSD_PROGRAM_NAME@
+# reads @ROUTER_INSTALL_CONFIGDIR@/@MRSD_PROGRAM_NAME@.conf
+ExecStart=@CMAKE_INSTALL_PREFIX@/bin/@MRSD_PROGRAM_NAME@
+RuntimeDirectory=@MRSD_PROGRAM_NAME@
+LimitNOFILE=10000
+Restart=on-failure
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

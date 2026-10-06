@@ -156,7 +156,8 @@ other packages; vendor MariaDB plc; `VERSION` file with `VERSION = x.y.z` entrie
 3. Bundled runtime libraries, rpath/install-name fixups.
 4. Linux and macOS tarballs, verified with `--setup` + smoke test from the unpacked tree.
 5. deb/rpm: systemd unit, service user, system-wide `--setup`.
-6. Windows ZIP + MSI (service installation option).
+6. Windows ZIP + MSI (service installation option). MSI deferred (2026-10-05): the
+   Windows VM has no WiX/.NET and little disk; the ZIP ships for now.
 - CI matrix: 3 OSes × JIT on/off × MySQL 9.x server: unit + component tests, MRS
   functional suite, smoke test. Last step of the whole work, once the final remote
   repository exists (it decides the CI system).
@@ -245,3 +246,5 @@ mrsd/
   The generated account is `<program name with _>_<router id>_<random>`. The tests
   `bootstrap_mrs_*` are replaced by `setup_mrs_name`, `setup_mrs_default_name` and
   `setup_mrs_errors`; the smoke test configures mrsd with `--setup`.
+- 2026-10-05: Windows MSI deferred (no WiX on the build VM); ZIP only for now. rpm
+  packages are built and tested on a Fedora VM (<fedora-vm-ip>).

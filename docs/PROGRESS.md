@@ -11,7 +11,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 | 1: new repo that builds | ✅ done 2026-09-30: macOS, Linux, Windows (x64), with JIT; smoke test incl. MRS scripts passes on all three |
 | 2: tests and ecosystem validation | ✅ done 2026-10-05: unit + component tests (116/116) and MRS functional suite pass on Linux, macOS, Windows; CI moved to the end (Phase 4) |
 | 3: MRS setup and cleanup | ✅ done 2026-10-05: branding (`mariadb-mrsd`), `--setup`, routing/cluster cleanup; tests pass on all three platforms |
-| 4: packaging and CI | 🟡 started: VERSION format, install layouts, bundling, macOS tarball done; next: Linux tarball, deb/rpm, Windows ZIP/MSI; CI last |
+| 4: packaging and CI | 🟡 tar.gz (Linux, macOS), deb, rpm, Windows ZIP done and verified (unpacked); real deb/rpm installs need root; MSI deferred; CI last |
 
 ## How to build and test (macOS)
 
@@ -155,6 +155,31 @@ The VM has no passwordless sudo, so there are three workarounds, none of them ne
 - no ninja: Makefiles generator
 - `deps/lib/libaio.so.1 -> libaio.so.1t64` for the package's mysqld (Ubuntu 24.04+ renamed it)
 In the build tree the config must set `plugin_folder=<build>/plugin_output_directory`.
+
+### Fedora (VM `ssh <fedora-vm>`, Fedora 44, aarch64): rpm packages
+
+Source: `<dev>/mrsd`, accepts pushes (`git push fedora main`, remote `fedora`). Assets in
+`<dev>/mysql/` (copied from the Ubuntu VM: server package, MySQL Shell, mysql-shell-plugins,
+mrs_scripts) and the JIT library + headers in `<dev>/jit/target` (built on Ubuntu, same
+glibc 2.43). GCC 16, CMake 4.3, openssl-devel and libicu-devel are installed; no ninja.
+```sh
+cd <dev>/mrsd; D=<dev>/mysql
+cmake -S . -B build-sys -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DINSTALL_LAYOUT=SYSTEM -DCMAKE_INSTALL_PREFIX=/usr \
+  -DMYSQL_PACKAGE_DIR=$D/mysql-26.7.0-linux-glibc2.28-aarch64 -DMRS_JIT_EXECUTOR_LIB=<dev>/jit/target
+make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
+```
+`rpm-build` is installed (a user-local copy doesn't work, its macros hard-code
+`/usr/lib/rpm` helpers). No passwordless sudo, so no real `dnf install` test yet.
+
+### Packages (Phase 4)
+- STANDALONE: `cpack -G TGZ` (Linux, macOS), `cpack -G ZIP` (Windows, `<win-home>\mrsd-cpack.cmd`
+  in the `build` dir). SYSTEM (`-DINSTALL_LAYOUT=SYSTEM -DCMAKE_INSTALL_PREFIX=/usr`):
+  `cpack -G DEB` (Ubuntu VM, `build-sys`), `cpack -G RPM` (Fedora VM).
+- Verify an unpacked package with the smoke test: `MRSD_INSTALL=<unpacked prefix>`
+  (`MRSD_PLUGIN_FOLDER=<prefix>/lib/mariadb-mrsd` for deb/rpm contents, whose defaults are
+  absolute; `MRSD_SETUP_DEFAULT_FOLDERS=1` for `--setup` without `-d`). Windows ZIP:
+  `<win-home>\mrsd-smoke-zip.sh` (no build-time DLL dirs on PATH).
 
 ## Phase 1 checklist
 - [x] 1.1 skeleton: layout, top-level CMake, `cmake/compat/` macro replacements
@@ -408,3 +433,17 @@ In the build tree the config must set `plugin_folder=<build>/plugin_output_direc
 - Docs installed to the doc dir (README.md, MRS_README.router, LICENSE, sample config).
 - macOS tar.gz verified: unpacked elsewhere, the smoke test (`MRSD_INSTALL=`) passes and
   the process loads only the bundled OpenSSL/ICU/libmysqlclient.
+
+### 2026-10-05: session 2, continued (Phase 4: Linux and Windows packages)
+- Linux tar.gz: bundled ELF libs get RUNPATH `$ORIGIN` (patchelf), otherwise their own
+  dependencies came from the system; smoke test incl. MRS scripts passes unpacked.
+- deb (SYSTEM layout): systemd unit, sysusers.d/tmpfiles.d, postinst/prerm/postrm;
+  Depends from dpkg-shlibdeps (libssl3t64, libicu78, ...); unpacked contents pass the smoke
+  test incl. MRS scripts. Not installed for real yet (no root on the VM).
+- `--setup` without `-d` (default folders) + `--user`; tested in an unpacked tarball.
+- Windows ZIP (with MSVC runtime, libmysql, OpenSSL, ICU): smoke test incl. MRS scripts
+  passes with no build-time DLL directories on PATH. MSI deferred.
+- Fedora VM added for rpm; build works, `cpack -G RPM` waits for `rpm-build`.
+- rpm (Fedora 44): Requires only system libraries (bundled ones excluded), rpm turns the
+  sysusers.d file into user()/group() provides; unpacked contents pass the smoke test incl.
+  MRS scripts.

@@ -83,6 +83,9 @@ class MrsdSetup {
   void connect();
   void check_mrs_metadata();
   void prepare_directory();
+  void prepare_system_paths();
+  void check_files_exist();
+  void set_owner();
   void load_existing_deployment();
   uint64_t register_instance();
   void store_developer(uint64_t router_id);
@@ -108,7 +111,8 @@ class MrsdSetup {
 
   // command line
   std::string server_uri_;
-  std::string directory_;
+  std::string directory_;  // empty: system deployment (default folders)
+  std::string user_;       // --user: owner of the created files (not Windows)
   std::string name_;
   std::string report_host_;
   std::string socket_;
@@ -131,6 +135,7 @@ class MrsdSetup {
   std::string rundir_;
   std::string datadir_;
   KeyringInfo keyring_info_{false};
+  std::vector<std::string> created_paths_;  // chowned with --user
   // accounts of an existing deployment (--force), passwords from its keyring
   bool reuse_metadata_account_{false};
   bool reuse_data_account_{false};

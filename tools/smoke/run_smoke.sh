@@ -106,22 +106,32 @@ if [ -n "${MRSD_INSTALL:-}" ]; then
   BIN="$MRSD_INSTALL/bin"
   # <program>-keyring is the keyring tool
   PROG=$(cd "$BIN" && ls | sed -n 's/-keyring\(\.exe\)\{0,1\}$//p' | head -1)
-  PLUGIN_OPTION=  # the installed default
+  # the installed default, unless the package is unpacked elsewhere than its
+  # absolute defaults (deb/rpm contents): MRSD_PLUGIN_FOLDER
+  PLUGIN_OPTION=${MRSD_PLUGIN_FOLDER:+--conf-set-option=DEFAULT.plugin_folder=$MRSD_PLUGIN_FOLDER}
 else
   PROG=$(sed -n 's/^#define MRSD_PROGRAM_NAME "\(.*\)"$/\1/p' "$MRSD_BUILD/router_config.h")
   BIN="$MRSD_BUILD/runtime_output_directory"
   PLUGIN_OPTION=--conf-set-option=DEFAULT.plugin_folder="$MRSD_BUILD/plugin_output_directory"
 fi
 DEPLOY="$WORK/mrsd"
+# MRSD_SETUP_DEFAULT_FOLDERS=1 (with MRSD_INSTALL): --setup without -d writes
+# to the package's default folders, and mrsd starts without -c
+DEPLOY_ARGS=(-d "$DEPLOY")
+START_ARGS=(-c "$DEPLOY/$PROG.conf")
+if [ "${MRSD_SETUP_DEFAULT_FOLDERS:-}" = 1 ]; then
+  DEPLOY_ARGS=()
+  START_ARGS=()
+fi
 # root has no password: the prompt reads an empty line
-echo | "$BIN/$PROG" --setup "root@127.0.0.1:$PORT" -d "$DEPLOY" \
+echo | "$BIN/$PROG" --setup "root@127.0.0.1:$PORT" ${DEPLOY_ARGS[@]+"${DEPLOY_ARGS[@]}"} \
   --jwt-secret 0123456789abcdef0123456789abcdef \
   ${PLUGIN_OPTION:+"$PLUGIN_OPTION"} \
   --conf-set-option=http_server.port="$HTTP_PORT" \
   --conf-set-option=http_server.ssl=0 \
   --conf-set-option=logger.level=debug
 
-"$BIN/$PROG" -c "$DEPLOY/$PROG.conf" > "$WORK/log/mrsd.stdout" 2>&1 &
+"$BIN/$PROG" ${START_ARGS[@]+"${START_ARGS[@]}"} > "$WORK/log/mrsd.stdout" 2>&1 &
 MRSD_PID=$!
 sleep 3
 

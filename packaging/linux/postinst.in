@@ -1,0 +1,35 @@
+#!/bin/sh
+# Copyright (c) 2026, MariaDB plc. GPL-2.0 (see LICENSE)
+#
+# deb postinst ($1: configure) and rpm %post ($1: 1 = install, 2 = upgrade):
+# service account and folders; the service is enabled after --setup.
+set -e
+
+prog=@MRSD_PROGRAM_NAME@
+
+if ! getent passwd "$prog" >/dev/null 2>&1; then
+  if command -v systemd-sysusers >/dev/null 2>&1; then
+    systemd-sysusers @CMAKE_INSTALL_PREFIX@/lib/sysusers.d/$prog.conf
+  else
+    nologin=$(command -v nologin || echo /bin/false)
+    useradd --system --user-group --no-create-home \
+      --home-dir @ROUTER_INSTALL_DATADIR@ --shell "$nologin" \
+      --comment "@MYSQL_ROUTER_NAME@" "$prog"
+  fi
+fi
+
+install -d -m 0755 @ROUTER_INSTALL_CONFIGDIR@
+if command -v systemd-tmpfiles >/dev/null 2>&1; then
+  systemd-tmpfiles --create @CMAKE_INSTALL_PREFIX@/lib/tmpfiles.d/$prog.conf || true
+else
+  install -d -m 0750 -o "$prog" -g "$prog" @ROUTER_INSTALL_DATADIR@ @ROUTER_INSTALL_LOGDIR@
+fi
+
+if [ -d /run/systemd/system ]; then
+  systemctl daemon-reload >/dev/null 2>&1 || true
+  # an upgrade restarts a running service
+  if systemctl is-active --quiet "$prog"; then
+    systemctl restart "$prog" || true
+  fi
+fi
+exit 0

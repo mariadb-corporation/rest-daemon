@@ -1,0 +1,12 @@
+#!/bin/sh
+# Copyright (c) 2026, MariaDB plc. GPL-2.0 (see LICENSE)
+#
+# deb postrm and rpm %postun: forget the removed unit. The configuration,
+# keyring and logs stay (remove @ROUTER_INSTALL_CONFIGDIR@,
+# @ROUTER_INSTALL_DATADIR@ and @ROUTER_INSTALL_LOGDIR@ by hand).
+set -e
+
+if [ -d /run/systemd/system ]; then
+  systemctl daemon-reload >/dev/null 2>&1 || true
+fi
+exit 0
