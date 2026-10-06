@@ -32,8 +32,13 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.24)
 # -DINSTALL_GIT_HOOKS=OFF. See cmake/git_hooks.cmake.
 INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/git_hooks.cmake)
 
-FILE(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" MRSD_VERSION LIMIT_COUNT 1)
-STRING(STRIP "${MRSD_VERSION}" MRSD_VERSION)
+# VERSION holds "<KEY> = <value>" entries; VERSION = x.y.z is required
+FILE(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" _version_lines
+  REGEX "^[ \t]*VERSION[ \t]*=")
+IF(NOT _version_lines MATCHES "=[ \t]*([0-9]+\\.[0-9]+\\.[0-9]+)[ \t]*$")
+  MESSAGE(FATAL_ERROR "VERSION: expected an entry 'VERSION = x.y.z'")
+ENDIF()
+SET(MRSD_VERSION "${CMAKE_MATCH_1}")
 
 # consumed by cmake/version.cmake
 SET(MYSQL_NO_DASH_VERSION "${MRSD_VERSION}")
@@ -45,6 +50,8 @@ SET(CMAKE_MODULE_PATH
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 INCLUDE(cmake/version.cmake)
+# program/product names, needed by the install layout (build_env.cmake)
+INCLUDE(cmake/settings.cmake)
 
 # The project keeps the upstream name for now: many CMake files and generated
 # headers refer to MySQLRouter_{SOURCE,BINARY}_DIR and MySQLRouter_VERSION.
@@ -116,14 +123,17 @@ ADD_SUBDIRECTORY(compat)
 # from here on: upstream router/CMakeLists.txt (trimmed)
 # ---------------------------------------------------------------------------
 SET(ROUTER_LICENSE_FILE "${CMAKE_SOURCE_DIR}/LICENSE.router")
-SET(ROUTER_README_FILE "${CMAKE_SOURCE_DIR}/README.router")
-SET(DOC_DESTINATION ".")
+SET(ROUTER_README_FILE "${CMAKE_SOURCE_DIR}/README.md")
 INSTALL(FILES
-  ${ROUTER_LICENSE_FILE}
-  ${ROUTER_README_FILE}
-  DESTINATION ${DOC_DESTINATION} COMPONENT Router OPTIONAL)
+  ${CMAKE_SOURCE_DIR}/README.md
+  ${CMAKE_SOURCE_DIR}/MRS_README.router
+  DESTINATION ${ROUTER_INSTALL_DOCDIR} COMPONENT Router)
+INSTALL(FILES ${ROUTER_LICENSE_FILE}
+  DESTINATION ${ROUTER_INSTALL_DOCDIR} RENAME LICENSE COMPONENT Router)
+INSTALL(FILES ${CMAKE_SOURCE_DIR}/packaging/sample.conf
+  DESTINATION ${ROUTER_INSTALL_DOCDIR}
+  RENAME ${MRSD_PROGRAM_NAME}.conf.sample COMPONENT Router)
 
-INCLUDE(cmake/settings.cmake)
 INCLUDE(cmake/set_rpath.cmake)
 INCLUDE(cmake/testing.cmake)  # does not enable testing
 INCLUDE(cmake/configure.cmake)
@@ -146,3 +156,46 @@ ADD_SUBDIRECTORY(src)
 IF(WITH_UNIT_TESTS)
   ADD_SUBDIRECTORY(tests)
 ENDIF()
+
+# ---------------------------------------------------------------------------
+# bundled runtime libraries (last install rule: runs after everything else is
+# installed). libmysqlclient always; OpenSSL and ICU in the STANDALONE layout
+# (tarballs, ZIP, MSI), from the system in deb/rpm.
+# ---------------------------------------------------------------------------
+# matched against the dependency as recorded (@rpath/..., absolute path, or a
+# bare DLL name), hence the (^|/) anchor
+SET(_bundle_regexes "(^|/)libmysqlclient[^/]*$" "(^|/)libmysql\\.dll$")
+SET(_bundle_dirs "${MYSQL_CLIENT_LIBRARY_DIR}")
+IF(INSTALL_LAYOUT STREQUAL "STANDALONE")
+  LIST(APPEND _bundle_regexes "(^|/)lib(ssl|crypto)[^/]*$" "(^|/)(lib)?icu[^/]*$")
+  FOREACH(_lib ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY}
+      ${ICU_UC_LIBRARY} ${ICU_I18N_LIBRARY} ${ICU_DATA_LIBRARY})
+    GET_FILENAME_COMPONENT(_dir "${_lib}" DIRECTORY)
+    LIST(APPEND _bundle_dirs "${_dir}")
+    IF(WIN32)
+      # the DLLs are in ../bin (vcpkg) or ../bin64 (ICU zip)
+      LIST(APPEND _bundle_dirs "${_dir}/../bin" "${_dir}/../bin64")
+    ENDIF()
+  ENDFOREACH()
+ENDIF()
+LIST(REMOVE_DUPLICATES _bundle_dirs)
+IF(WIN32)
+  SET(_bundle_dest "${ROUTER_INSTALL_BINDIR}")
+ELSE()
+  SET(_bundle_dest "${ROUTER_INSTALL_LIBDIR}")
+ENDIF()
+SET(_bundle_scan
+  "${ROUTER_INSTALL_BINDIR}" "${ROUTER_INSTALL_LIBDIR}"
+  "${ROUTER_INSTALL_PLUGINDIR}")
+LIST(REMOVE_DUPLICATES _bundle_scan)
+INSTALL(CODE "
+  set(BUNDLE_NAME_REGEXES \"${_bundle_regexes}\")
+  set(BUNDLE_SEARCH_DIRS \"${_bundle_dirs}\")
+  set(BUNDLE_DEST \"${_bundle_dest}\")
+  set(BUNDLE_SCAN_DIRS \"${_bundle_scan}\")
+  set(BUNDLE_AVOID_DIR \"${MYSQL_PACKAGE_DIR}\")
+  include(\"${CMAKE_SOURCE_DIR}/cmake/bundle_runtime_libraries.cmake\")
+  " COMPONENT Router)
+
+
+INCLUDE(cmake/packaging.cmake)

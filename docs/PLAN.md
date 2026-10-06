@@ -146,10 +146,17 @@ See [phase0-inventory.md](phase0-inventory.md). **Verdict: GO.** The kept code u
 - **Exit criteria:** a fresh install works via `mrsd --setup` alone on each OS.
 
 ### Phase 4: packaging and CI
-- Linux: deb/rpm (from `packaging/deb-in/deb_router.cmake` and the rpm specs), a systemd unit, a container image.
-- Windows: MSI (from `packaging/WiX/router`, new upgrade codes) and service installation.
-- macOS: pkg/tarball, dylib handling.
-- Ship the JIT library in `private/`.
+Decided 2026-10-05: CPack for all formats (not upstream's deb-in/rpm/WiX trees);
+formats deb + rpm, Linux tar.gz, Windows MSI + ZIP, macOS tar.gz; libmysqlclient and
+libjitexecutor always bundled, OpenSSL/ICU from the OS in deb/rpm and bundled in the
+other packages; vendor MariaDB plc; `VERSION` file with `VERSION = x.y.z` entries.
+1. Version + CPack metadata.
+2. Install layout: STANDALONE (tarballs, ZIP, MSI) and system (deb/rpm) layouts, names
+   derived from the program name (no `mysqlrouter` paths left).
+3. Bundled runtime libraries, rpath/install-name fixups.
+4. Linux and macOS tarballs, verified with `--setup` + smoke test from the unpacked tree.
+5. deb/rpm: systemd unit, service user, system-wide `--setup`.
+6. Windows ZIP + MSI (service installation option).
 - CI matrix: 3 OSes × JIT on/off × MySQL 9.x server: unit + component tests, MRS
   functional suite, smoke test. Last step of the whole work, once the final remote
   repository exists (it decides the CI system).

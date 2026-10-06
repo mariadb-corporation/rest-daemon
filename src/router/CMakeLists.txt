@@ -27,13 +27,7 @@ IF(WITH_UNIT_TESTS)
   ADD_SUBDIRECTORY(tests/)
 ENDIF()
 
-IF(ROUTER_INSTALL_DOCDIR)
-  INSTALL(FILES ${PROJECT_SOURCE_DIR}/doc/sample_mysqlrouter.conf
-          DESTINATION ${ROUTER_INSTALL_DOCDIR}
-          COMPONENT Router)
-  # we do not install the README, License and so on as we
-  # are part of the server-tree
-ENDIF()
+# mrsd: the documentation is installed by the top-level CMakeLists.txt
 
 
 # Install logging, runtime, config and data folders

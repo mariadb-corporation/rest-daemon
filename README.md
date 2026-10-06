@@ -79,8 +79,22 @@ In the build directory:
 - `plugin_output_directory/`: the plugins (`mysql_rest_service`,
   `http_server`, `jit_executor`, ...)
 
-The program name (`mariadb-mrsd`) and the product name are set in
-`cmake/settings.cmake`.
+The program name (`mariadb-mrsd`), the product name and the package metadata
+are set in `cmake/settings.cmake`, the version in `VERSION`.
+
+### Packages
+
+`cmake --build build --target package` (CPack) builds the packages of the
+configured layout. Build them without `WITH_UNIT_TESTS`.
+
+| `INSTALL_LAYOUT` | Packages | Layout |
+|---|---|---|
+| `STANDALONE` (default) | `.tar.gz` (Linux, macOS), `.zip` (Windows) | relocatable: `bin/`, `lib/` (plugins in `lib/mariadb-mrsd/`), `docs/`; the defaults are relative to the executable |
+| `SYSTEM` (with `-DCMAKE_INSTALL_PREFIX=/usr`) | `.deb`, `.rpm` | `/usr/bin`, `/usr/lib/mariadb-mrsd/` (plugins), `/usr/lib/mariadb-mrsd/private/` (libraries), `/etc/mariadb-mrsd`, `/var/lib/mariadb-mrsd`, `/var/log/mariadb-mrsd` |
+
+The packages bundle `libmysqlclient` (from `MYSQL_PACKAGE_DIR`) and the JIT
+executor library; the `STANDALONE` packages also bundle OpenSSL and ICU, which
+deb/rpm take from the system.
 
 ## Setting up a deployment
 

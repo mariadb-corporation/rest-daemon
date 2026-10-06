@@ -28,6 +28,9 @@
 #   MYSQLSH=<path to mysqlsh> SHELL_PLUGINS=<mysql-shell-plugins checkout> \
 #   tools/smoke/run_smoke.sh [workdir]
 #
+# MRSD_INSTALL=<installed or unpacked package> instead of MRSD_BUILD tests a
+# package (its bundled libraries and default plugin folder).
+#
 # SHELL_PLUGINS can also be a MySQL Shell package's lib/mysqlsh/plugins
 # (it bundles mrs_plugin/db_schema).
 #
@@ -39,7 +42,10 @@
 # libaio.so.1 -> /usr/lib/<arch>/libaio.so.1t64 symlink.
 set -euo pipefail
 
-MRSD_BUILD=${MRSD_BUILD:?set MRSD_BUILD}
+# MRSD_BUILD: a build directory, or MRSD_INSTALL: an installed/unpacked package
+if [ -z "${MRSD_INSTALL:-}" ]; then
+  MRSD_BUILD=${MRSD_BUILD:?set MRSD_BUILD or MRSD_INSTALL}
+fi
 MYSQL_PACKAGE_DIR=${MYSQL_PACKAGE_DIR:?set MYSQL_PACKAGE_DIR}
 MYSQLSH=${MYSQLSH:?set MYSQLSH}
 SHELL_PLUGINS=${SHELL_PLUGINS:?set SHELL_PLUGINS}
@@ -52,7 +58,8 @@ HTTP_PORT=${HTTP_PORT:-18080}
 if command -v cygpath >/dev/null 2>&1; then
   mkdir -p "$WORK"
   WORK=$(cygpath -m "$WORK")
-  MRSD_BUILD=$(cygpath -m "$MRSD_BUILD")
+  [ -n "${MRSD_BUILD:-}" ] && MRSD_BUILD=$(cygpath -m "$MRSD_BUILD")
+  [ -n "${MRSD_INSTALL:-}" ] && MRSD_INSTALL=$(cygpath -m "$MRSD_INSTALL")
   MYSQL_PACKAGE_DIR=$(cygpath -m "$MYSQL_PACKAGE_DIR")
   SHELL_PLUGINS=$(cygpath -m "$SHELL_PLUGINS")
   [ -n "${MRS_SCRIPTS_DIR:-}" ] && MRS_SCRIPTS_DIR=$(cygpath -m "$MRS_SCRIPTS_DIR")
@@ -95,13 +102,21 @@ mysql_cli -e "
 
 # --- mrsd --setup ------------------------------------------------------------
 # the program name is set in cmake/settings.cmake
-PROG=$(sed -n 's/^#define MRSD_PROGRAM_NAME "\(.*\)"$/\1/p' "$MRSD_BUILD/router_config.h")
-BIN="$MRSD_BUILD/runtime_output_directory"
+if [ -n "${MRSD_INSTALL:-}" ]; then
+  BIN="$MRSD_INSTALL/bin"
+  # <program>-keyring is the keyring tool
+  PROG=$(cd "$BIN" && ls | sed -n 's/-keyring\(\.exe\)\{0,1\}$//p' | head -1)
+  PLUGIN_OPTION=  # the installed default
+else
+  PROG=$(sed -n 's/^#define MRSD_PROGRAM_NAME "\(.*\)"$/\1/p' "$MRSD_BUILD/router_config.h")
+  BIN="$MRSD_BUILD/runtime_output_directory"
+  PLUGIN_OPTION=--conf-set-option=DEFAULT.plugin_folder="$MRSD_BUILD/plugin_output_directory"
+fi
 DEPLOY="$WORK/mrsd"
 # root has no password: the prompt reads an empty line
 echo | "$BIN/$PROG" --setup "root@127.0.0.1:$PORT" -d "$DEPLOY" \
   --jwt-secret 0123456789abcdef0123456789abcdef \
-  --conf-set-option=DEFAULT.plugin_folder="$MRSD_BUILD/plugin_output_directory" \
+  ${PLUGIN_OPTION:+"$PLUGIN_OPTION"} \
   --conf-set-option=http_server.port="$HTTP_PORT" \
   --conf-set-option=http_server.ssl=0 \
   --conf-set-option=logger.level=debug

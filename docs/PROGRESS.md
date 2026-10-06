@@ -11,7 +11,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 | 1: new repo that builds | ✅ done 2026-09-30: macOS, Linux, Windows (x64), with JIT; smoke test incl. MRS scripts passes on all three |
 | 2: tests and ecosystem validation | ✅ done 2026-10-05: unit + component tests (116/116) and MRS functional suite pass on Linux, macOS, Windows; CI moved to the end (Phase 4) |
 | 3: MRS setup and cleanup | ✅ done 2026-10-05: branding (`mariadb-mrsd`), `--setup`, routing/cluster cleanup; tests pass on all three platforms |
-| 4: packaging and CI | ⏳ not started; CI is the last step, once the final remote exists |
+| 4: packaging and CI | 🟡 started: VERSION format, install layouts, bundling, macOS tarball done; next: Linux tarball, deb/rpm, Windows ZIP/MSI; CI last |
 
 ## How to build and test (macOS)
 
@@ -393,3 +393,18 @@ In the build tree the config must set `plugin_folder=<build>/plugin_output_direc
 - After the cleanup: macOS 116 passed/5 skipped, Linux 117/4, Windows 116/5 (each + 1
   xpassed); unit + component 113/113 and smoke test (incl. MRS scripts) on all three.
   Phase 3 done.
+
+### 2026-10-05: session 2, continued (Phase 4: layouts, bundling, macOS tarball)
+- Decisions: CPack for all formats; deb + rpm, Linux tar.gz, Windows MSI + ZIP, macOS
+  tar.gz; libmysqlclient + JIT always bundled, OpenSSL/ICU bundled except in deb/rpm;
+  vendor MariaDB plc (maintainer address still a placeholder, `MRSD_PACKAGE_CONTACT`);
+  `VERSION` file with `VERSION = 26.10.0`.
+- `cmake/install_layout.cmake`: STANDALONE and SYSTEM layouts from the program name;
+  `cmake/paths.cmake` defaults are plain variables (no stale cache), no `mysqlrouter`.
+- `cmake/bundle_runtime_libraries.cmake` (last install rule): copies the bundled libs
+  (found with file(GET_RUNTIME_DEPENDENCIES); the MySQL package's private OpenSSL loses
+  to the build's), on macOS rewrites references to @rpath, drops absolute rpaths and
+  re-signs. `CMAKE_INSTALL_RPATH_USE_LINK_PATH` off.
+- Docs installed to the doc dir (README.md, MRS_README.router, LICENSE, sample config).
+- macOS tar.gz verified: unpacked elsewhere, the smoke test (`MRSD_INSTALL=`) passes and
+  the process loads only the bundled OpenSSL/ICU/libmysqlclient.

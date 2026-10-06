@@ -1,17 +1,8 @@
-# Copyright (c) 2015, 2026, Oracle and/or its affiliates.
 # Copyright (c) 2026, MariaDB plc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0,
 # as published by the Free Software Foundation.
-#
-# This program is designed to work with certain software (including
-# but not limited to OpenSSL) that is licensed under separate terms,
-# as designated in a particular file or component or in included license
-# documentation.  The authors of MySQL hereby grant you an additional
-# permission to link the program and your derivative works with the
-# separately licensed software that they have either included with
-# the program or referenced in the documentation.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -22,78 +13,46 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+# CPack packages ("cmake --build <dir> --target package"):
+#   STANDALONE layout: tar.gz (Linux, macOS), ZIP + MSI (Windows)
+#   SYSTEM layout:     deb + rpm (Linux)
+# Names and metadata come from cmake/settings.cmake; the version from VERSION.
 
+SET(CPACK_PACKAGE_NAME "${MRSD_PROGRAM_NAME}")
+SET(CPACK_PACKAGE_VENDOR "${MRSD_PACKAGE_VENDOR}")
+SET(CPACK_PACKAGE_CONTACT "${MRSD_PACKAGE_CONTACT}")
+SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${MRSD_PACKAGE_SUMMARY}")
+SET(CPACK_PACKAGE_DESCRIPTION "${MRSD_PACKAGE_DESCRIPTION}")
+SET(CPACK_PACKAGE_HOMEPAGE_URL "${MRSD_PACKAGE_HOMEPAGE}")
+SET(CPACK_PACKAGE_VERSION "${MRSD_VERSION}")
+SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.router")
+SET(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
+SET(CPACK_STRIP_FILES OFF)  # keep symbols for the stack traces
+
+# platform part of the file names: linux-<arch>, macos-<arch>, windows-x64
 IF(WIN32)
-  SET(CPACK_ROUTER_PACKAGE_NAME "MySQL Router")
+  SET(_platform "windows-x64")
+ELSEIF(APPLE)
+  SET(_platform "macos-${MRSD_TARGET_ARCH}")
 ELSE()
-  SET(CPACK_ROUTER_PACKAGE_NAME "mysql-router")
+  SET(_platform "linux-${MRSD_TARGET_ARCH}")
 ENDIF()
+SET(CPACK_PACKAGE_FILE_NAME
+  "${MRSD_PROGRAM_NAME}-${MRSD_VERSION}-${_platform}")
 
-SET(CPACK_ROUTER_PACKAGE_VERSION ${VERSION})
-SET(CPACK_ROUTER__PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
-SET(CPACK_ROUTER__PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
-SET(CPACK_ROUTER__PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
-
-SET(EXTRA_NAME_SUFFIX "" CACHE STRING "Extra text in package name")
-
-IF(WIN32)
-  IF(SHORT_PRODUCT_TAG)
-    SET(PRODUCT_TAG "-${SHORT_PRODUCT_TAG}")
-  ELSEIF(MYSQL_SERVER_SUFFIX)
-    SET(PRODUCT_TAG "${MYSQL_SERVER_SUFFIX}")  # Already has a leading dash
-  ELSE()
-    SET(PRODUCT_TAG)
-  ENDIF()
-  SET(CPACK_SYSTEM_NAME "winx64")
-  SET(CPACK_ROUTER_PACKAGE_FILE_NAME "mysql-router${PRODUCT_TAG}${EXTRA_NAME_SUFFIX}-${CPACK_ROUTER_PACKAGE_VERSION}${PROJECT_PACKAGE_EXTRAS}-${CPACK_SYSTEM_NAME}")
+IF(INSTALL_LAYOUT STREQUAL "SYSTEM")
+  SET(CPACK_GENERATOR "DEB;RPM")
+  SET(CPACK_PACKAGING_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
+ELSEIF(WIN32)
+  SET(CPACK_GENERATOR "ZIP")
+ELSE()
+  SET(CPACK_GENERATOR "TGZ")
 ENDIF()
+# the archives unpack into <name>-<version>-<platform>/
+SET(CPACK_INCLUDE_TOPLEVEL_DIRECTORY ON)
 
-#
-# Source Distribution
-#
-SET(CPACK_ROUTER_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.router")
-SET(CPACK_ROUTER_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.router")
-SET(CPACK_SOURCE_GENERATOR "ZIP;TGZ")
-SET(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}${PROJECT_PACKAGE_EXTRAS}")
-
-# We ignore all files in the root of the repository and then
-# exclude from the list which we want to keep.
-FILE(GLOB cpack_source_ignore_files "${PROJECT_SOURCE_DIR}/*")
-SET(src_dir ${PROJECT_SOURCE_DIR})
-SET(source_include
-  "${src_dir}/cmake"
-  "${src_dir}/include"
-  "${src_dir}/doc"
-  "${src_dir}/ext"
-  "${src_dir}/src"
-  "${src_dir}/tests"
-  "${src_dir}/tools"
-  "${src_dir}/packaging"
-  "${src_dir}/CMakeLists.txt"
-  "${src_dir}/config.h.in"
-  "${src_dir}/README.router"
-  "${src_dir}/LICENSE.router")
-LIST(REMOVE_ITEM cpack_source_ignore_files ${source_include})
-LIST(APPEND cpack_source_ignore_files "${src_dir}/harness/.gitignore")
-
-# We need to escape the dots
-STRING(REPLACE "." "\\\\." cpack_source_ignore_files "${cpack_source_ignore_files}")
-
-SET(CPACK_SOURCE_IGNORE_FILES "${cpack_source_ignore_files}")
+SET(CPACK_SOURCE_GENERATOR "TGZ")
+SET(CPACK_SOURCE_PACKAGE_FILE_NAME "${MRSD_PROGRAM_NAME}-${MRSD_VERSION}-src")
+SET(CPACK_SOURCE_IGNORE_FILES "/\\\\.git/" "/build[^/]*/" "__pycache__")
 
 INCLUDE(CPack)
-
-#
-# RPM-based
-#
-# FIXME: wrong folder structure (is it needed?)
-#IF(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-#  ADD_SUBDIRECTORY("${PROJECT_SOURCE_DIR}/packaging/rpm-oel")
-#ENDIF()
-
-#
-# MSI for Windows
-#
-IF(WIN32)
-  ADD_SUBDIRECTORY("${CMAKE_SOURCE_DIR}/packaging/WiX/router" packaging)
-ENDIF()
