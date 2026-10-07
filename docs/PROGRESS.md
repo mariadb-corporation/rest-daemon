@@ -109,9 +109,12 @@ ninja -C build
 - Smoke test: Git Bash script `<win-home>\mrsd-smoke.sh` (DLL dirs on PATH; MySQL Shell
   26.7.0 Windows zip in Downloads, whose bundled `lib/mysqlsh/plugins` serves as SHELL_PLUGINS;
   built mrs_scripts in `<win-home>\mrsd-deps\mrs_scripts`)
-- Source sync from the Mac: commits exported with `git format-patch` from `refs/win/synced..main`,
-  served briefly over HTTP on <host-ip>, applied with `git am` (the VM's sshd has no SFTP
-  and stdin streaming to PowerShell never sees EOF)
+- Source sync from the Mac: `tools/vm/win_sync.sh` (commits since `refs/win/synced`, via
+  `git format-patch`, served briefly over HTTP on <host-ip>, applied with `git am`: the
+  VM's sshd has no SFTP and stdin streaming to PowerShell never sees EOF);
+  `tools/vm/win_wip.sh` copies uncommitted changes. `refs/win/synced` is local to the Mac
+  clone: if it's missing, set it to the commit the Windows clone has (`git log -1` there).
+- Run PowerShell on the VM: `tools/vm/win.sh <<'PS' ... PS` (quoted heredoc).
 
 - MRS functional suite: `powershell -File <win-home>\mrsd-pytest.ps1 -q [-k <test>]`
   (venv `<win-home>\mrsd-venv` from the ARM64 Python 3.14; puts the DLL dirs and Git's
@@ -235,9 +238,18 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
   `<dev>/rest-daemon` (moved there 2026-10-07 from `<dev>/mysql/mrsd`).
 
 ## Next steps
-1. Phase 4: packaging (deb/rpm + systemd unit, MSI + service, macOS pkg/tarball; install
-   layout incl. the remaining `mysqlrouter` paths; system-wide `--setup`).
-2. CI, last: the remote is GitHub, so GitHub Actions (needs runners/VMs for the three OSes).
+1. Open items from 2026-10-07 (the session that moved to this repo):
+   - Rename (`mariadb-restd`): Ubuntu passed (ctest 113/113, deb, smoke incl. MRS scripts,
+     MRS suite 117 passed/4 skipped/1 xpassed); Windows passed (ctest 113/113, ZIP smoke
+     incl. MRS scripts with a clean PATH, MRS suite 116 passed/5 skipped/1 xpassed);
+     Fedora rpm built; macOS ctest, setup tests and smoke incl. MRS scripts.
+   - The VM clones were force-updated to the rewritten history (attribution trailers
+     removed); if a push is rejected, `git push --force <vm|fedora> main`.
+   - Real `apt install` / `dnf install` tests of the deb/rpm (need root on the VMs).
+   - The VMs still build the JIT library in their shell checkouts; can switch to
+     `ext/polyglot` of this repo.
+2. Push to GitHub: not yet (wait for the user's go).
+3. Windows MSI (deferred), CI with GitHub Actions (last).
 
 ## Session log
 
