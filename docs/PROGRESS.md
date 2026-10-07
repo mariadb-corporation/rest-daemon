@@ -19,7 +19,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 cd <dev>/rest-daemon
 cmake -S . -B build-jit -G Ninja -DCMAKE_BUILD_TYPE=Debug \
   -DMYSQL_PACKAGE_DIR=<dev>/mysql/mysql-26.7.0-macos15-arm64 \
-  -DMRS_JIT_EXECUTOR_LIB=<dev>/workflow-test/ext/polyglot/polyglot-nativeapi-native-library/target
+  -DMRS_JIT_EXECUTOR_LIB=$PWD/ext/polyglot/polyglot-nativeapi-native-library/target
 ninja -C build-jit
 
 MRSD_BUILD=$PWD/build-jit \
@@ -225,7 +225,9 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
 - None blocking.
 
 ## Resolved questions
-- JIT: `-DMRS_JIT_EXECUTOR_LIB=<dir>` (lib + headers). Local: `<dev>/workflow-test/ext/polyglot/polyglot-nativeapi-native-library/target`.
+- JIT: `-DMRS_JIT_EXECUTOR_LIB=<dir>` (lib + headers), built from `ext/polyglot` in this repo
+  (copied from the MySQL Shell sources 2026-10-07; GraalVM 23.0.1 in `<dev>/graalvm-community-openjdk-23.0.1+11.1`,
+  sources in `<dev>/graal-jdk-23.0.1`). The VMs still build it in their shell checkouts.
 - Client library: from a MySQL server package, `-DMYSQL_PACKAGE_DIR=<path>`. Local: `<dev>/mysql/mysql-26.7.0-macos15-arm64`.
 - ICU: keep it (performance, Bug#36797250).
 - Copyright notices: mariadb-shell recipe, `.githooks/pre-commit` linked by the configure step.
@@ -455,3 +457,9 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
 - Code moved to the final repository: `github.com/mariadb-corporation/rest-daemon`
   (private, was empty), clone `<dev>/rest-daemon` with the full local
   history; remotes `vm`/`fedora` for the VM clones, copyright hook linked.
+- `ext/polyglot` (JIT executor library build) copied verbatim from the MySQL Shell
+  sources (7 files, unchanged since 2025-03); build outputs ignored, excluded from the
+  copyright hook. The macOS library is rebuilt from it (the old build dir was removed).
+- macOS: rest-daemon built against it (`build-test`), smoke test incl. MRS scripts passes
+  (first macOS run with scripts; mrs_scripts copied from the Ubuntu VM to
+  `<dev>/mysql/mrs_scripts`).

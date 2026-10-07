@@ -256,3 +256,6 @@ mrsd/
   the local history (all commits of `<dev>/mysql/mrsd`) moved to the clone
   in `<dev>/rest-daemon`. The VM clones (`<dev>/mrsd` on the Ubuntu and
   Fedora VMs, `<win-home>\mrsd` on Windows) stay as build/test clones.
+- 2026-10-07: the JIT executor library build (`ext/polyglot` of the MySQL Shell sources)
+  is part of this repository, same path, copied verbatim; `MRS_JIT_EXECUTOR_LIB` stays the
+  way to point the build at its output.

@@ -13,6 +13,9 @@ extra/rapidjson/
 extra/libcno/
 extra/googletest/
 extra/duktape/
+# JIT executor library build, copied verbatim from the MySQL Shell sources
+# (ext/polyglot); the patch must stay byte-identical
+ext/polyglot/
 
 # golden files of the MRS functional tests: compared byte for byte
 tests/mrs/r/

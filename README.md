@@ -25,8 +25,8 @@ bootstrap and X protocol. It is built against a stock MySQL client library.
   `mysqld`
 - OpenSSL 3 and ICU (system packages on Linux/macOS; on Windows, e.g. OpenSSL
   from vcpkg and the official ICU zip)
-- optional: a **JIT executor library** (`libjitexecutor` built from the
-  GraalVM polyglot sources, plus its headers), needed for MRS scripts
+- optional: the **JIT executor library** (`libjitexecutor` and its headers),
+  needed for MRS scripts; built from `ext/polyglot` (below)
 
 ### CMake options
 
@@ -39,12 +39,28 @@ bootstrap and X protocol. It is built against a stock MySQL client library.
 | `OPENSSL_ROOT_DIR`, `ICU_ROOT` | where to find OpenSSL / ICU, if not in a default location |
 | `INSTALL_GIT_HOOKS` | link the hooks in `.githooks/` into the clone at configure time (`ON`) |
 
+### JIT executor library
+
+`ext/polyglot` builds `libjitexecutor` (the GraalVM Polyglot Native API with
+the patch in `polyglot-nativeapi/patches`) into
+`ext/polyglot/polyglot-nativeapi-native-library/target`, the directory to pass
+as `MRS_JIT_EXECUTOR_LIB`. It needs GraalVM 23.0.1, its source code and Maven:
+
+```sh
+cd ext/polyglot
+JAVA_HOME=/path/to/graalvm-community-openjdk-23.0.1/Home \
+GRAALJDK_ROOT=/path/to/graal-jdk-23.0.1 \
+PATH=$JAVA_HOME/bin:$PATH mvn package
+```
+
+On Windows, run it from a `vcvars64.bat` environment; see `ext/polyglot/README.txt`.
+
 ### Linux / macOS
 
 ```sh
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DMYSQL_PACKAGE_DIR=/path/to/mysql-<version>-<platform> \
-  -DMRS_JIT_EXECUTOR_LIB=/path/to/polyglot-nativeapi-native-library/target
+  -DMRS_JIT_EXECUTOR_LIB=$PWD/ext/polyglot/polyglot-nativeapi-native-library/target
 cmake --build build
 ```
 
@@ -61,7 +77,7 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ^
   -DMYSQL_PACKAGE_DIR=C:\path\to\mysql-<version>-winx64 ^
   -DOPENSSL_ROOT_DIR=C:\path\to\vcpkg\installed\x64-windows ^
   -DICU_ROOT=C:\path\to\icu ^
-  -DMRS_JIT_EXECUTOR_LIB=C:\path\to\polyglot-nativeapi-native-library\target
+  -DMRS_JIT_EXECUTOR_LIB=%CD%\ext\polyglot\polyglot-nativeapi-native-library\target
 cmake --build build
 ```
 
@@ -255,6 +271,7 @@ it is served; see the script for its parameters.
 | `compat/` | replacements for MySQL client library internals the router code used |
 | `cmake/compat/` | the parts of the MySQL server's build system the router CMake files expect |
 | `extra/` | vendored code: rapidjson, libcno, googletest, duktape, MySQL server headers |
+| `ext/polyglot/` | Maven build of the JIT executor library (from the MySQL Shell sources) |
 | `tests/` | component tests, test helpers, MRS functional tests (`tests/mrs`), test data |
 | `tools/` | smoke test, dependency analysis scripts |
 | `docs/` | plan, progress log, dependency inventory |

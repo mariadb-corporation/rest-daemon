@@ -2,3 +2,8 @@ build/
 build-*/
 __pycache__/
 *.pyc
+# JIT executor library build (ext/polyglot, mvn package): outputs and the
+# GraalVM sources copied in and patched by the build
+ext/polyglot/**/target/
+ext/polyglot/polyglot-nativeapi/src/main/java/org/
+ext/polyglot/polyglot-nativeapi/src/main/resources/
