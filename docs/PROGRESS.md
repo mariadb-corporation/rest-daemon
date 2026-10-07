@@ -10,13 +10,13 @@ tick tasks, add a session entry, and rewrite "Next steps".
 | 0: dependency inventory | ✅ done 2026-09-30, verdict GO ([phase0-inventory.md](phase0-inventory.md)) |
 | 1: new repo that builds | ✅ done 2026-09-30: macOS, Linux, Windows (x64), with JIT; smoke test incl. MRS scripts passes on all three |
 | 2: tests and ecosystem validation | ✅ done 2026-10-05: unit + component tests (116/116) and MRS functional suite pass on Linux, macOS, Windows; CI moved to the end (Phase 4) |
-| 3: MRS setup and cleanup | ✅ done 2026-10-05: branding (`mariadb-mrsd`), `--setup`, routing/cluster cleanup; tests pass on all three platforms |
+| 3: MRS setup and cleanup | ✅ done 2026-10-05: branding (`mariadb-restd`), `--setup`, routing/cluster cleanup; tests pass on all three platforms |
 | 4: packaging and CI | 🟡 tar.gz (Linux, macOS), deb, rpm, Windows ZIP done and verified (unpacked); real deb/rpm installs need root; MSI deferred; CI last |
 
 ## How to build and test (macOS)
 
 ```sh
-cd <dev>/mysql/mrsd
+cd <dev>/rest-daemon
 cmake -S . -B build-jit -G Ninja -DCMAKE_BUILD_TYPE=Debug \
   -DMYSQL_PACKAGE_DIR=<dev>/mysql/mysql-26.7.0-macos15-arm64 \
   -DMRS_JIT_EXECUTOR_LIB=<dev>/workflow-test/ext/polyglot/polyglot-nativeapi-native-library/target
@@ -177,7 +177,7 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
   in the `build` dir). SYSTEM (`-DINSTALL_LAYOUT=SYSTEM -DCMAKE_INSTALL_PREFIX=/usr`):
   `cpack -G DEB` (Ubuntu VM, `build-sys`), `cpack -G RPM` (Fedora VM).
 - Verify an unpacked package with the smoke test: `MRSD_INSTALL=<unpacked prefix>`
-  (`MRSD_PLUGIN_FOLDER=<prefix>/lib/mariadb-mrsd` for deb/rpm contents, whose defaults are
+  (`MRSD_PLUGIN_FOLDER=<prefix>/lib/mariadb-restd` for deb/rpm contents, whose defaults are
   absolute; `MRSD_SETUP_DEFAULT_FOLDERS=1` for `--setup` without `-d`). Windows ZIP:
   `<win-home>\mrsd-smoke-zip.sh` (no build-time DLL dirs on PATH).
 
@@ -214,7 +214,7 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
 - [x] CI: moved to the end of the work (Phase 4), waits for the final remote
 
 ## Phase 3 checklist
-- [x] branding: `mariadb-mrsd`, "MariaDB REST Service Daemon" (names in `cmake/settings.cmake`)
+- [x] branding: `mariadb-restd`, "MariaDB REST Service Daemon" (names in `cmake/settings.cmake`)
 - [x] `--setup` (directory deployment), tests `setup_mrs_*`, smoke test uses it
 - [x] `--setup` verified on all three platforms (MRS suite, smoke test incl. MRS scripts):
       macOS 116 passed/5 skipped, Linux 117/4, Windows 116/5 (each + 1 xpassed); unit +
@@ -229,12 +229,13 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
 - Client library: from a MySQL server package, `-DMYSQL_PACKAGE_DIR=<path>`. Local: `<dev>/mysql/mysql-26.7.0-macos15-arm64`.
 - ICU: keep it (performance, Bug#36797250).
 - Copyright notices: mariadb-shell recipe, `.githooks/pre-commit` linked by the configure step.
-- Repository: local git repo in `<dev>/mysql/mrsd`, moved to the final remote later.
+- Repository: `github.com/mariadb-corporation/rest-daemon` (private), local clone
+  `<dev>/rest-daemon` (moved there 2026-10-07 from `<dev>/mysql/mrsd`).
 
 ## Next steps
 1. Phase 4: packaging (deb/rpm + systemd unit, MSI + service, macOS pkg/tarball; install
    layout incl. the remaining `mysqlrouter` paths; system-wide `--setup`).
-2. CI, last, once the final remote exists.
+2. CI, last: the remote is GitHub, so GitHub Actions (needs runners/VMs for the three OSes).
 
 ## Session log
 
@@ -447,3 +448,10 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
 - rpm (Fedora 44): Requires only system libraries (bundled ones excluded), rpm turns the
   sysusers.d file into user()/group() provides; unpacked contents pass the smoke test incl.
   MRS scripts.
+
+### 2026-10-07: session 3 (rename to mariadb-restd)
+- `MRSD_PROGRAM_NAME` = `mariadb-restd` (cmake/settings.cmake); tests, README, sample config
+  and docs updated; entries above dated before 2026-10-07 keep the old name.
+- Code moved to the final repository: `github.com/mariadb-corporation/rest-daemon`
+  (private, was empty), clone `<dev>/rest-daemon` with the full local
+  history; remotes `vm`/`fedora` for the VM clones, copyright hook linked.

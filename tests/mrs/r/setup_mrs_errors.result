@@ -10,23 +10,23 @@ Error: --master-key-reader and --master-key-writer must be used together
 CREATE USER setup_admin IDENTIFIED BY 'pass';
 GRANT ALL ON *.* TO setup_admin WITH GRANT OPTION;
 # wrong password
-# Setting up mariadb-mrsd in 'DIRECTORY'
+# Setting up mariadb-restd in 'DIRECTORY'
 
 Error: Unable to connect to the MySQL server at '127.0.0.1:PORT': Error connecting to MySQL server at 127.0.0.1:PORT: Access denied for user 'setup_admin'@HOST (using password: YES) (1045)
 # no MRS metadata on the server
-# Setting up mariadb-mrsd in 'DIRECTORY'
+# Setting up mariadb-restd in 'DIRECTORY'
 
 - Checking the MRS metadata
 Error: The MRS metadata schema (mysql_rest_service_metadata) was not found on the MySQL server. Create it first, e.g. with MySQL Shell (\sql CONFIGURE REST METADATA).
 # MySQL Rest Service schema created.
 # the directory has other files
-# Setting up mariadb-mrsd in 'DIRECTORY'
+# Setting up mariadb-restd in 'DIRECTORY'
 
 - Checking the MRS metadata
 Error: Directory 'DIRECTORY' already contains files
 # a failed setup is rolled back: here the keyring step fails, after
 # the account was created
-# Setting up mariadb-mrsd in 'DIRECTORY'
+# Setting up mariadb-restd in 'DIRECTORY'
 
 - Checking the MRS metadata
 - Registering the instance in the MRS metadata
@@ -36,18 +36,18 @@ Error: Directory 'DIRECTORY' already contains files
 FATAL ERROR ENCOUNTERED, attempting to undo new accounts that were created
 - New accounts cleaned up successfully
 Error: Could not read the master key with no_such_command_mrsd
-select count(*) from mysql.user where user like 'mariadb\_mrsd%';
+select count(*) from mysql.user where user like 'mariadb\_restd%';
 count(*)
 0
 # a deployment
 # it exists already
-# Setting up mariadb-mrsd in 'DIRECTORY'
+# Setting up mariadb-restd in 'DIRECTORY'
 
 - Checking the MRS metadata
-Error: 'DIRECTORY' already contains mariadb-mrsd.conf; use --force to overwrite it
+Error: 'DIRECTORY' already contains mariadb-restd.conf; use --force to overwrite it
 # --force: overwrites the configuration, backs it up and reuses the
 # instance, the account and the JWT secret of the existing deployment
-# Setting up mariadb-mrsd in 'DIRECTORY'
+# Setting up mariadb-restd in 'DIRECTORY'
 
 - Checking the MRS metadata
 - Reusing the account(s) of the existing configuration
@@ -55,10 +55,10 @@ Error: 'DIRECTORY' already contains mariadb-mrsd.conf; use --force to overwrite 
 - Creating the MRS account(s) if needed
 - Using the existing TLS certificate in 'DIRECTORY/data'
 - Storing the account password(s) and the JWT secret in the keyring
-- Creating configuration DIRECTORY/mariadb-mrsd.conf
-- Existing configuration backed up to DIRECTORY/mariadb-mrsd.conf.bak
+- Creating configuration DIRECTORY/mariadb-restd.conf
+- Existing configuration backed up to DIRECTORY/mariadb-restd.conf.bak
 
-# mariadb-mrsd 'HOSTNAME:8443' configured for the MySQL server at '127.0.0.1:PORT'
+# mariadb-restd 'HOSTNAME:8443' configured for the MySQL server at '127.0.0.1:PORT'
 
 Start it with
 
@@ -66,7 +66,7 @@ Start it with
 
 or
 
-    mariadb-mrsd -c DIRECTORY/mariadb-mrsd.conf
+    mariadb-restd -c DIRECTORY/mariadb-restd.conf
 
 The MySQL REST Service can then be reached at
 

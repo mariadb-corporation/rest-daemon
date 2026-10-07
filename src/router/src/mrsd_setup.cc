@@ -864,7 +864,7 @@ void MrsdSetup::create_accounts(uint64_t router_id) {
   if (reuse_metadata_account_) {
     // password from the existing keyring
   } else if (metadata_account_.user.empty()) {
-    // mariadb-mrsd -> mariadb_mrsd<router_id>_<random>
+    // mariadb-restd -> mariadb_restd<router_id>_<random>
     std::string prefix = MRSD_PROGRAM_NAME;
     std::replace(prefix.begin(), prefix.end(), '-', '_');
     metadata_account_.user = generate_username(prefix, router_id);

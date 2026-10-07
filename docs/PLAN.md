@@ -30,7 +30,7 @@ MRS metadata schema and queries, MariaDB-aware destination providers).
 | Platforms | **Linux, Windows, macOS** |
 | Upstream sync | **None.** Directory layout may be changed freely |
 | Tests | Keep the GoogleTest/CTest suites; port the MRS-relevant mtr tests to gtest; no mtr |
-| Source repo location | `<dev>/mysql/mrsd` |
+| Source repo location | `https://github.com/mariadb-corporation/rest-daemon` (private), local clone `<dev>/rest-daemon` |
 
 ## Guiding principles
 
@@ -128,14 +128,14 @@ See [phase0-inventory.md](phase0-inventory.md). **Verdict: GO.** The kept code u
   auth apps, scripts).
 
 ### Phase 3: MRS-specific setup and cleanup ✅ done (2026-10-05)
-- ✅ Branding (2026-10-05): program `mariadb-mrsd` (+ `-keyring`, `-passwd`,
+- ✅ Branding (2026-10-05): program `mariadb-restd` (+ `-keyring`, `-passwd`,
   `-plugin-info`), product name "MariaDB REST Service Daemon" (version line, logs,
   Windows service/event log, REST API title, MRS metadata `product_name`), default
-  `mariadb-mrsd.conf` / `mariadb-mrsd.log`. Both names are set only in
+  `mariadb-restd.conf` / `mariadb-restd.log`. Both names are set only in
   `cmake/settings.cmake`. Config section names and log domains are kept (router-style
   configs stay valid). Install layout (`lib/mysqlrouter`, `/var/lib/mysqlrouter`,
   `C:\ProgramData\MySQL\MySQL Router`) is renamed with packaging (Phase 4).
-- ✅ `mariadb-mrsd --setup <server URI> -d <dir>` (2026-10-05): from `BootstrapConfigurator::configure_mrs()`
+- ✅ `mariadb-restd --setup <server URI> -d <dir>` (2026-10-05): from `BootstrapConfigurator::configure_mrs()`
   (check_mrs_metadata, register_mrs_router_instance, create_mrs_users, keyring,
   config writing) against a single standalone server; no router account and no routing
   sections. Options without the `mrs-` prefix: `--metadata-account`, `--data-account`,
@@ -248,3 +248,11 @@ mrsd/
   `setup_mrs_errors`; the smoke test configures mrsd with `--setup`.
 - 2026-10-05: Windows MSI deferred (no WiX on the build VM); ZIP only for now. rpm
   packages are built and tested on a Fedora VM (<fedora-vm-ip>).
+- 2026-10-07: program renamed `mariadb-mrsd` -> `mariadb-restd` (executables, config/log/key
+  file names, service and service account, package names, generated MRS account prefix
+  `mariadb_restd`). Product name unchanged. Internal identifiers (`MRSD_*` CMake variables,
+  `MrsdSetup`, the repository name) are unchanged.
+- 2026-10-07: final repository: `github.com/mariadb-corporation/rest-daemon` (private);
+  the local history (all commits of `<dev>/mysql/mrsd`) moved to the clone
+  in `<dev>/rest-daemon`. The VM clones (`<dev>/mrsd` on the Ubuntu and
+  Fedora VMs, `<win-home>\mrsd` on Windows) stay as build/test clones.

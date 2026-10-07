@@ -33,7 +33,7 @@
 #include "mysqlrouter/uri.h"
 
 /**
- * `mariadb-mrsd --setup`: prepares a self-contained deployment directory for
+ * `mariadb-restd --setup`: prepares a self-contained deployment directory for
  * MRS against a single MySQL server.
  *
  * Follows the MRS part of MySQL Router's bootstrap

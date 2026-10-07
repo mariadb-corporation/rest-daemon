@@ -29,7 +29,7 @@
 # the default configuration and log file names, the Windows service and the
 # MRS metadata registration derive from them. Plain variables, so that a
 # change also reaches existing build directories.
-SET(MRSD_PROGRAM_NAME "mariadb-mrsd")
+SET(MRSD_PROGRAM_NAME "mariadb-restd")
 SET(MYSQL_ROUTER_NAME "MariaDB REST Service Daemon")
 SET(MYSQL_ROUTER_INI "${MRSD_PROGRAM_NAME}.conf")
 

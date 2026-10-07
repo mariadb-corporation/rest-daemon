@@ -1,3 +1,3 @@
-# mariadb-mrsd version, read by CMakeLists.txt: <KEY> = <value> entries,
+# mariadb-restd version, read by CMakeLists.txt: <KEY> = <value> entries,
 # "#" starts a comment
 VERSION = 26.10.0

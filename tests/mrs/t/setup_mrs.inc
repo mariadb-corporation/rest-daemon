@@ -1,4 +1,4 @@
-# mariadb-mrsd --setup against the test server
+# mariadb-restd --setup against the test server
 #
 # $setup_name_cmd: optional, e.g. --name MyName
 
@@ -20,13 +20,13 @@ exec $MYSQLROUTER --setup mrs_setup_user:pass@127.0.0.1:$MASTER_MYPORT
 
 # the generated configuration
 replace_regex /=.*setup_folder.*/=DIRECTORY_FILE_OR_FOLDER/
-              /mysql_user=mariadb_mrsd1_.*/mysql_user=mariadb_mrsd1_RANDOM/
+              /mysql_user=mariadb_restd1_.*/mysql_user=mariadb_restd1_RANDOM/
               /plugin_folder=.*/plugin_folder=ROUTER_PLUGIN_DIRECTORY/
               /destinations=.*/destinations=ADDR:PORT/ ;
---cat_file $MYSQL_TMP_DIR/setup_folder/mariadb-mrsd.conf
+--cat_file $MYSQL_TMP_DIR/setup_folder/mariadb-restd.conf
 
 # the files of the deployment
---file_exists $MYSQL_TMP_DIR/setup_folder/mariadb-mrsd.key
+--file_exists $MYSQL_TMP_DIR/setup_folder/mariadb-restd.key
 --file_exists $MYSQL_TMP_DIR/setup_folder/data/keyring
 --file_exists $MYSQL_TMP_DIR/setup_folder/data/router-cert.pem
 --file_exists $MYSQL_TMP_DIR/setup_folder/data/router-key.pem
@@ -44,19 +44,19 @@ if (!$setup_name_cmd) {
   select router_name from mysql_rest_service_metadata.router;
 }
 
---replace_regex /"mariadb_mrsd1_.*"/"mariadb_mrsd1_RANDOM"/
+--replace_regex /"mariadb_restd1_.*"/"mariadb_restd1_RANDOM"/
 select attributes from mysql_rest_service_metadata.router;
 
 # the generated account and its roles
---replace_regex /mariadb_mrsd1_[a-z0-9]+/mariadb_mrsd1_RANDOM/
-select user, host from mysql.user where user like 'mariadb_mrsd1_%';
---replace_regex /mariadb_mrsd1_[a-z0-9]+/mariadb_mrsd1_RANDOM/
-select from_user, to_user from mysql.role_edges where to_user like 'mariadb_mrsd1_%' order by from_user;
+--replace_regex /mariadb_restd1_[a-z0-9]+/mariadb_restd1_RANDOM/
+select user, host from mysql.user where user like 'mariadb_restd1_%';
+--replace_regex /mariadb_restd1_[a-z0-9]+/mariadb_restd1_RANDOM/
+select from_user, to_user from mysql.role_edges where to_user like 'mariadb_restd1_%' order by from_user;
 
 # Cleanup
 --disable_query_log
 --disable_result_log
---let $u1=`SELECT user from mysql.user WHERE user like "mariadb_mrsd1_%";`
+--let $u1=`SELECT user from mysql.user WHERE user like "mariadb_restd1_%";`
 eval DROP USER $u1@'%';
 --enable_query_log
 --enable_result_log
