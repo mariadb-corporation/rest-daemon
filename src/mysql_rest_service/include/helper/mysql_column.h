@@ -27,6 +27,7 @@
 #ifndef ROUTER_SRC_MYSQL_REST_SERVICE_SRC_HELPER_MYSQL_COLUMN_H_
 #define ROUTER_SRC_MYSQL_REST_SERVICE_SRC_HELPER_MYSQL_COLUMN_H_
 
+#include <cstdint>
 #include <string>
 
 #include <mysql.h>

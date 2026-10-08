@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdlib>
 #include <chrono>
 #include <functional>
 #include <map>
@@ -43,6 +44,7 @@
 
 #include "mrsd/compat_client.h"  // client_error_message
 #include "mysql.h"
+#include "router_config.h"  // MRSD_CLIENT_PLUGIN_DIR
 #include "mysql/harness/net_ts/internet.h"
 
 #include "mysql/harness/logging/logger.h"
@@ -149,6 +151,14 @@ MySQLSession::MySQLSession() {
   // mrsd: libmariadb 3.4 defaults to TLS with certificate verification, which
   // refuses servers without TLS. libmysqlclient's default is PREFERRED.
   set_ssl_options(SSL_MODE_PREFERRED, "", "", "", "", "", "");
+
+  // libmariadb's auth plugins (caching_sha2_password, ...) are dynamic. Its
+  // compiled-in directory is the installed package's; the build knows the
+  // one of the Connector/C it was built with. MARIADB_PLUGIN_DIR (the
+  // library's own override) and MYSQL_PLUGIN_DIR set by callers win.
+  if (MRSD_CLIENT_PLUGIN_DIR[0] != '\0' && !getenv("MARIADB_PLUGIN_DIR")) {
+    set_option(PluginDir(MRSD_CLIENT_PLUGIN_DIR));
+  }
 #endif
 }
 

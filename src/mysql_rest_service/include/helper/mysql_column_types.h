@@ -27,6 +27,7 @@
 #ifndef ROUTER_SRC_REST_MRS_SRC_HELPER_COLUMN_TYPES_H_
 #define ROUTER_SRC_REST_MRS_SRC_HELPER_COLUMN_TYPES_H_
 
+#include <cstdint>
 #include <string>
 
 #include <mysql.h>

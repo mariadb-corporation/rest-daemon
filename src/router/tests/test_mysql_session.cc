@@ -258,10 +258,10 @@ using MysqlSessionGettableOptionTypes =
         MySQLSession::LoadDataLocalDir  // needs real directory
 #else
         // mrsd: readable in libmariadb, but not as the value that was set
-        // (no LoadDataLocalDir there)
+        // (no LoadDataLocalDir there). InitCommand is in no list: its get
+        // writes a count to a second out-parameter the wrapper doesn't pass.
         MySQLSession::CharsetDir,           //
         MySQLSession::CharsetName,          //
-        MySQLSession::InitCommand,          // read back as a list
         MySQLSession::NamedPipe,            //
         MySQLSession::ZstdCompressionLevel  //
 #endif

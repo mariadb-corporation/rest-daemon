@@ -18,7 +18,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 | Milestone 2 phase | Status |
 |---|---|
 | M2.0: MariaDB dependency inventory | ✅ done 2026-10-07, verdict GO in stages ([milestone2-inventory.md](milestone2-inventory.md)) |
-| M2.1: build against MariaDB Connector/C | 🟡 started 2026-10-08 (macOS) |
+| M2.1: build against MariaDB Connector/C | 🟡 macOS and Linux: build + ctest 113/113 (2026-10-08); Windows: vcpkg libmariadb installed, configure OK, build interrupted (VM became unreachable) |
 | M2.2: run against a MariaDB server | ⬜ |
 | M2.3: test suites on MariaDB | ⬜ |
 | M2.4: cleanup | ⬜ |
@@ -53,6 +53,21 @@ ninja -C build-mariadb
 `MRSD_CLIENT_MARIADB` is defined for the whole build; the client-API differences are
 behind `#ifdef MRSD_CLIENT_MARIADB` (`grep -rn MRSD_CLIENT_MARIADB src compat tests`),
 centralised in `compat/include/mrsd/compat_client.h`.
+
+Connector/C on the VMs (the finder accepts a Connector/C package, Homebrew, a Debian
+`libmariadb-dev` tree and vcpkg's layout):
+- Ubuntu (no root): `apt-get download libmariadb-dev libmariadb3 libmariadb-dev-compat`
+  unpacked with `dpkg -x` into `<dev>/mysql/deps/mariadb-connector/root`, then
+  `-DMARIADB_CONNECTOR_DIR=$D/deps/mariadb-connector/root/usr` (Connector/C 3.4.9 from
+  the 11.8.6 packages; multiarch `lib/aarch64-linux-gnu`, plugins in `libmariadb3/plugin`).
+  Build dir `build-mariadb`, JIT from `<dev>/mariadb-shell/ext/polyglot/.../target`.
+- Windows: vcpkg port `libmariadb[openssl]:x64-windows` (3.4.8) into the existing
+  `<win-home>\mrsd-deps\vcpkg` roots; headers in `include/mysql`, plugins in
+  `plugins/libmariadb`. `<win-home>\mrsd-win-mariadb.cmd configure|build|ctest`
+  (build dir `build-mariadb`, tests on).
+- Older Connector/C headers (3.4.8, 3.4.9) lack `MYSQL_TYPE_VECTOR` and `ER_QUERY_TIMEOUT`;
+  `compat_client.h` supplies them. The Linux `libmariadb.so.3` doesn't export the
+  `client_errors` tables, so `client_error_message()` keeps its own table.
 
 ### MRS functional suite (pytest, `tests/mrs`)
 
@@ -263,7 +278,14 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
   `<dev>/rest-daemon` (moved there 2026-10-07 from `<dev>/mysql/mrsd`).
 
 ## Next steps
-1. Phase M2.1: build against MariaDB Connector/C (macOS first). Local resources: MariaDB
+1. Phase M2.1, Windows: the VM stopped answering (ping, SSH) during the Connector/C build
+   (`<win-home>\mrsd-win-mariadb.cmd build`, log `<win-home>\mrsd-build-mariadb.log`);
+   check the VM, `tools/vm/win_sync.sh` (commit e6d83a6 is not on the Windows clone yet, the
+   clone has an older WIP copy), then `mrsd-win-mariadb.cmd build` and `ctest`.
+2. Phase M2.2 (run against a MariaDB server): start with the version gate
+   (`server_compatibility.cc`), `--setup`, the metadata loaders (`->>`) and the smoke test
+   against `<dev>/mariadb-server/light-build/sql/mariadbd` with the 4.1.6 schema.
+3. Phase M2.1 (original plan): build against MariaDB Connector/C (macOS first). Local resources: MariaDB
    13.2.0 Release build in `<dev>/mariadb-server/light-build` (`sql/mariadbd`, static
    `libmariadb/libmariadb/libmariadbclient.a` with `CONC_WITH_SSL=OPENSSL`), built shell in
    `<dev>/shell/bld/bin/mariadb-shell`, MRS plugins in `<dev>/mariadb-shell-plugins`.
@@ -539,5 +561,17 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
   (`mysql_bind_param`), `CR_NO_RESULT_SET`, `CLIENT_LONG_PASSWORD` and the missing option
   aliases behind `#ifdef`.
 - Tests: `tests/helpers/mysql_client.h` and `test_mysql_session.cc` adapted (options
-  libmariadb can't read back, or reads back differently). macOS: ctest 113/113 on the
-  Connector/C build; MySQL build rebuilt from the same sources.
+  libmariadb can't read back, or reads back differently; `InitCommand` is in no get list,
+  its libmariadb get writes to a second out-parameter). macOS: ctest 113/113 on the
+  Connector/C build and on the MySQL build from the same sources.
+- Linux (Ubuntu VM, Connector/C 3.4.9 from the `libmariadb-dev` packages, unpacked):
+  build and ctest 113/113. Needed: `MYSQL_TYPE_VECTOR`/`ER_QUERY_TIMEOUT` for older
+  headers, own client error texts (the .so doesn't export the tables), explicit
+  `<cstdint>`, and the client plugin directory: libmariadb's auth plugins are dynamic
+  and its compiled-in directory is the installed package's, so `MySQLSession` sets
+  `MYSQL_PLUGIN_DIR` to the Connector/C's plugin dir recorded at configure time
+  (`MRSD_CLIENT_PLUGIN_DIR` in `router_config.h`; `MARIADB_PLUGIN_DIR` in the
+  environment wins). Packaging (Milestone 4) must bundle the plugins and point there.
+- Windows: Connector/C from vcpkg (`libmariadb[openssl]:x64-windows`, 3.4.8) installed,
+  `mrsd-win-mariadb.cmd configure` finds it; the build was running (502/770, no errors)
+  when the VM became unreachable. To be finished next session.

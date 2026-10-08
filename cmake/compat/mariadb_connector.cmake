@@ -20,7 +20,8 @@
 # The prefix is what `mariadb_config` was built for, e.g. a Connector/C
 # release package, Homebrew's keg /opt/homebrew/opt/mariadb-connector-c, or
 # /usr with the distribution's libmariadb-dev (also works unpacked anywhere
-# with `dpkg -x`, as <dir>/usr). Uses <prefix>/include/mariadb (mysql.h,
+# with `dpkg -x`, as <dir>/usr), or vcpkg's installed/x64-windows with its
+# libmariadb port. Uses <prefix>/include/mariadb (mysql.h,
 # mariadb_version.h, errmsg.h, mysqld_error.h, ...), the shared library from
 # <prefix>/lib[/mariadb | /<multiarch>] and the client auth plugins from
 # <prefix>/lib[/<multiarch>]/{mariadb,libmariadb3}/plugin.
@@ -45,6 +46,7 @@ GET_FILENAME_COMPONENT(MARIADB_CONNECTOR_DIR "${MARIADB_CONNECTOR_DIR}" ABSOLUTE
 FIND_PATH(MYSQL_CLIENT_INCLUDE_DIR
   NAMES mysql.h
   PATHS "${MARIADB_CONNECTOR_DIR}/include/mariadb"
+        "${MARIADB_CONNECTOR_DIR}/include/mysql"  # vcpkg's libmariadb port
         "${MARIADB_CONNECTOR_DIR}/include"
   NO_DEFAULT_PATH)
 IF(NOT MYSQL_CLIENT_INCLUDE_DIR OR
@@ -127,6 +129,7 @@ FIND_PATH(MARIADB_CLIENT_PLUGIN_DIR
         "${MARIADB_CONNECTOR_DIR}/lib64/mariadb/plugin"
         "${MARIADB_CONNECTOR_DIR}/lib/${CMAKE_LIBRARY_ARCHITECTURE}/libmariadb3/plugin"
         "${MARIADB_CONNECTOR_DIR}/lib/${CMAKE_LIBRARY_ARCHITECTURE}/mariadb/plugin"
+        "${MARIADB_CONNECTOR_DIR}/plugins/libmariadb"  # vcpkg
   NO_DEFAULT_PATH)
 IF(NOT MARIADB_CLIENT_PLUGIN_DIR)
   MESSAGE(WARNING
