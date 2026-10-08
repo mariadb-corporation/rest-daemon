@@ -9,13 +9,23 @@ file and add a line to the "Decision log" at the end.
 Fork MySQL Router's **MySQL REST Service (MRS)** out of the MySQL server
 repository into a standalone project that builds a single-purpose MRS daemon, `mrsd`.
 
-**Milestone 1 (this plan):** `mrsd` builds against a stock **MySQL 9.x client
-library**, runs in the **MySQL ecosystem** (MySQL Server 9.x, MySQL Shell `mrs`
-plugin, MySQL Shell for VS Code), and serves the same REST endpoints as
-`mysqlrouter` with MRS enabled.
+**Milestone 1 ✅ done (2026-10-07):** `mariadb-restd` builds against a stock
+**MySQL 9.x client library**, runs in the **MySQL ecosystem** (MySQL Server 9.x,
+MySQL Shell `mrs` plugin, MySQL Shell for VS Code), and serves the same REST
+endpoints as `mysqlrouter` with MRS enabled. Verified on Linux, macOS and Windows
+(unit + component tests, MRS functional suite, smoke test incl. MRS scripts).
 
-**Milestone 2 (later, out of scope here):** migrate to MariaDB (Connector/C,
+**Milestone 2 (current):** migrate to MariaDB (Connector/C,
 MRS metadata schema and queries, MariaDB-aware destination providers).
+Phases are listed under "Milestone 2" below.
+
+**Milestone 3:** MariaDB, second stage: REST async tasks (`mysql_tasks` on
+MariaDB) and GTID-based read-your-writes ("asof"). Both are disabled on MariaDB in
+Milestone 2.
+
+**Milestone 4 (final):** packaging and CI (the former Phase 4, see below). The
+packaging done so far (tar.gz, deb, rpm, Windows ZIP) stays in the tree; the
+remaining items (real deb/rpm installs, MSI, GitHub Actions) are finished last.
 
 ## Scope decisions
 
@@ -145,7 +155,7 @@ See [phase0-inventory.md](phase0-inventory.md). **Verdict: GO.** The kept code u
   (destination_status, metadata_cache/bootstrap paths, DynamicState, config exposure).
 - **Exit criteria:** a fresh install works via `mrsd --setup` alone on each OS.
 
-### Phase 4: packaging and CI
+### Phase 4: packaging and CI (moved to Milestone 4, 2026-10-07)
 Decided 2026-10-05: CPack for all formats (not upstream's deb-in/rpm/WiX trees);
 formats deb + rpm, Linux tar.gz, Windows MSI + ZIP, macOS tar.gz; libmysqlclient and
 libjitexecutor always bundled, OpenSSL/ICU from the OS in deb/rpm and bundled in the
@@ -161,6 +171,73 @@ other packages; vendor MariaDB plc; `VERSION` file with `VERSION = x.y.z` entrie
 - CI matrix: 3 OSes × JIT on/off × MySQL 9.x server: unit + component tests, MRS
   functional suite, smoke test. Last step of the whole work, once the final remote
   repository exists (it decides the CI system).
+
+## Milestone 2: MariaDB
+
+Goal: `mariadb-restd` builds against **MariaDB Connector/C**, runs against a
+**MariaDB server** with the MRS metadata schema deployed by the MariaDB Shell
+plugins (schema 4.1.6+), and serves the same REST endpoints. Findings:
+[milestone2-inventory.md](milestone2-inventory.md). Same recipe as Milestone 1:
+inventory, build, tests, cleanup.
+
+Scope decisions (2026-10-08, see the decision log):
+
+| Topic | Decision |
+|---|---|
+| MySQL build | **Kept** during the port, behind a client/server abstraction; the MySQL test suites stay the safety net until the MariaDB suites reach parity |
+| Client library | **MariaDB Connector/C package** (release build with OpenSSL), found through `-DMARIADB_CONNECTOR_DIR` / `mariadb_config`; public API only, as in Milestone 1 |
+| Minimum MariaDB server | **10.11 (oldest supported LTS)**; develop and test on `main` (13.2). Caveat: the MRS metadata schema 4.1.6 uses `JSON_SCHEMA_VALID` (11.1+) and `JSON_OVERLAPS` (10.9+); deploying on 10.11 needs a schema change on the plugin side. Features needing newer servers degrade: `MAX_EXECUTION_TIME` hint → `SET STATEMENT max_statement_time`, `VECTOR` only where the server has it (11.7+) |
+| REST async tasks (`mysql_tasks`) | **Out of Milestone 2**, disabled on MariaDB; Milestone 3 |
+| GTID / "asof" | **Out of Milestone 2**, disabled on MariaDB (the RW pool `session_track_gtids` SET is removed); Milestone 3 |
+| `--setup` accounts | MariaDB's **default auth plugin** (`CREATE USER ... IDENTIFIED BY`) |
+| MRS scripts (JIT) | **In scope**: the smoke test's script step (example scripts deployed with `LOAD SCRIPTS` through the MariaDB Shell plugins) must pass on MariaDB; plugin-side problems go to the plugin team |
+
+### Phase M2.0: MariaDB dependency inventory ✅ done (2026-10-07)
+Verdict GO, in stages. Client switch is mechanical; server-side work is JSON
+document generation, GTID tracking, `mysql_tasks`, account setup, tests.
+
+### Phase M2.1: build against MariaDB Connector/C
+- CMake: `-DMARIADB_CONNECTOR_DIR` (or `mariadb_config`) finder replacing
+  `cmake/compat/mysql_package.cmake`; `MySQL::client` → `MariaDB::client`; bundling of
+  `libmariadb` and its dynamic client auth plugins (`MYSQL_PLUGIN_DIR`).
+- Client-API gaps (inventory §2): nonblocking API → `_start/_cont`; project `SslMode`
+  enum emulated with `SSL_ENFORCE`/`SSL_VERIFY_SERVER_CERT`; drop the TLS session cache,
+  query attributes, missing option aliases and type enums; `MYSQL_BIND::is_null` as
+  `my_bool`; `CR_*`/`ER_*` constants; headers; `compat/` client errors and charset table.
+- Exit: all three platforms build with JIT; unit and component tests (mock server) pass.
+
+### Phase M2.2: run against a MariaDB server
+- Server gating (`server_compatibility.cc`), `@@super_read_only`, offline mode, error-code
+  mapping, `SET ROLE`, `sql_mode` default; `--setup` account creation with MariaDB syntax
+  and the 1973 "already exists" note.
+- Metadata loaders: `->>` → `JSON_EXTRACT`; `UUID_TO_BIN`; `INSERT ... AS new`.
+- JSON document generation (`JSON_OBJECT`/`JSON_ARRAYAGG` nesting, `CAST AS JSON`,
+  `ST_AsGeoJSON`) measured against MariaDB and fixed; JSON/VECTOR column detection through
+  Connector/C extended metadata; `VEC_FromText`/`VEC_ToText`; GIS SRID handling.
+- GTID / "asof" and REST async tasks: disabled on MariaDB with a clear error (Milestone 3).
+- Smoke test variant for MariaDB (`mariadbd`, `mariadb-shell` + plugins, schema 4.1.6).
+- Exit: smoke test (REST view GET, and MRS scripts if in scope) passes on MariaDB on all
+  three platforms.
+
+### Phase M2.3: test suites on MariaDB
+- `tests/mrs` harness: `mariadbd` start/reset, 4.1.6 deployment script instead of the v4
+  dump, MariaDB-specific expectations (result files, GTID format, error codes), disabled
+  tests with reasons (`disabled.def`).
+- Live-DB unit tests (`shared_server.cc`) and fixtures on MariaDB.
+- Exit: unit + component + MRS suite pass on Linux, macOS, Windows against MariaDB, with a
+  recorded list of disabled tests and why.
+
+### Phase M2.4: cleanup
+- Remove MySQL-only code paths that are no longer reachable (or keep the dual build, per
+  decision), README/docs for MariaDB, `mrsd:` markers.
+
+## Milestone 3: MariaDB, second stage
+
+- REST async tasks: `mysql_tasks` on MariaDB (plugin-side schema plus the daemon's
+  `query_rest_task*`, `mysql_task_monitor` on the Connector/C nonblocking API).
+- GTID / "asof": `last_gtid` session tracking, `MASTER_GTID_WAIT`, MariaDB GTID format
+  (`domain-server-seq`) in `database/helper/gtid.h` and the `asof` filter.
+Phases to be defined when Milestone 2 is done.
 
 ## Target repository layout
 
@@ -259,3 +336,15 @@ mrsd/
 - 2026-10-07: the JIT executor library build (`ext/polyglot` of the MySQL Shell sources)
   is part of this repository, same path, copied verbatim; `MRS_JIT_EXECUTOR_LIB` stays the
   way to point the build at its output.
+- 2026-10-07: Milestone 1 (standalone daemon) declared complete: the daemon is
+  verified on all three platforms. Phase 4 (packaging and CI) moves to a final
+  Milestone 3; Milestone 2 (MariaDB) starts now.
+- 2026-10-07: Phase M2.0 (MariaDB inventory) done, verdict GO in stages; phases M2.1-M2.4
+  defined. Open decisions (inventory §5): dual MySQL/MariaDB build, Connector/C source,
+  minimum MariaDB version, async tasks, GTID/asof, MRS scripts, setup auth plugin.
+- 2026-10-08: Milestone 2 decisions: keep the MySQL build during the port; MariaDB
+  Connector/C from a package; minimum server MariaDB 10.11 (develop on 13.2); REST async
+  tasks and GTID/"asof" disabled on MariaDB and moved to a new Milestone 3; `--setup`
+  creates accounts with MariaDB's default auth plugin. Packaging and CI become Milestone 4.
+- 2026-10-08: MRS scripts stay in Milestone 2 (smoke test incl. scripts on MariaDB); the
+  shell-side `LOAD SCRIPTS` is pure Python and unchanged in the MariaDB plugin port.
