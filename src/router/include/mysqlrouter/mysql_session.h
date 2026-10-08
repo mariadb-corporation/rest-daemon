@@ -38,6 +38,8 @@
 #include <vector>
 
 #include <mysql.h>  // enum mysql_ssl_mode
+
+#include "mrsd/compat_client.h"  // mrsd: mysql_ssl_mode on libmariadb
 #include <string.h>
 
 #include "mysql/harness/stdx/expected.h"
@@ -201,33 +203,50 @@ class ROUTER_MYSQL_EXPORT MySQLSession {
   using CanHandleExpiredPasswords =
       BooleanOption<MYSQL_OPT_CAN_HANDLE_EXPIRED_PASSWORDS>;
   using Compress = BooleanOption<MYSQL_OPT_COMPRESS>;
+#ifndef MRSD_CLIENT_MARIADB
   using CompressionAlgorithms =
       ConstCharOption<MYSQL_OPT_COMPRESSION_ALGORITHMS>;
+#endif
   using ConnectAttributeReset = BooleanOption<MYSQL_OPT_CONNECT_ATTR_RESET>;
   using ConnectAttributeDelete = BooleanOption<MYSQL_OPT_CONNECT_ATTR_DELETE>;
   using ConnectTimeout = IntegerOption<MYSQL_OPT_CONNECT_TIMEOUT>;
+#ifndef MRSD_CLIENT_MARIADB
   using GetServerPublicKey = BooleanOption<MYSQL_OPT_GET_SERVER_PUBLIC_KEY>;
   using LoadDataLocalDir = ConstCharOption<MYSQL_OPT_LOAD_DATA_LOCAL_DIR>;
+#endif
   using LocalInfile = IntegerOption<MYSQL_OPT_LOCAL_INFILE>;
   using MaxAllowedPacket = LongOption<MYSQL_OPT_MAX_ALLOWED_PACKET>;
   using NamedPipe = BooleanOption<MYSQL_OPT_NAMED_PIPE>;
   using NetBufferLength = LongOption<MYSQL_OPT_NET_BUFFER_LENGTH>;
+#ifndef MRSD_CLIENT_MARIADB
   using OptionalResultsetMetadata =
       BooleanOption<MYSQL_OPT_OPTIONAL_RESULTSET_METADATA>;
+#endif
   // TCP/UnixSocket/...
   using Protocol = IntegerOption<MYSQL_OPT_PROTOCOL>;
   using ReadTimeout = IntegerOption<MYSQL_OPT_READ_TIMEOUT>;
+#ifndef MRSD_CLIENT_MARIADB
   using RetryCount = IntegerOption<MYSQL_OPT_RETRY_COUNT>;
+#endif
   using SslCa = ConstCharOption<MYSQL_OPT_SSL_CA>;
   using SslCaPath = ConstCharOption<MYSQL_OPT_SSL_CAPATH>;
   using SslCert = ConstCharOption<MYSQL_OPT_SSL_CERT>;
   using SslCipher = ConstCharOption<MYSQL_OPT_SSL_CIPHER>;
   using SslCrl = ConstCharOption<MYSQL_OPT_SSL_CRL>;
   using SslCrlPath = ConstCharOption<MYSQL_OPT_SSL_CRLPATH>;
+#ifndef MRSD_CLIENT_MARIADB
   using SslFipsMode = IntegerOption<MYSQL_OPT_SSL_FIPS_MODE>;
+#endif
   using SslKey = ConstCharOption<MYSQL_OPT_SSL_KEY>;
+#ifdef MRSD_CLIENT_MARIADB
+  // mrsd: libmariadb has no MYSQL_OPT_SSL_MODE; set_ssl_options() emulates
+  // the modes with these two
+  using SslEnforce = BooleanOption<MYSQL_OPT_SSL_ENFORCE>;
+  using SslVerifyServerCert = BooleanOption<MYSQL_OPT_SSL_VERIFY_SERVER_CERT>;
+#else
   using SslMode = IntegerOption<MYSQL_OPT_SSL_MODE>;
   using TlsCipherSuites = ConstCharOption<MYSQL_OPT_TLS_CIPHERSUITES>;
+#endif
   using TlsVersion = ConstCharOption<MYSQL_OPT_TLS_VERSION>;
   using WriteTimeout = IntegerOption<MYSQL_OPT_WRITE_TIMEOUT>;
   using ZstdCompressionLevel = IntegerOption<MYSQL_OPT_ZSTD_COMPRESSION_LEVEL>;
@@ -553,6 +572,16 @@ class ROUTER_MYSQL_EXPORT MySQLSession {
   };
   AsyncQueryState async_state_ = AsyncQueryState::kNone;
   bool async_query_logged_ = false;
+#ifdef MRSD_CLIENT_MARIADB
+  // mrsd: libmariadb's mysql_*_start()/_cont() API. The MYSQL_WAIT_* mask the
+  // suspended operation of async_state_ waits for (0: nothing suspended).
+  int async_wait_status_{0};
+  bool async_nonblock_set_{false};
+  bool async_socket_ready(int *ready_events);
+  stdx::expected<mysql_result_type, MysqlError> store_result_nb();
+  // libmariadb can't report the ssl mode back; the one set_ssl_options() set
+  mysql_ssl_mode ssl_mode_{SSL_MODE_PREFERRED};
+#endif
 
   /**
    * run query.

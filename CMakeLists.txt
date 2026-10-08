@@ -19,8 +19,9 @@
 # kept as upstream as possible; cmake/compat/ provides the parts of the MySQL
 # server build environment they expect.
 #
-# Required:
+# Required, one of:
 #   -DMYSQL_PACKAGE_DIR=<extracted MySQL server package, 9.x or later>
+#   -DMARIADB_CONNECTOR_DIR=<MariaDB Connector/C installation, 3.4 or later>
 # Optional:
 #   -DMRS_JIT_EXECUTOR_LIB=<dir with libjitexecutor and its headers>
 #   -DWITH_UNIT_TESTS=ON
@@ -71,7 +72,15 @@ OPTION(WITH_UNIT_TESTS "Build the unit and component tests" OFF)
 INCLUDE(cmake/compat/build_env.cmake)
 INCLUDE(cmake/compat/fileutils.cmake)
 INCLUDE(cmake/compat/configure_checks.cmake)
-INCLUDE(cmake/compat/mysql_package.cmake)
+# the client library: MariaDB Connector/C or MySQL's libmysqlclient. Both
+# define MySQL::client; the MariaDB one also defines MRSD_CLIENT_MARIADB.
+IF(MARIADB_CONNECTOR_DIR)
+  INCLUDE(cmake/compat/mariadb_connector.cmake)
+  SET(MRSD_CLIENT_PACKAGE_DIR "${MARIADB_CONNECTOR_DIR}")
+ELSE()
+  INCLUDE(cmake/compat/mysql_package.cmake)
+  SET(MRSD_CLIENT_PACKAGE_DIR "${MYSQL_PACKAGE_DIR}")
+ENDIF()
 INCLUDE(cmake/compat/third_party.cmake)
 
 # global flags, as in the server build
@@ -159,12 +168,14 @@ ENDIF()
 
 # ---------------------------------------------------------------------------
 # bundled runtime libraries (last install rule: runs after everything else is
-# installed). libmysqlclient always; OpenSSL and ICU in the STANDALONE layout
-# (tarballs, ZIP, MSI), from the system in deb/rpm.
+# installed). The client library (libmysqlclient or libmariadb) always;
+# OpenSSL and ICU in the STANDALONE layout (tarballs, ZIP, MSI), from the
+# system in deb/rpm.
 # ---------------------------------------------------------------------------
 # matched against the dependency as recorded (@rpath/..., absolute path, or a
 # bare DLL name), hence the (^|/) anchor
-SET(_bundle_regexes "(^|/)libmysqlclient[^/]*$" "(^|/)libmysql\\.dll$")
+SET(_bundle_regexes "(^|/)libmysqlclient[^/]*$" "(^|/)libmysql\\.dll$"
+  "(^|/)libmariadb[^/]*$")
 SET(_bundle_dirs "${MYSQL_CLIENT_LIBRARY_DIR}")
 IF(INSTALL_LAYOUT STREQUAL "STANDALONE")
   LIST(APPEND _bundle_regexes "(^|/)lib(ssl|crypto)[^/]*$" "(^|/)(lib)?icu[^/]*$")
@@ -193,7 +204,7 @@ INSTALL(CODE "
   set(BUNDLE_SEARCH_DIRS \"${_bundle_dirs}\")
   set(BUNDLE_DEST \"${_bundle_dest}\")
   set(BUNDLE_SCAN_DIRS \"${_bundle_scan}\")
-  set(BUNDLE_AVOID_DIR \"${MYSQL_PACKAGE_DIR}\")
+  set(BUNDLE_AVOID_DIR \"${MRSD_CLIENT_PACKAGE_DIR}\")
   include(\"${CMAKE_SOURCE_DIR}/cmake/bundle_runtime_libraries.cmake\")
   " COMPONENT Router)
 

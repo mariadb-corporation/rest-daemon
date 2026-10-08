@@ -36,6 +36,7 @@
 
 #include <errmsg.h>
 
+#ifndef MRSD_CLIENT_MARIADB
 namespace {
 const char *const kClientErrors[] = {
     "Unknown MySQL error",
@@ -134,14 +135,21 @@ const char *const kClientErrors[] = {
 constexpr int kNumClientErrors =
     static_cast<int>(sizeof(kClientErrors) / sizeof(kClientErrors[0])) - 1;
 }  // namespace
+#endif
 
 namespace mrsd {
 
 const char *client_error_message(unsigned int code) {
+#ifdef MRSD_CLIENT_MARIADB
+  // libmariadb exports its message tables (errmsg.h: ER())
+  if (IS_MYSQL_ERROR(code) || IS_MARIADB_ERROR(code)) return ER(code);
+  return ER(CR_UNKNOWN_ERROR);
+#else
   const int ndx = static_cast<int>(code) - CR_ERROR_FIRST;
   if (ndx >= 0 && ndx < kNumClientErrors) return kClientErrors[ndx];
 
   return kClientErrors[CR_UNKNOWN_ERROR - CR_ERROR_FIRST];
+#endif
 }
 
 }  // namespace mrsd

@@ -26,9 +26,7 @@
 
 #include "database/query_attributes.h"
 
-#include <field_types.h>
-#include <mysql.h>  // my_socket, needed by the public mysql_com.h
-#include <mysql_com.h>
+#include <mysql.h>
 #include <memory>
 #include <stdexcept>
 #include <string>

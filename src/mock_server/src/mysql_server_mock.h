@@ -31,6 +31,8 @@
 
 #include "mock_session.h"
 #include "mysql.h"  // mysql_ssl_mode
+
+#include "mrsd/compat_client.h"  // mrsd: mysql_ssl_mode on libmariadb
 #include "mysql/harness/destination.h"
 #include "mysql/harness/net_ts/io_context.h"
 #include "mysql/harness/plugin.h"

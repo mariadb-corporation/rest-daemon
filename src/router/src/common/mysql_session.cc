@@ -61,6 +61,9 @@ using namespace std::string_literals;
 
 namespace {
 
+#ifndef MRSD_CLIENT_MARIADB
+// mrsd: libmariadb has no TLS session resumption API; the cache is dropped
+// there (a performance feature only)
 class SSLSessionsCache {
  public:
   using EndpointId = std::string;
@@ -124,6 +127,7 @@ class SSLSessionsCache {
 
   static constexpr size_t kMaxEntriesPerEndpoint{2};
 };
+#endif
 
 using MysqlSessionTrackGet = int (*)(MYSQL *mysql,
                                      enum enum_session_state_type type,
@@ -140,6 +144,12 @@ MySQLSession::MySQLSession() {
     // not supposed to happen
     throw std::logic_error("Error initializing MySQL connection structure");
   }
+
+#ifdef MRSD_CLIENT_MARIADB
+  // mrsd: libmariadb 3.4 defaults to TLS with certificate verification, which
+  // refuses servers without TLS. libmysqlclient's default is PREFERRED.
+  set_ssl_options(SSL_MODE_PREFERRED, "", "", "", "", "", "");
+#endif
 }
 
 MySQLSession::~MySQLSession() {
@@ -228,6 +238,27 @@ void MySQLSession::set_ssl_options(mysql_ssl_mode ssl_mode,
                 mysql_errno(connection_));
   }
 
+#ifdef MRSD_CLIENT_MARIADB
+  // mrsd: libmariadb has no MYSQL_OPT_SSL_MODE. TLS is used iff
+  // MYSQL_OPT_SSL_ENFORCE is set (setting a CA, CRL, cert or key sets it
+  // too, hence last), and the server certificate is verified unless
+  // MYSQL_OPT_SSL_VERIFY_SERVER_CERT is cleared (it is set by default).
+  // libmariadb verifies the hostname whenever it verifies the certificate,
+  // so VERIFY_CA behaves like VERIFY_IDENTITY. Without verification,
+  // libmariadb silently continues without TLS if the server has none (that
+  // is PREFERRED); connect() checks the cipher for REQUIRED.
+  const bool verify =
+      ssl_mode == SSL_MODE_VERIFY_CA || ssl_mode == SSL_MODE_VERIFY_IDENTITY;
+  const bool enforce = ssl_mode != SSL_MODE_DISABLED;
+  if (!set_option(SslVerifyServerCert(verify)) ||
+      !set_option(SslEnforce(enforce))) {
+    const char *text = ssl_mode_to_string(ssl_mode);
+    std::string msg = std::string("Setting SSL mode to '") + text +
+                      "' on connection failed: " + mysql_error(connection_);
+    throw Error(msg, mysql_errno(connection_));
+  }
+  ssl_mode_ = ssl_mode;
+#else
   // this has to be the last option that gets set due to what appears to be a
   // bug in libmysql causing ssl_mode downgrade from REQUIRED if other options
   // (like tls_version) are also specified
@@ -237,6 +268,7 @@ void MySQLSession::set_ssl_options(mysql_ssl_mode ssl_mode,
                       "' on connection failed: " + mysql_error(connection_);
     throw Error(msg, mysql_errno(connection_));
   }
+#endif
 }
 
 uint64_t MySQLSession::connection_id() {
@@ -252,12 +284,16 @@ uint64_t MySQLSession::connection_id() {
 }
 
 mysql_ssl_mode MySQLSession::ssl_mode() const {
+#ifdef MRSD_CLIENT_MARIADB
+  return ssl_mode_;
+#else
   SslMode ssl_mode;
   if (!get_option(ssl_mode)) {
     assert(0 && "get_option<SslMode>() failed unexpectedly");
   }
 
   return mysql_ssl_mode(ssl_mode.value());
+#endif
 }
 
 std::string MySQLSession::tls_version() const {
@@ -396,8 +432,12 @@ void MySQLSession::connect(const std::string &host, unsigned int port,
   set_option(Protocol(protocol));
 
   const unsigned long client_flags =
-      (CLIENT_LONG_PASSWORD | CLIENT_LONG_FLAG | CLIENT_PROTOCOL_41 |
-       CLIENT_MULTI_RESULTS | extra_client_flags);
+      (
+#ifndef MRSD_CLIENT_MARIADB
+          CLIENT_LONG_PASSWORD |  // libmariadb: bit 0 is CLIENT_MYSQL, set by it
+#endif
+          CLIENT_LONG_FLAG | CLIENT_PROTOCOL_41 | CLIENT_MULTI_RESULTS |
+          extra_client_flags);
   std::string endpoint_str;
 
   if (!unix_socket.empty()) {
@@ -412,16 +452,22 @@ void MySQLSession::connect(const std::string &host, unsigned int port,
   }
 
   const bool ssl_disabled = ssl_mode() == SSL_MODE_DISABLED;
+#ifndef MRSD_CLIENT_MARIADB
   auto &ssl_sessions_cache = SSLSessionsCache::instance();
 
   if (!ssl_disabled) {
     ssl_sessions_cache.try_reuse_session(connection_, endpoint_str);
   }
+#endif
 
-  if (!mysql_real_connect(
-          connection_, !unix_socket.empty() ? nullptr : host.c_str(),
-          username.c_str(), password.c_str(), default_schema.c_str(), port,
-          unix_socket.c_str(), client_flags)) {
+  auto do_connect = [&]() {
+    return mysql_real_connect(
+        connection_, !unix_socket.empty() ? nullptr : host.c_str(),
+        username.c_str(), password.c_str(), default_schema.c_str(), port,
+        unix_socket.c_str(), client_flags);
+  };
+
+  if (!do_connect()) {
     std::stringstream ss;
     ss << "Error connecting to MySQL server at " << endpoint_str;
     ss << ": " << mysql_error(connection_) << " (" << mysql_errno(connection_)
@@ -429,9 +475,26 @@ void MySQLSession::connect(const std::string &host, unsigned int port,
     throw Error(ss.str(), mysql_errno(connection_));
   }
 
+#ifdef MRSD_CLIENT_MARIADB
+  // mrsd: with certificate verification off, libmariadb connects without TLS
+  // when the server has none; REQUIRED must not accept that
+  if (ssl_mode() == SSL_MODE_REQUIRED &&
+      mysql_get_ssl_cipher(connection_) == nullptr) {
+    mysql_close(connection_);
+    mysql_init(connection_);
+    throw Error("Error connecting to MySQL server at " + endpoint_str +
+                    ": SSL is required, but the server does not support it",
+                CR_SSL_CONNECTION_ERROR);
+  }
+#endif
+
+#ifndef MRSD_CLIENT_MARIADB
   if (!ssl_disabled) {
     ssl_sessions_cache.store_ssl_session(connection_, endpoint_str);
   }
+#else
+  (void)ssl_disabled;
+#endif
 
   async_state_ = AsyncQueryState::kNone;
   connected_ = true;
@@ -557,6 +620,148 @@ MySQLSession::real_query(const std::string &q) {
   return res;
 }
 
+#ifdef MRSD_CLIENT_MARIADB
+// mysql_error=0 means ASYNC_NOT_READY
+//
+// mrsd: libmariadb has no mysql_*_nonblocking(). Its mysql_*_start()/_cont()
+// run the operation in a coroutine (MYSQL_OPT_NONBLOCK) and return a
+// MYSQL_WAIT_* mask while they wait for the socket; the next call must be
+// _cont() with the events that happened. async_wait_status_ keeps that mask
+// between calls, 0 when nothing is suspended.
+
+bool MySQLSession::async_socket_ready(int *ready_events) {
+  const auto fd = mysql_get_socket(connection_);
+  short events = 0;
+  if (async_wait_status_ & MYSQL_WAIT_READ) events |= POLLIN;
+  if (async_wait_status_ & MYSQL_WAIT_WRITE) events |= POLLOUT;
+  if (async_wait_status_ & MYSQL_WAIT_EXCEPT) events |= POLLPRI;
+
+#ifdef _WIN32
+  if (fd == INVALID_SOCKET) return false;
+  WSAPOLLFD pfd{fd, events, 0};
+  if (::WSAPoll(&pfd, 1, 0) <= 0) return false;
+#else
+  if (fd < 0) return false;
+  pollfd pfd{fd, events, 0};
+  if (::poll(&pfd, 1, 0) <= 0) return false;
+#endif
+
+  *ready_events = 0;
+  if (pfd.revents & (POLLIN | POLLHUP | POLLERR)) *ready_events |= MYSQL_WAIT_READ;
+  if (pfd.revents & POLLOUT) *ready_events |= MYSQL_WAIT_WRITE;
+  if (pfd.revents & POLLPRI) *ready_events |= MYSQL_WAIT_EXCEPT;
+  return *ready_events != 0;
+}
+
+stdx::expected<MySQLSession::mysql_result_type, MysqlError>
+MySQLSession::real_query_nb(const std::string &q) {
+  if (!connected_) {
+    return stdx::unexpected(make_mysql_error_code(CR_COMMANDS_OUT_OF_SYNC));
+  }
+
+  if (async_state_ == AsyncQueryState::kNone) {
+    if (!async_nonblock_set_) {
+      // allocates the coroutine context (default stack size)
+      mysql_options(connection_, MYSQL_OPT_NONBLOCK, nullptr);
+      async_nonblock_set_ = true;
+    }
+    async_state_ = AsyncQueryState::kQuery;
+    async_query_logged_ = false;
+    async_wait_status_ = 0;
+  }
+  if (async_state_ == AsyncQueryState::kQuery) {
+    int ret = 0;
+    if (async_wait_status_ == 0) {
+      async_wait_status_ =
+          mysql_real_query_start(&ret, connection_, q.data(), q.size());
+    } else {
+      int ready = 0;
+      if (!async_socket_ready(&ready)) {
+        return stdx::unexpected(make_mysql_error_code(0U));
+      }
+      async_wait_status_ = mysql_real_query_cont(&ret, connection_, ready);
+    }
+    if (async_wait_status_ != 0) {
+      return stdx::unexpected(make_mysql_error_code(0U));
+    }
+    if (ret != 0) {
+      async_state_ = AsyncQueryState::kNone;
+      return stdx::unexpected(make_mysql_error_code(connection_));
+    }
+
+    async_state_ = AsyncQueryState::kStoreResult;
+  }
+
+  assert(async_state_ == AsyncQueryState::kStoreResult);
+
+  return store_result_nb();
+}
+
+stdx::expected<MySQLSession::mysql_result_type, MysqlError>
+MySQLSession::store_result_nb() {
+  MYSQL_RES *res = nullptr;
+  if (async_wait_status_ == 0) {
+    async_wait_status_ = mysql_store_result_start(&res, connection_);
+  } else {
+    int ready = 0;
+    if (!async_socket_ready(&ready)) {
+      return stdx::unexpected(make_mysql_error_code(0U));
+    }
+    async_wait_status_ = mysql_store_result_cont(&res, connection_, ready);
+  }
+  if (async_wait_status_ != 0) {
+    return stdx::unexpected(make_mysql_error_code(0U));
+  }
+
+  async_query_logged_ = false;
+
+  if (!res) {
+    async_state_ = AsyncQueryState::kNone;
+
+    // no error, but also no resultset
+    if (mysql_errno(connection_) == 0) return {};
+
+    return stdx::unexpected(make_mysql_error_code(connection_));
+  } else {
+    async_state_ = AsyncQueryState::kNextResult;
+  }
+
+  return mysql_result_type{res};
+}
+
+stdx::expected<MySQLSession::mysql_result_type, MysqlError>
+MySQLSession::next_result_nb() {
+  if (async_state_ == AsyncQueryState::kNextResult) {
+    int ret = 0;  // 0: another result, -1: no more, >0: error
+    if (async_wait_status_ == 0) {
+      async_wait_status_ = mysql_next_result_start(&ret, connection_);
+    } else {
+      int ready = 0;
+      if (!async_socket_ready(&ready)) {
+        return stdx::unexpected(make_mysql_error_code(0U));
+      }
+      async_wait_status_ = mysql_next_result_cont(&ret, connection_, ready);
+    }
+    if (async_wait_status_ != 0) {
+      return stdx::unexpected(make_mysql_error_code(0U));
+    }
+    if (ret > 0) {
+      async_state_ = AsyncQueryState::kNone;
+      return stdx::unexpected(make_mysql_error_code(connection_));
+    }
+    if (ret < 0) {
+      // no more results
+      async_state_ = AsyncQueryState::kNone;
+      return {};
+    }
+
+    async_state_ = AsyncQueryState::kStoreResult;
+  }
+
+  return store_result_nb();
+}
+
+#else
 // mysql_error=0 means ASYNC_NOT_READY
 stdx::expected<MySQLSession::mysql_result_type, MysqlError>
 MySQLSession::real_query_nb(const std::string &q) {
@@ -649,6 +854,8 @@ MySQLSession::next_result_nb() {
 
   return mysql_result_type{res};
 }
+
+#endif
 
 stdx::expected<MySQLSession::mysql_result_type, MysqlError>
 MySQLSession::logged_real_query(const std::string &q) {
@@ -797,7 +1004,8 @@ void MySQLSession::prepare_execute_with_bind_parameters(
     }
     std::unique_ptr<MYSQL_BIND[]> my_bind{new MYSQL_BIND[nfields]};
     std::unique_ptr<unsigned long[]> length{new unsigned long[nfields]};
-    std::unique_ptr<bool[]> is_null{new bool[nfields]};
+    std::unique_ptr<mrsd::bind_bool_t[]> is_null{
+        new mrsd::bind_bool_t[nfields]};
     memset(my_bind.get(), 0, sizeof(MYSQL_BIND) * nfields);
 
     validator(nfields, fields);
@@ -835,7 +1043,9 @@ void MySQLSession::prepare_execute_with_bind_parameters(
   } while (status == 0);
 
   if (status == MYSQL_NO_DATA) return;
+#ifndef MRSD_CLIENT_MARIADB
   if (status == CR_NO_RESULT_SET) return;
+#endif
 
   throw_mysqlerror(stmt, ps_id);
 }
@@ -1063,8 +1273,16 @@ std::string MySQLSession::quote(const std::string &s, char qchar) const {
   std::string r;
   r.resize(s.length() * 2 + 3);
   r[0] = qchar;
+#ifdef MRSD_CLIENT_MARIADB
+  // mrsd: no mysql_real_escape_string_quote() in libmariadb;
+  // mysql_real_escape_string() escapes ' and " (and handles
+  // NO_BACKSLASH_ESCAPES), which covers the quote chars used here
+  unsigned long len =
+      mysql_real_escape_string(connection_, &r[1], s.c_str(), s.length());
+#else
   unsigned long len = mysql_real_escape_string_quote(
       connection_, &r[1], s.c_str(), s.length(), qchar);
+#endif
   r.resize(len + 2);
   r[len + 1] = qchar;
   return r;
@@ -1086,7 +1304,11 @@ const char *MySQLSession::ssl_cipher() {
 }
 
 bool MySQLSession::is_ssl_session_reused() {
+#ifdef MRSD_CLIENT_MARIADB
+  return false;  // no TLS session resumption in libmariadb
+#else
   return connection_ ? mysql_get_ssl_session_reused(connection_) : false;
+#endif
 }
 
 unsigned long MySQLSession::server_version() {

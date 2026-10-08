@@ -11,8 +11,9 @@ without the router's connection routing, InnoDB Cluster/ClusterSet support,
 bootstrap and X protocol. It is built against a stock MySQL client library.
 
 > **Status:** work in progress. restd builds and passes its tests on Linux,
-> macOS and Windows against MySQL 26.7. There are no packages yet. See [docs/PLAN.md](docs/PLAN.md) and
-> [docs/PROGRESS.md](docs/PROGRESS.md).
+> macOS and Windows against MySQL 26.7 (Milestone 1). MariaDB support (Connector/C,
+> MariaDB server) is the current milestone; see [docs/PLAN.md](docs/PLAN.md) and
+> [docs/PROGRESS.md](docs/PROGRESS.md). There are no packages yet.
 
 ## Building
 
@@ -20,9 +21,12 @@ bootstrap and X protocol. It is built against a stock MySQL client library.
 
 - CMake 3.24 or later and a C++23 compiler (tested: GCC 15, AppleClang 21,
   MSVC 2022 17.14)
-- an extracted **MySQL server binary package**, 9.0 or later: restd uses its
-  client library (`lib/`) and headers (`include/`), and the tests use its
-  `mysqld`
+- a client library, one of:
+  - **MariaDB Connector/C** 3.4 or later (a release package, or Homebrew's
+    `mariadb-connector-c`), built with OpenSSL
+  - an extracted **MySQL server binary package**, 9.0 or later: restd uses its
+    client library (`lib/`) and headers (`include/`), and the tests use its
+    `mysqld`
 - OpenSSL 3 and ICU (system packages on Linux/macOS; on Windows, e.g. OpenSSL
   from vcpkg and the official ICU zip)
 - optional: the **JIT executor library** (`libjitexecutor` and its headers),
@@ -32,7 +36,8 @@ bootstrap and X protocol. It is built against a stock MySQL client library.
 
 | Option | |
 |---|---|
-| `MYSQL_PACKAGE_DIR` | **required**, path of the MySQL server package |
+| `MARIADB_CONNECTOR_DIR` | prefix of a MariaDB Connector/C installation; **one of** this and `MYSQL_PACKAGE_DIR` is required |
+| `MYSQL_PACKAGE_DIR` | path of the MySQL server package (builds against libmysqlclient instead) |
 | `MRS_JIT_EXECUTOR_LIB` | directory with `libjitexecutor` and its headers; without it, restd is built without MRS script support |
 | `WITH_UNIT_TESTS` | build the unit tests and the test tools (`OFF`) |
 | `WITH_COMPONENT_TESTS` | build the component tests, needs `WITH_UNIT_TESTS` (`OFF`) |
@@ -59,12 +64,14 @@ On Windows, run it from a `vcvars64.bat` environment; see `ext/polyglot/README.t
 
 ```sh
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  -DMYSQL_PACKAGE_DIR=/path/to/mysql-<version>-<platform> \
+  -DMARIADB_CONNECTOR_DIR=/opt/homebrew/opt/mariadb-connector-c \
   -DMRS_JIT_EXECUTOR_LIB=$PWD/ext/polyglot/polyglot-nativeapi-native-library/target
 cmake --build build
 ```
 
-On macOS, OpenSSL and ICU are found in Homebrew's default locations.
+With MySQL's client library, pass `-DMYSQL_PACKAGE_DIR=/path/to/mysql-<version>-<platform>`
+instead of `MARIADB_CONNECTOR_DIR`. On macOS, OpenSSL and ICU are found in
+Homebrew's default locations.
 
 ### Windows
 

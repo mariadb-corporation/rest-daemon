@@ -52,6 +52,13 @@ constexpr uint8_t kMbMaxLen[] = {
 namespace mrsd {
 
 unsigned int charset_mbmaxlen(unsigned int collation_id) {
+#ifdef MRSD_CLIENT_MARIADB
+  // libmariadb exports its collation table (MariaDB ids differ from MySQL's
+  // above ~247, and the UCA-14 collations use ids >= 2048)
+  if (const auto *cs = mariadb_get_charset_by_nr(collation_id)) {
+    return cs->char_maxlen;
+  }
+#endif
   if (collation_id < std::size(kMbMaxLen)) return kMbMaxLen[collation_id];
 
   return 0;

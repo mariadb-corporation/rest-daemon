@@ -27,8 +27,9 @@
 #ifndef ROUTER_SRC_JIT_EXECUTOR_SRC_DATABASE_QUERY_ATTRIBUTES_H_
 #define ROUTER_SRC_JIT_EXECUTOR_SRC_DATABASE_QUERY_ATTRIBUTES_H_
 
-#include <field_types.h>
-#include <mysql_time.h>
+#include <mysql.h>  // enum_field_types, MYSQL_TIME
+
+#include "mrsd/compat_client.h"  // mrsd: bind_bool_t
 #include <functional>
 #include <memory>
 #include <string>
@@ -80,7 +81,7 @@ struct Classic_query_attribute : public IQuery_attribute_value {
   enum_field_types type = MYSQL_TYPE_NULL;
   void *data_ptr = nullptr;
   unsigned long size = 0;
-  bool is_null = true;
+  mrsd::bind_bool_t is_null = true;  // bound through MYSQL_BIND::is_null
   int flags = 0;
 };
 

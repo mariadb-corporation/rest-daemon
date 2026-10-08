@@ -24,6 +24,7 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "mrsd/compat_client.h"  // mrsd: is_client_error
 #include "mrs/database/mysql_task_monitor.h"
 #include <mysql.h>
 #include <chrono>
@@ -131,7 +132,7 @@ bool MysqlTaskMonitor::update_task(Task &task) {
       task.script.clear();
       task.failed = true;
       // client errors are fatal (disconnection etc), so we can't cleanup
-      if (e.code() >= CR_ERROR_FIRST && e.code() <= CR_ERROR_LAST) return true;
+      if (mrsd::is_client_error(e.code())) return true;
       task.error = task.on_error(e);
       return false;
     } catch (const std::exception &e) {

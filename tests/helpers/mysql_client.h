@@ -379,35 +379,47 @@ class MysqlClient {
   using CanHandleExpiredPasswords =
       BooleanOption<MYSQL_OPT_CAN_HANDLE_EXPIRED_PASSWORDS>;
   using Compress = BooleanOption<MYSQL_OPT_COMPRESS>;
+#ifndef MRSD_CLIENT_MARIADB  // mrsd: not in libmariadb
   using CompressionAlgorithms =
       ConstCharOption<MYSQL_OPT_COMPRESSION_ALGORITHMS>;
+#endif
   using ConnectAttributeReset = BooleanOption<MYSQL_OPT_CONNECT_ATTR_RESET>;
   using ConnectAttributeDelete = BooleanOption<MYSQL_OPT_CONNECT_ATTR_DELETE>;
   using ConnectAttributeAdd = ConstCharPairOption<MYSQL_OPT_CONNECT_ATTR_ADD>;
 
   using ConnectTimeout = IntegerOption<MYSQL_OPT_CONNECT_TIMEOUT>;
+#ifndef MRSD_CLIENT_MARIADB  // mrsd: not in libmariadb
   using GetServerPublicKey = BooleanOption<MYSQL_OPT_GET_SERVER_PUBLIC_KEY>;
   using LoadDataLocalDir = ConstCharOption<MYSQL_OPT_LOAD_DATA_LOCAL_DIR>;
+#endif
   using LocalInfile = IntegerOption<MYSQL_OPT_LOCAL_INFILE>;
   using MaxAllowedPacket = LongOption<MYSQL_OPT_MAX_ALLOWED_PACKET>;
   using NamedPipe = BooleanOption<MYSQL_OPT_NAMED_PIPE>;
   using NetBufferLength = LongOption<MYSQL_OPT_NET_BUFFER_LENGTH>;
+#ifndef MRSD_CLIENT_MARIADB  // mrsd: not in libmariadb
   using OptionalResultsetMetadata =
       BooleanOption<MYSQL_OPT_OPTIONAL_RESULTSET_METADATA>;
+#endif
   // TCP/UnixSocket/...
   using Protocol = IntegerOption<MYSQL_OPT_PROTOCOL>;
   using ReadTimeout = IntegerOption<MYSQL_OPT_READ_TIMEOUT>;
+#ifndef MRSD_CLIENT_MARIADB  // mrsd: not in libmariadb
   using RetryCount = IntegerOption<MYSQL_OPT_RETRY_COUNT>;
+#endif
   using SslCa = ConstCharOption<MYSQL_OPT_SSL_CA>;
   using SslCaPath = ConstCharOption<MYSQL_OPT_SSL_CAPATH>;
   using SslCert = ConstCharOption<MYSQL_OPT_SSL_CERT>;
   using SslCipher = ConstCharOption<MYSQL_OPT_SSL_CIPHER>;
   using SslCrl = ConstCharOption<MYSQL_OPT_SSL_CRL>;
   using SslCrlPath = ConstCharOption<MYSQL_OPT_SSL_CRLPATH>;
+#ifndef MRSD_CLIENT_MARIADB  // mrsd: not in libmariadb
   using SslFipsMode = IntegerOption<MYSQL_OPT_SSL_FIPS_MODE>;
+#endif
   using SslKey = ConstCharOption<MYSQL_OPT_SSL_KEY>;
+#ifndef MRSD_CLIENT_MARIADB  // mrsd: not in libmariadb
   using SslMode = IntegerOption<MYSQL_OPT_SSL_MODE>;
   using TlsCipherSuites = ConstCharOption<MYSQL_OPT_TLS_CIPHERSUITES>;
+#endif
   using TlsVersion = ConstCharOption<MYSQL_OPT_TLS_VERSION>;
   using WriteTimeout = IntegerOption<MYSQL_OPT_WRITE_TIMEOUT>;
   using ZstdCompressionLevel = IntegerOption<MYSQL_OPT_ZSTD_COMPRESSION_LEVEL>;
@@ -787,6 +799,7 @@ class MysqlClient {
       MYSQL *m_;
     };
 
+#ifndef MRSD_CLIENT_MARIADB  // mrsd: no query attributes in libmariadb
     stdx::expected<void, MysqlError> bind_params(
         const std::span<MYSQL_BIND> &params,
         const std::span<const char *> &names) {
@@ -797,6 +810,7 @@ class MysqlClient {
 
       return {};
     }
+#endif
 
     stdx::expected<Result, MysqlError> query(const std::string_view &stmt) {
       auto r = mysql_real_query(m_, stmt.data(), stmt.size());
@@ -846,7 +860,11 @@ class MysqlClient {
   stdx::expected<void, MysqlError> use_schema(const std::string &schema) {
     initial_schema_ = schema;
 
+#ifdef MRSD_CLIENT_MARIADB
+    if (!m_ || m_->net.pvio == nullptr) return {};  // no server connection yet.
+#else
     if (!m_ || m_->net.vio == nullptr) return {};  // no server connection yet.
+#endif
 
     const auto r = mysql_select_db(m_.get(), schema.c_str());
 
@@ -876,8 +894,16 @@ class MysqlClient {
     // You must allocate the to buffer to be at least length*2+1 bytes long.
     out.resize(stmt.size() * 2 + 1);
 
+#ifdef MRSD_CLIENT_MARIADB
+    // mrsd: no mysql_real_escape_string_quote() in libmariadb; ' and " are
+    // escaped either way
+    (void)quote;
+    auto res = mysql_real_escape_string(m_.get(), out.data(), stmt.data(),
+                                        stmt.size());
+#else
     auto res = mysql_real_escape_string_quote(m_.get(), out.data(), stmt.data(),
                                               stmt.size(), quote);
+#endif
 
     // should not happen as the out.size() should be large enough.
     if (res == static_cast<unsigned long>(-1)) std::terminate();
@@ -887,6 +913,7 @@ class MysqlClient {
     return out;
   }
 
+#ifndef MRSD_CLIENT_MARIADB  // mrsd: no query attributes in libmariadb
   stdx::expected<Statement::Result, MysqlError> query(
       std::string_view stmt, const std::span<MYSQL_BIND> &params,
       const std::span<const char *> &names) {
@@ -897,6 +924,7 @@ class MysqlClient {
 
     return st.query(stmt);
   }
+#endif
 
   class PreparedStatement {
    public:
@@ -960,8 +988,14 @@ class MysqlClient {
         return stdx::unexpected(make_mysql_error_code(1));
       }
 
+#ifdef MRSD_CLIENT_MARIADB
+      // mrsd: no named parameters in libmariadb
+      (void)names;
+      auto r = mysql_stmt_bind_param(stmt, params.data());
+#else
       auto r = mysql_stmt_bind_named_param(stmt, params.data(), params.size(),
                                            names.data());
+#endif
       if (r != 0) {
         return stdx::unexpected(make_mysql_error_code(stmt));
       }
@@ -977,8 +1011,12 @@ class MysqlClient {
         return stdx::unexpected(make_mysql_error_code(1));
       }
 
+#ifdef MRSD_CLIENT_MARIADB
+      auto r = mysql_stmt_bind_param(stmt, params.data());
+#else
       auto r = mysql_stmt_bind_named_param(stmt, params.data(), params.size(),
                                            nullptr);
+#endif
       if (r != 0) {
         return stdx::unexpected(make_mysql_error_code(stmt));
       }
@@ -1279,6 +1317,7 @@ class MysqlClient {
     return {m_.get(), SESSION_TRACK_BEGIN, SESSION_TRACK_END};
   }
 
+#ifndef MRSD_CLIENT_MARIADB  // mrsd: MySQL's binlog client API
   stdx::expected<void, MysqlError> binlog_dump(MYSQL_RPL &rpl) {
     auto res = mysql_binlog_open(m_.get(), &rpl);
 
@@ -1298,6 +1337,7 @@ class MysqlClient {
 
     return {};
   }
+#endif
 
   [[nodiscard]] int native_handle() const { return m_->net.fd; }
 

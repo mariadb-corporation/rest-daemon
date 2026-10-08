@@ -34,6 +34,8 @@
 
 #include "my_thread.h"  // my_thread_self_setname
 #include "mysql.h"      // mysql_ssl_mode
+
+#include "mrsd/compat_client.h"  // mrsd: mysql_ssl_mode on libmariadb
 #include "mysql/harness/config_option.h"
 #include "mysql/harness/config_parser.h"
 #include "mysql/harness/logging/logging.h"

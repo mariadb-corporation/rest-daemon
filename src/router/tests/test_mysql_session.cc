@@ -114,6 +114,7 @@ unsigned int DefaultValueGetter<unsigned int>(mysql_option opt) {
 template <>
 const char *DefaultValueGetter<const char *>(mysql_option opt) {
   if (opt == MYSQL_OPT_TLS_VERSION) return "TLSv1.2";
+#ifndef MRSD_CLIENT_MARIADB
   if (opt == MYSQL_OPT_LOAD_DATA_LOCAL_DIR) {
     // needs to be directory that exists.
     return
@@ -124,6 +125,7 @@ const char *DefaultValueGetter<const char *>(mysql_option opt) {
 #endif
         ;
   }
+#endif
 
   return "test-value";
 }
@@ -143,7 +145,9 @@ class MysqlSessionOptionTest : public ::testing::Test {};
 
 using MysqlSessionOptionTypes =
     ::testing::Types<MySQLSession::DefaultAuthentication,  //
+#ifndef MRSD_CLIENT_MARIADB  // mrsd: not readable in libmariadb
                      MySQLSession::EnableCleartextPlugin,  //
+#endif
                      // InitCommand - set-only
                      MySQLSession::BindAddress,                //
                      MySQLSession::CanHandleExpiredPasswords,  //
@@ -152,15 +156,19 @@ using MysqlSessionOptionTypes =
                      // CompressionAlgorithms (Bug#32483980)
                      // ConnectAttributeReset - set-only
                      // ConnectAttributeDelete - set-only
+#ifndef MRSD_CLIENT_MARIADB
                      MySQLSession::GetServerPublicKey,  //
                      MySQLSession::LoadDataLocalDir,    //
+#endif
                      MySQLSession::LocalInfile,         //
                      MySQLSession::MaxAllowedPacket,    //
                      // NamedPipe - set-only
                      MySQLSession::NetBufferLength,  //
                      MySQLSession::Protocol,         //
                      MySQLSession::ReadTimeout,      //
+#ifndef MRSD_CLIENT_MARIADB
                      MySQLSession::RetryCount,       //
+#endif
                      MySQLSession::SslCa,            //
                      MySQLSession::SslCaPath,        //
                      MySQLSession::SslCert,          //
@@ -168,16 +176,21 @@ using MysqlSessionOptionTypes =
                      MySQLSession::SslCrl,           //
                      MySQLSession::SslCrlPath,       //
                      MySQLSession::SslKey,           //
+#ifndef MRSD_CLIENT_MARIADB
                      MySQLSession::TlsCipherSuites,  //
+#endif
                      MySQLSession::TlsVersion,       //
                      MySQLSession::WriteTimeout,     //
                      // ZstdCompressionLevel (Bug#32483980)
                      MySQLSession::PluginDir,         //
                      MySQLSession::ServerPluginKey,   //
                      MySQLSession::ReadDefaultFile,   //
-                     MySQLSession::ReadDefaultGroup,  //
-                     MySQLSession::CharsetDir,        //
-                     MySQLSession::CharsetName        //
+                     MySQLSession::ReadDefaultGroup   //
+#ifndef MRSD_CLIENT_MARIADB  // mrsd: libmariadb doesn't store these as set
+                     ,
+                     MySQLSession::CharsetDir,  //
+                     MySQLSession::CharsetName  //
+#endif
 #ifdef _WIN32
                      ,
                      MySQLSession::SharedMemoryBasename
@@ -240,8 +253,19 @@ template <typename T>
 class MysqlSessionGettableOptionTest : public ::testing::Test {};
 
 using MysqlSessionGettableOptionTypes =
-    ::testing::Types<MySQLSession::LoadDataLocalDir  // needs real directory
-                     >;
+    ::testing::Types<
+#ifndef MRSD_CLIENT_MARIADB
+        MySQLSession::LoadDataLocalDir  // needs real directory
+#else
+        // mrsd: readable in libmariadb, but not as the value that was set
+        // (no LoadDataLocalDir there)
+        MySQLSession::CharsetDir,           //
+        MySQLSession::CharsetName,          //
+        MySQLSession::InitCommand,          // read back as a list
+        MySQLSession::NamedPipe,            //
+        MySQLSession::ZstdCompressionLevel  //
+#endif
+        >;
 
 TYPED_TEST_SUITE(MysqlSessionGettableOptionTest,
                  MysqlSessionGettableOptionTypes);
@@ -266,12 +290,16 @@ template <typename T>
 class MysqlSessionSettableOptionTest : public ::testing::Test {};
 
 using MysqlSessionSettableOptionTypes =
-    ::testing::Types<MySQLSession::InitCommand,             //
-                     MySQLSession::ConnectAttributeReset,   //
+    ::testing::Types<MySQLSession::ConnectAttributeReset,   //
                      MySQLSession::ConnectAttributeDelete,  //
-                     MySQLSession::NamedPipe,               //
-                     MySQLSession::ZstdCompressionLevel,    // Bug#32483980
-                     MySQLSession::CompressionAlgorithms    // Bug#32483980
+#ifndef MRSD_CLIENT_MARIADB
+                     MySQLSession::InitCommand,           //
+                     MySQLSession::NamedPipe,             //
+                     MySQLSession::ZstdCompressionLevel,  // Bug#32483980
+                     MySQLSession::CompressionAlgorithms  // Bug#32483980
+#else
+                     MySQLSession::EnableCleartextPlugin  // mrsd: not readable
+#endif
                      >;
 
 TYPED_TEST_SUITE(MysqlSessionSettableOptionTest,

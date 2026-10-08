@@ -36,6 +36,7 @@
 
 #include <mysql.h>  // mysql_library_init
 
+#include "mrsd/compat_client.h"  // mrsd: MySQL-only ER_* codes
 #include "my_thread.h"     // NOLINT(build/include_subdir)
 #include "mysqld_error.h"  // NOLINT(build/include_subdir)
 #include "socket_operations.h"

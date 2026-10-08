@@ -11,7 +11,17 @@ tick tasks, add a session entry, and rewrite "Next steps".
 | 1: new repo that builds | ✅ done 2026-09-30: macOS, Linux, Windows (x64), with JIT; smoke test incl. MRS scripts passes on all three |
 | 2: tests and ecosystem validation | ✅ done 2026-10-05: unit + component tests (116/116) and MRS functional suite pass on Linux, macOS, Windows; CI moved to the end (Phase 4) |
 | 3: MRS setup and cleanup | ✅ done 2026-10-05: branding (`mariadb-restd`), `--setup`, routing/cluster cleanup; tests pass on all three platforms |
-| 4: packaging and CI | 🟡 tar.gz (Linux, macOS), deb, rpm, Windows ZIP done and verified (unpacked); real deb/rpm installs need root; MSI deferred; CI last |
+| 4: packaging and CI | ⏸ moved to Milestone 4 (2026-10-07): tar.gz (Linux, macOS), deb, rpm, Windows ZIP done and verified (unpacked); real deb/rpm installs need root; MSI deferred; CI last |
+
+**Milestone 1 (standalone daemon) is complete (2026-10-07).** Milestone 2 (MariaDB) is current.
+
+| Milestone 2 phase | Status |
+|---|---|
+| M2.0: MariaDB dependency inventory | ✅ done 2026-10-07, verdict GO in stages ([milestone2-inventory.md](milestone2-inventory.md)) |
+| M2.1: build against MariaDB Connector/C | 🟡 started 2026-10-08 (macOS) |
+| M2.2: run against a MariaDB server | ⬜ |
+| M2.3: test suites on MariaDB | ⬜ |
+| M2.4: cleanup | ⬜ |
 
 ## How to build and test (macOS)
 
@@ -29,6 +39,20 @@ SHELL_PLUGINS=<dev>/mysql/mysql-shell-plugins \
   tools/smoke/run_smoke.sh      # prints "OK: {...}" on success
 ```
 `build/` is the same build without JIT (leave out `-DMRS_JIT_EXECUTOR_LIB`).
+
+### MariaDB Connector/C build (Milestone 2, `build-mariadb`)
+
+```sh
+brew install mariadb-connector-c   # 3.4.x, OpenSSL; keg-only
+cmake -S . -B build-mariadb -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+  -DMARIADB_CONNECTOR_DIR=/opt/homebrew/opt/mariadb-connector-c \
+  -DMRS_JIT_EXECUTOR_LIB=$PWD/ext/polyglot/polyglot-nativeapi-native-library/target \
+  -DWITH_UNIT_TESTS=ON -DWITH_COMPONENT_TESTS=ON
+ninja -C build-mariadb
+```
+`MRSD_CLIENT_MARIADB` is defined for the whole build; the client-API differences are
+behind `#ifdef MRSD_CLIENT_MARIADB` (`grep -rn MRSD_CLIENT_MARIADB src compat tests`),
+centralised in `compat/include/mrsd/compat_client.h`.
 
 ### MRS functional suite (pytest, `tests/mrs`)
 
@@ -225,7 +249,8 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
 - [x] cleanup of routing/cluster leftovers (stages 1, 2a, 2b)
 
 ## Open questions
-- None blocking.
+- Minimum server 10.11 vs. the metadata schema 4.1.6 (`JSON_SCHEMA_VALID` needs 11.1):
+  to raise with the plugin team.
 
 ## Resolved questions
 - JIT: `-DMRS_JIT_EXECUTOR_LIB=<dir>` (lib + headers), built from `ext/polyglot` in this repo
@@ -238,7 +263,12 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
   `<dev>/rest-daemon` (moved there 2026-10-07 from `<dev>/mysql/mrsd`).
 
 ## Next steps
-1. Open items from 2026-10-07 (the session that moved to this repo):
+1. Phase M2.1: build against MariaDB Connector/C (macOS first). Local resources: MariaDB
+   13.2.0 Release build in `<dev>/mariadb-server/light-build` (`sql/mariadbd`, static
+   `libmariadb/libmariadb/libmariadbclient.a` with `CONC_WITH_SSL=OPENSSL`), built shell in
+   `<dev>/shell/bld/bin/mariadb-shell`, MRS plugins in `<dev>/mariadb-shell-plugins`.
+   A Connector/C package build (shared `libmariadb`, OpenSSL) is still needed.
+3. Open items from Milestone 1 (now Milestone 4, packaging and CI):
    - Rename (`mariadb-restd`): Ubuntu passed (ctest 113/113, deb, smoke incl. MRS scripts,
      MRS suite 117 passed/4 skipped/1 xpassed); Windows passed (ctest 113/113, ZIP smoke
      incl. MRS scripts with a clean PATH, MRS suite 116 passed/5 skipped/1 xpassed);
@@ -248,8 +278,8 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
    - Real `apt install` / `dnf install` tests of the deb/rpm (need root on the VMs).
    - The VMs still build the JIT library in their shell checkouts; can switch to
      `ext/polyglot` of this repo.
-2. Push to GitHub: not yet (wait for the user's go).
-3. Windows MSI (deferred), CI with GitHub Actions (last).
+4. Push to GitHub: not yet (wait for the user's go).
+5. Windows MSI (deferred), CI with GitHub Actions (last).
 
 ## Session log
 
@@ -475,3 +505,39 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
 - macOS: rest-daemon built against it (`build-test`), smoke test incl. MRS scripts passes
   (first macOS run with scripts; mrs_scripts copied from the Ubuntu VM to
   `<dev>/mysql/mrs_scripts`).
+
+### 2026-10-07: session 4 (Milestone 1 closed, Milestone 2 inventory)
+- Milestone 1 declared complete; Phase 4 (packaging, CI) moved to a final Milestone 3.
+- Phase M2.0: four surveys (client API vs Connector/C 3.4.10, SQL emitted by the daemon,
+  MRS metadata schema on MariaDB, tests/tools) written up in `docs/milestone2-inventory.md`;
+  phases M2.1-M2.4 added to PLAN.md. Key findings: schema 4.1.6 in the MariaDB shell plugins
+  already runs on MariaDB (same name and objects, accepted by the daemon's major-only check);
+  8 client functions and 9 option enumerators missing in Connector/C; the server-side work is
+  JSON document generation, GTID tracking (`session_track_gtids` SET fails on every RW pool
+  connection), `mysql_tasks` (not deployed on MariaDB), account setup syntax, and the version
+  gate that rejects MariaDB outright.
+- 2026-10-08: Milestone 2 decisions recorded (PLAN.md decision log); async tasks and
+  GTID/"asof" moved to a new Milestone 3, packaging and CI to Milestone 4.
+
+### 2026-10-08: session 4, continued (Phase M2.1 on macOS)
+- `cmake/compat/mariadb_connector.cmake`: `-DMARIADB_CONNECTOR_DIR` (Homebrew
+  `mariadb-connector-c` 3.4.11, OpenSSL) defines the same `MySQL::client` target and
+  `MYSQL_CLIENT_*` names as the MySQL finder, plus the global `MRSD_CLIENT_MARIADB`.
+  The MySQL build is unchanged (decision: keep it).
+- `compat/include/mrsd/compat_client.h` carries the differences: `mysql_ssl_mode` enum,
+  MySQL-only `MYSQL_TYPE_*` codes, MySQL-only `ER_*` codes mapped to MariaDB's,
+  `bind_bool_t` (`MYSQL_BIND::is_null` is `my_bool*` in libmariadb), `is_client_error()`
+  (libmariadb has a second client error range, 5000+). `client_errors.cc` uses libmariadb's
+  exported tables, `charset.cc` its `mariadb_get_charset_by_nr()`.
+- `MySQLSession`: ssl modes emulated with `MYSQL_OPT_SSL_ENFORCE` +
+  `MYSQL_OPT_SSL_VERIFY_SERVER_CERT` (VERIFY_CA = VERIFY_IDENTITY; REQUIRED checked after
+  connect, since libmariadb silently drops TLS when verification is off and the server has
+  none; libmariadb 3.4 defaults to TLS + verification, so the constructor applies
+  PREFERRED); nonblocking API on `mysql_*_start()/_cont()` with `MYSQL_OPT_NONBLOCK` set
+  lazily and a zero-timeout poll between calls (untested until Milestone 3 enables async
+  tasks); TLS session cache, `mysql_real_escape_string_quote`, query attributes
+  (`mysql_bind_param`), `CR_NO_RESULT_SET`, `CLIENT_LONG_PASSWORD` and the missing option
+  aliases behind `#ifdef`.
+- Tests: `tests/helpers/mysql_client.h` and `test_mysql_session.cc` adapted (options
+  libmariadb can't read back, or reads back differently). macOS: ctest 113/113 on the
+  Connector/C build; MySQL build rebuilt from the same sources.

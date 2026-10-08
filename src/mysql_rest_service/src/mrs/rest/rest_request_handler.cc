@@ -24,6 +24,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include "mrsd/compat_client.h"  // mrsd: MySQL-only ER_* codes
 #include "mrs/rest/rest_request_handler.h"
 
 #include <memory>
@@ -642,11 +643,14 @@ void RestRequestHandler::handle_request(::http::base::Request &req) {
 
 http::Error RestRequestHandler::err_to_http_error(
     const mysqlrouter::MySQLSession::Error &err) {
+#ifndef MRSD_CLIENT_MARIADB  // mrsd: no GTID_MODE on MariaDB
   if (ER_GTID_MODE_OFF == err.code()) {
     return {HttpStatusCode::BadRequest,
             "'Asof' requirement was not fulfilled, GTID_MODE is not "
             "configured properly on the MySQL Server."};
-  } else if (ER_WRONG_VALUE == err.code()) {
+  }
+#endif
+  if (ER_WRONG_VALUE == err.code()) {
     // Its safe to forward this message:
     //     ER_WRONG_VALUE_MSG
     //     "Incorrect %-.32s value: \'%-.128s\'"

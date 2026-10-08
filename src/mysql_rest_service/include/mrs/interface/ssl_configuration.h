@@ -31,6 +31,8 @@
 
 #include <mysql.h>
 
+#include "mrsd/compat_client.h"  // mrsd: mysql_ssl_mode on libmariadb
+
 namespace mrs {
 class SslConfiguration {
  public:

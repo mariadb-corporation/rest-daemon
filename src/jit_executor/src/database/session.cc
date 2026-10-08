@@ -26,8 +26,6 @@
 
 #include "database/session.h"
 
-#include <mysql_version.h>
-
 #include <mutex>
 #include <regex>
 #include <utility>
@@ -47,9 +45,11 @@ namespace database {
 
 using jit_executor::db::IResult;
 
+#ifndef MRSD_CLIENT_MARIADB
 namespace {
 constexpr size_t K_MAX_QUERY_ATTRIBUTES = 32;
 }  // namespace
+#endif
 
 //-------------------------- Session Implementation ----------------------------
 
@@ -179,6 +179,10 @@ std::shared_ptr<IResult> Session::run_sql(
     return err;
   };
 
+#ifdef MRSD_CLIENT_MARIADB
+  // mrsd: no query attributes in the MariaDB protocol; they are ignored
+  (void)query_attributes;
+#else
   // Attribute references need to be alive while the query is executed
   const char *attribute_names[K_MAX_QUERY_ATTRIBUTES];
   MYSQL_BIND attribute_values[K_MAX_QUERY_ATTRIBUTES];
@@ -203,6 +207,7 @@ std::shared_ptr<IResult> Session::run_sql(
     mysql_bind_param(_mysql, attribute_count, attribute_values,
                      attribute_names);
   }
+#endif
 
   if (mysql_real_query(_mysql, sql, len) != 0) {
     throw process_error({sql, len});
