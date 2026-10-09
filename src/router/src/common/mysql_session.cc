@@ -591,7 +591,7 @@ const std::error_category &mysql_category() noexcept {
    public:
     const char *name() const noexcept override { return "mysql_client"; }
     std::string message(int ev) const override {
-      return restd::client_error_message(ev ? ev : CR_UNKNOWN_ERROR);
+      return mrsd::client_error_message(ev ? ev : CR_UNKNOWN_ERROR);
     }
   };
 
@@ -600,7 +600,7 @@ const std::error_category &mysql_category() noexcept {
 }
 
 static MysqlError make_mysql_error_code(unsigned int e) {
-  return {e, restd::client_error_message(e ? e : CR_UNKNOWN_ERROR), "HY000"};
+  return {e, mrsd::client_error_message(e ? e : CR_UNKNOWN_ERROR), "HY000"};
 }
 
 static MysqlError make_mysql_error_code(MYSQL *m) {
@@ -1015,8 +1015,8 @@ void MySQLSession::prepare_execute_with_bind_parameters(
     }
     std::unique_ptr<MYSQL_BIND[]> my_bind{new MYSQL_BIND[nfields]};
     std::unique_ptr<unsigned long[]> length{new unsigned long[nfields]};
-    std::unique_ptr<restd::bind_bool_t[]> is_null{
-        new restd::bind_bool_t[nfields]};
+    std::unique_ptr<mrsd::bind_bool_t[]> is_null{
+        new mrsd::bind_bool_t[nfields]};
     memset(my_bind.get(), 0, sizeof(MYSQL_BIND) * nfields);
 
     validator(nfields, fields);

@@ -88,7 +88,7 @@ static std::string appedn_unsigned(const MYSQL_FIELD *field) {
 static std::string append_length(const MYSQL_FIELD *field) {
   using namespace std::string_literals;
   auto l = field->length;
-  const auto mbmaxlen = restd::charset_mbmaxlen(field->charsetnr);
+  const auto mbmaxlen = mrsd::charset_mbmaxlen(field->charsetnr);
   if (mbmaxlen > 0) {
     l = l / mbmaxlen;
   }
@@ -104,7 +104,8 @@ static std::string append_length_dec(const MYSQL_FIELD *field) {
 
 std::string txt_from_mysql_column_type(const MYSQL_FIELD *field) {
   using namespace std::string_literals;
-  switch (field->type) {
+  // restd: JSON/VECTOR on MariaDB come from the extended metadata
+  switch (mrsd::effective_field_type(field)) {
     case MYSQL_TYPE_DECIMAL:
       return "DECIMAL"s + append_length_dec(field);
     case MYSQL_TYPE_NEWDECIMAL:
@@ -188,7 +189,8 @@ std::string txt_from_mysql_column_type(const MYSQL_FIELD *field) {
 }
 
 JsonType from_mysql_column_type(const MYSQL_FIELD *field) {
-  switch (field->type) {
+  // restd: JSON/VECTOR on MariaDB come from the extended metadata
+  switch (mrsd::effective_field_type(field)) {
     case MYSQL_TYPE_DECIMAL:
     case MYSQL_TYPE_NEWDECIMAL:
     case MYSQL_TYPE_TINY:

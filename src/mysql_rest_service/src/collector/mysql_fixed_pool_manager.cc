@@ -54,7 +54,7 @@ void MysqlFixedPoolManager::MysqlCacheCallbacks::object_remove(Object obj) {
 bool MysqlFixedPoolManager::MysqlCacheCallbacks::object_before_cache(
     Object obj, [[maybe_unused]] bool dirty) {
   const auto last_error = obj->last_errno();
-  if (restd::is_client_error(last_error)) return false;
+  if (mrsd::is_client_error(last_error)) return false;
 
   return true;
 }

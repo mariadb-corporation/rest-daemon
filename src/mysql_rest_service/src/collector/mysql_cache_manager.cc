@@ -137,7 +137,7 @@ void MysqlCacheManager::MysqlCacheCallbacks::object_remove(Object obj) {
 bool MysqlCacheManager::MysqlCacheCallbacks::object_before_cache(Object obj,
                                                                  bool dirty) {
   auto last_error = obj->last_errno();
-  if (restd::is_client_error(last_error)) return false;
+  if (mrsd::is_client_error(last_error)) return false;
   // If we are at other server, then just drop such connection,
   // we only need to cache the connections to default server.
   if (!is_default_server(obj)) return false;

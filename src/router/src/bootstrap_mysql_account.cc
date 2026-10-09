@@ -456,14 +456,15 @@ void BootstrapMySQLAccount::give_grants_to_users(
 
     // if we were granting some roles we need to make sure they are enabled by
     // default
+    std::string default_role;  // restd: best effort on MariaDB, see below
     if (user_options.grant_role.size() > 0) {
       if (mysql_->is_mariadb()) {
         // restd: one default role per account on MariaDB; the connection
         // pools SET ROLE explicitly, the default only matters for ad-hoc
-        // connections
-        statements.push_back("SET DEFAULT ROLE "s +
-                             user_options.grant_role.front() + " FOR " +
-                             new_accounts);
+        // connections. Setting another account's default role needs
+        // privileges on the mysql schema, which the setup account may lack.
+        default_role = "SET DEFAULT ROLE "s + user_options.grant_role.front() +
+                       " FOR " + new_accounts;
       } else {
         statements.push_back("SET DEFAULT ROLE ALL TO " + new_accounts);
       }
@@ -489,6 +490,14 @@ void BootstrapMySQLAccount::give_grants_to_users(
                 "Error creating MySQL account for router (GRANTs stage): ") +
             e.what();
         throw std::runtime_error(err_msg);
+      }
+    }
+
+    if (!default_role.empty()) {
+      try {
+        mysql_->execute(default_role);
+      } catch (const MySQLSession::Error &) {
+        // not essential, see above
       }
     }
   }

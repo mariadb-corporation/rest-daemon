@@ -32,6 +32,7 @@ _SRID_ATTR = re.compile(r"\s+SRID\s+\d+(?=\s*(?:,|\)|NOT\s+NULL|NULL|DEFAULT|COM
 # BLOB holds the same bytes (VEC_FromText/VEC_ToText work on any binary) and
 # MRS knows the column as VECTOR from the metadata, not from the table.
 _VECTOR_NO_DIM = re.compile(r"\bVECTOR\b(?!\s*\()", re.I)
+_DDL = re.compile(r"\s*(CREATE|ALTER)\b", re.I)
 _FUNCS = [(re.compile(r"\bSTRING_TO_VECTOR\s*\(", re.I), "VEC_FromText("),
           (re.compile(r"\bVECTOR_TO_STRING\s*\(", re.I), "VEC_ToText(")]
 _CAST_OPEN = re.compile(r"\bCAST\s*\(", re.I)
@@ -71,13 +72,122 @@ def _rewrite_cast_as_json(sql: str) -> str:
 _SRS_ID = re.compile(r"\bSRS_ID\b")
 
 
+# JSON path operators (MySQL only)
+_ARROW2 = re.compile(r"([A-Za-z_][A-Za-z_0-9]*(?:\.[A-Za-z_][A-Za-z_0-9]*)*|\))->>('\$[^']*')")
+_ARROW1 = re.compile(r"([A-Za-z_][A-Za-z_0-9]*(?:\.[A-Za-z_][A-Za-z_0-9]*)*|\))->('\$[^']*')")
+# statements of the GTID machinery and MySQL-only variables
+_RESET_GTIDS = re.compile(r"^\s*RESET\s+BINARY\s+LOGS\s+AND\s+GTIDS\s*$", re.I)
+_SUPER_READ_ONLY = re.compile(r"\bsuper_read_only\b", re.I)
+# MySQL's FROM_BASE64() returns NULL for invalid input, MariaDB's raises an
+# error (strict mode); the tests pass placeholders like 'ignore'
+_FROM_BASE64 = re.compile(r"\bFROM_BASE64\s*\(", re.I)
+
+
+def _rewrite_arrows(sql: str) -> str:
+    # a ')' before the arrow means a function result: not handled here
+    sql = _ARROW2.sub(lambda m: f"JSON_UNQUOTE(JSON_EXTRACT({m.group(1)},{m.group(2)}))"
+                      if m.group(1) != ")" else m.group(0), sql)
+    sql = _ARROW1.sub(lambda m: f"JSON_EXTRACT({m.group(1)},{m.group(2)})"
+                      if m.group(1) != ")" else m.group(0), sql)
+    return sql
+
+
+def _rewrite_from_base64(sql: str) -> str:
+    out = []
+    pos = 0
+    while True:
+        m = _FROM_BASE64.search(sql, pos)
+        if not m:
+            out.append(sql[pos:])
+            return "".join(out)
+        depth = 1
+        i = m.end()
+        while i < len(sql) and depth:
+            if sql[i] == "(":
+                depth += 1
+            elif sql[i] == ")":
+                depth -= 1
+            i += 1
+        arg = sql[m.end():i - 1]
+        out.append(sql[pos:m.start()])
+        out.append(f"IF(({arg}) REGEXP '^[A-Za-z0-9+/]*={{0,2}}$' AND LENGTH({arg}) % 4 = 0, "
+                   f"FROM_BASE64({arg}), NULL)")
+        pos = i
+
+
 def rewrite(sql: str) -> str:
+    if _RESET_GTIDS.match(sql):
+        return "DO 0"  # no GTIDs to reset, nothing to do
     sql = _SRID_ATTR.sub("", sql)
+    sql = _SUPER_READ_ONLY.sub("read_only", sql)
     if "information_schema.columns" in sql.lower():
         sql = _SRS_ID.sub("NULL", sql)
-    sql = _VECTOR_NO_DIM.sub("BLOB", sql)
+    if "->" in sql:
+        sql = _rewrite_arrows(sql)
+    if "FROM_BASE64" in sql.upper():
+        sql = _rewrite_from_base64(sql)
+    if _DDL.match(sql):  # not in string literals of INSERTs (a "/VECTOR" path)
+        sql = _VECTOR_NO_DIM.sub("BLOB", sql)
     for pattern, repl in _FUNCS:
         sql = pattern.sub(repl, sql)
     if "JSON" in sql.upper():
         sql = _rewrite_cast_as_json(sql)
     return sql
+
+
+# ---------------------------------------------------------------------------
+# output comparison in MariaDB mode
+# ---------------------------------------------------------------------------
+import json
+
+_CONTENT_LENGTH = re.compile(r"(Content-Length  ->  )\d+")
+_ETAG = re.compile(r'("etag": ")[0-9A-F]{64}(")')
+
+
+def _canonical_json(text: str):
+    """re-dump a JSON document with sorted keys; integral floats as ints"""
+    def fix(v):
+        if isinstance(v, dict):
+            return {k: fix(x) for k, x in v.items()}
+        if isinstance(v, list):
+            return [fix(x) for x in v]
+        if isinstance(v, float) and v.is_integer():
+            return int(v)
+        return v
+    return json.dumps(fix(json.loads(text)), sort_keys=True, indent=4,
+                      ensure_ascii=False)
+
+
+def normalize_output(text: str) -> str:
+    """What legitimately differs between the servers and is not what the
+    tests check: the length of documents with JSON values (MariaDB returns
+    JSON text as stored, MySQL normalized), the member order of objects
+    (MySQL sorts keys by length, MariaDB keeps the insertion order), the
+    etags that hash those documents, integral floats (ST_AsGeoJSON prints
+    20 vs 20.0). The pretty-printed documents of the mrs_client are re-dumped
+    with sorted keys; other lines stay as they are."""
+    text = _CONTENT_LENGTH.sub(r"\1<n>", text)
+    text = _ETAG.sub(r"\1<etag>\2", text)
+    lines = text.split("\n")
+    out = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line in ("{", "[") or (line.startswith(("{", "[")) and line.rstrip().endswith(("}", "]"))):
+            # a pretty-printed document ends with its closer in column 0, a
+            # one-line document is a line of its own
+            j = i
+            if line in ("{", "["):
+                closer = "}" if line == "{" else "]"
+                while j < len(lines) and lines[j] != closer:
+                    j += 1
+            block = "\n".join(lines[i:j + 1])
+            try:
+                out.append(_canonical_json(block))
+                i = j + 1
+                continue
+            except (ValueError, IndexError):
+                pass
+        out.append(line)
+        i += 1
+    return "\n".join(out)

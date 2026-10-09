@@ -184,6 +184,11 @@ class Mysqld:
         else:
             args += [f"--basedir={self.paths.package}", "--mysqlx=OFF",
                      "--gtid-mode=ON", "--enforce-gtid-consistency=ON"]
+        if os.environ.get("MRS_TEST_GENERAL_LOG"):
+            # debugging aid: the server's general log, written to that path
+            # (the base dir is removed at the end of the session)
+            args += ["--general-log=1",
+                     f"--general-log-file={os.environ['MRS_TEST_GENERAL_LOG']}"]
         args += extra or []
         self.extra = list(extra or [])
         self.proc = subprocess.Popen(args, stdout=subprocess.DEVNULL,

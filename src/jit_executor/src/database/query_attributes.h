@@ -81,7 +81,7 @@ struct Classic_query_attribute : public IQuery_attribute_value {
   enum_field_types type = MYSQL_TYPE_NULL;
   void *data_ptr = nullptr;
   unsigned long size = 0;
-  restd::bind_bool_t is_null = true;  // bound through MYSQL_BIND::is_null
+  mrsd::bind_bool_t is_null = true;  // bound through MYSQL_BIND::is_null
   int flags = 0;
 };
 

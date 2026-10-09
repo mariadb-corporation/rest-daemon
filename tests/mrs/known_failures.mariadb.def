@@ -1,1 +1,2 @@
 # Known failures on MariaDB (xfail): <test name>: <reason>
+timeout: max_statement_time does not interrupt a statement waiting for a table lock (LOCK TABLES), the request runs into the read timeout

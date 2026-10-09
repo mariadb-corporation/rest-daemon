@@ -26,6 +26,8 @@
 
 #include "mrs/rest/openapi_object_creator.h"
 
+#include <cstring>
+
 #include <charconv>
 #include <chrono>
 #include <iomanip>
@@ -298,6 +300,26 @@ std::optional<rapidjson::Value> OpenApiCreator::get_type_info(
   return add_type_constraints(raw_data_type, data_type);
 }
 
+// restd: MariaDB reports integer columns with their display width
+// ("int(11)", like MySQL before 8.0.19); the constraints and descriptions
+// use the bare type. "tinyint(1)" stays, it is the BOOLEAN of both servers.
+static std::string without_display_width(const std::string &datatype) {
+  static const char *const k_integers[] = {"bigint",  "mediumint", "smallint",
+                                           "integer", "int",       "tinyint"};
+  for (const char *name : k_integers) {
+    const size_t len = strlen(name);
+    if (datatype.compare(0, len, name) != 0 || datatype.size() <= len ||
+        datatype[len] != '(')
+      continue;
+    const size_t close = datatype.find(')', len);
+    if (close == std::string::npos) break;
+    if (strcmp(name, "tinyint") == 0 && datatype.compare(len, 3, "(1)") == 0)
+      break;
+    return datatype.substr(0, len) + datatype.substr(close + 1);
+  }
+  return datatype;
+}
+
 rapidjson::Value OpenApiCreator::create_components() const {
   rapidjson::Value schema_properties(rapidjson::kObjectType);
   rapidjson::Value component_info(rapidjson::kObjectType);
@@ -318,7 +340,7 @@ rapidjson::Value OpenApiCreator::create_components() const {
       auto property_details =
           add_type_constraints(column->datatype, column->type);
 
-      std::string description = column->datatype;
+      std::string description = without_display_width(column->datatype);
       if (column->is_primary) description += ", Primary Key";
 
       property_details.AddMember(
@@ -461,8 +483,9 @@ static std::optional<int> get_type_size(std::string_view datatype) {
 }
 
 rapidjson::Value OpenApiCreator::add_type_constraints(
-    const std::string &datatype,
+    const std::string &raw_datatype,
     const mrs::database::entry::ColumnType type) const {
+  const std::string datatype = without_display_width(raw_datatype);
   rapidjson::Value property_details(rapidjson::kObjectType);
 
   // zerofill and/or width is not taken into account as it is deprecated

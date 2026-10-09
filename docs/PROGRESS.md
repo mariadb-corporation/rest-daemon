@@ -341,9 +341,9 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
   (copied from libmysql/errmsg.cc), collation → mbmaxlen table (generated from
   MySQL 26.7.0 information_schema), `build_version`, vendored dtoa.
 - Source changes (behaviour changes marked `restd:` in comments; mechanical ones not):
-  - `mysql_session.cc`: `my_get_err_msg` → `restd::client_error_message`;
+  - `mysql_session.cc`: `my_get_err_msg` → `mrsd::client_error_message`;
     `vio_io_wait` → `poll()` on `NET::fd`; no more `violite.h`/`my_sys.h`
-  - MRS `mysql_column_types.cc`: `get_charset()` → `restd::charset_mbmaxlen()`
+  - MRS `mysql_column_types.cc`: `get_charset()` → `mrsd::charset_mbmaxlen()`
   - MRS plugin: `my_init()` → `mysql_library_init()`; routing wait removed
   - MRS plugin config: static destinations + `mysql_ssl_*` options; supported-options list updated
   - http: `metadata_cache` auth backend removed; `router_protobuf` requirement removed from http plugins

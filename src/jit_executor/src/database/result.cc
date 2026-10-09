@@ -26,6 +26,8 @@
 
 #include "database/result.h"
 
+#include "mrsd/compat_client.h"  // restd: effective_field_type
+
 #include <cstdlib>
 #include <sstream>
 #include <string>
@@ -175,7 +177,8 @@ void DbResult::fetch_metadata() {
               fields[index].table, fields[index].org_name, fields[index].name,
               fields[index].length, fields[index].decimals,
               // TODO(rennox): enable collation handling
-              map_data_type(fields[index].type,
+              // restd: JSON/VECTOR on MariaDB come from the extended metadata
+              map_data_type(mrsd::effective_field_type(&fields[index]),
                             fields[index]
                                 .flags /*,
 fields[index].charsetnr*/),

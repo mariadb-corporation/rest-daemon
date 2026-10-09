@@ -73,6 +73,20 @@ mysqlrouter::sqlstring format_where_expr(const Table &table,
   return format_where_expr(table, table.table_alias, f, omit_row_owner);
 }
 
+// restd: MySQL's JSON_OBJECT renders DATETIME/TIMESTAMP/TIME with their
+// microseconds ("2020-12-01 12:01:50.000000"); MariaDB renders them as the
+// column's precision. The same text for both servers.
+static const char *mariadb_temporal_format(entry::ColumnType type,
+                                           const std::string &datatype) {
+  if (!helper::is_mariadb_server() || type != entry::ColumnType::STRING)
+    return nullptr;
+  if (helper::starts_with(datatype, "datetime") ||
+      helper::starts_with(datatype, "timestamp"))
+    return "DATE_FORMAT(!.!,'%Y-%m-%d %H:%i:%s.%f')";
+  if (helper::starts_with(datatype, "time")) return "TIME_FORMAT(!.!,'%H:%i:%s.%f')";
+  return nullptr;
+}
+
 mysqlrouter::sqlstring format_key_names(const Table &table) {
   mysqlrouter::sqlstring s;
   for (const auto c : table.primary_key()) {
@@ -88,6 +102,8 @@ mysqlrouter::sqlstring format_key_names(const Table &table) {
           helper::is_mariadb_server()
               ? "JSON_EXTRACT(VEC_ToText(!.!),'$')"
               : "CAST(CONVERT(VECTOR_TO_STRING(!.!) using utf8mb4) AS JSON)");
+    else if (const char *fmt = mariadb_temporal_format(c->type, c->datatype))
+      col = mysqlrouter::sqlstring(fmt);
     else
       col = mysqlrouter::sqlstring("!.!");
     col << table.table_alias << c->column_name;
@@ -277,6 +293,11 @@ static mysqlrouter::sqlstring get_field_format(entry::ColumnType type,
       return {value_only ? "CONVERT(!.!,CHAR)" : "?, CONVERT(!.!, CHAR)"};
     else if (type == entry::ColumnType::DOUBLE)
       return {value_only ? "CONVERT(!.!,CHAR)" : "?, CONVERT(!.!, CHAR)"};
+  }
+
+  if (const char *fmt = mariadb_temporal_format(type, datatype)) {
+    if (value_only) return mysqlrouter::sqlstring(fmt);
+    return mysqlrouter::sqlstring(("?, " + std::string(fmt)).c_str());
   }
 
   return get_field_format(type, value_only);

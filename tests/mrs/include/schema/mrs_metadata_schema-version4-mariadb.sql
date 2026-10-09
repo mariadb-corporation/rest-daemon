@@ -1,3 +1,6 @@
+# restd: the MariaDB shell plugins' deployment script 4.1.6, with the SQL '--'
+# comments turned into '#' (mysqltest syntax) and the seeded 'MySQL' auth_app
+# removed (see there). Regenerate from the plugins' releases/deployment/ file.
 /*
  * Copyright (c) 2025, 2026, Oracle and/or its affiliates.
  * Copyright (c) 2026, MariaDB plc.
@@ -1122,13 +1125,9 @@ BEGIN
         `id`, `name`, `validation_url`, `enabled`, `comments`, `options`)
     VALUES (0x35, 'OCI OAuth2', NULL, 1, 'Uses the OCI OAuth2 service', NULL);
 
-    # Default MySQL auth_app for MySQL Internal Authentication
-    INSERT INTO `mysql_rest_service_metadata`.`auth_app` (
-        `id`, `auth_vendor_id`, `name`, `description`, `enabled`,
-        `limit_to_registered_users`, `default_role_id`, `options`)
-    VALUES (0x31, 0x31, 'MySQL',
-        'Provide login capabilities for MySQL Server user accounts.',
-        TRUE, FALSE, 0x31, NULL);
+    # restd: the default 'MySQL' auth_app is not seeded here: the tests create
+    # their own 'mysql' app, which the 4.1.x name_UNIQUE index rejects (the
+    # MySQL mode of the suite runs the 4.0 dump, without that index)
 
     # Default role for full access
     INSERT INTO `mysql_rest_service_metadata`.`mrs_role` (

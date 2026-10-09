@@ -143,11 +143,7 @@ def test_mrs(name, paths, mysqld, tmp_path, request):
     expected = (result_file.read_text(encoding="utf-8", errors="surrogateescape")
                 if result_file.exists() else "")
     if paths.is_mariadb:
-        # MariaDB returns JSON text as stored, MySQL normalized (": " and ", ")
-        # so the length of documents with JSON values differs; the bodies
-        # are compared pretty-printed anyway
-        mask = lambda t: re.sub(r"(Content-Length  ->  )\d+", r"\1<n>", t)
-        expected, actual = mask(expected), mask(actual)
+        expected, actual = mariadb_sql.normalize_output(expected), mariadb_sql.normalize_output(actual)
     if actual != expected:
         reject = tmp_path / f"{name}.reject"
         reject.write_text(actual, encoding="utf-8", errors="surrogateescape",

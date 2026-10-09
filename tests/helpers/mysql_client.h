@@ -63,7 +63,7 @@ inline bool operator==(const MysqlError &a, const MysqlError &b) {
 }
 
 static inline MysqlError make_mysql_error_code(unsigned int e) {
-  return {e, restd::client_error_message(e ? e : CR_UNKNOWN_ERROR), "HY000"};
+  return {e, mrsd::client_error_message(e ? e : CR_UNKNOWN_ERROR), "HY000"};
 }
 
 static inline MysqlError make_mysql_error_code(MYSQL *m) {

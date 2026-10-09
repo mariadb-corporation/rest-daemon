@@ -132,7 +132,7 @@ bool MysqlTaskMonitor::update_task(Task &task) {
       task.script.clear();
       task.failed = true;
       // client errors are fatal (disconnection etc), so we can't cleanup
-      if (restd::is_client_error(e.code())) return true;
+      if (mrsd::is_client_error(e.code())) return true;
       task.error = task.on_error(e);
       return false;
     } catch (const std::exception &e) {

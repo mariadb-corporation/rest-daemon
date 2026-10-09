@@ -21,6 +21,7 @@
 #ifndef MRSD_COMPAT_CLIENT_H
 #define MRSD_COMPAT_CLIENT_H
 
+#include <cstring>
 #include <type_traits>
 
 #include <errmsg.h>
@@ -80,6 +81,28 @@ namespace mrsd {
 // the type MYSQL_BIND::is_null points to: bool (libmysqlclient) or
 // my_bool, i.e. char (libmariadb)
 using bind_bool_t = std::remove_pointer_t<decltype(MYSQL_BIND::is_null)>;
+
+/**
+ * the type of a result column, with JSON and VECTOR recognised on MariaDB.
+ *
+ * A MariaDB server sends JSON columns and routine results as LONGTEXT and
+ * VECTOR as VARBINARY, with the kind in the extended column metadata, which
+ * Connector/C exposes as field attributes (format "json", data type
+ * "vector"). On MySQL and for everything else it is MYSQL_FIELD::type.
+ */
+inline enum_field_types effective_field_type(const MYSQL_FIELD *field) {
+#ifdef MRSD_CLIENT_MARIADB
+  MARIADB_CONST_STRING attr;
+  if (mariadb_field_attr(&attr, field, MARIADB_FIELD_ATTR_FORMAT_NAME) == 0 &&
+      attr.length == 4 && memcmp(attr.str, "json", 4) == 0)
+    return MYSQL_TYPE_JSON;
+  if (mariadb_field_attr(&attr, field, MARIADB_FIELD_ATTR_DATA_TYPE_NAME) ==
+          0 &&
+      attr.length == 6 && memcmp(attr.str, "vector", 6) == 0)
+    return MYSQL_TYPE_VECTOR;
+#endif
+  return field->type;
+}
 
 /**
  * is the error code a client-side (CR_*) error, as opposed to a server (ER_*)
