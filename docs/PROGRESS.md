@@ -18,7 +18,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 | Milestone 2 phase | Status |
 |---|---|
 | M2.0: MariaDB dependency inventory | ✅ done 2026-10-07, verdict GO in stages ([milestone2-inventory.md](milestone2-inventory.md)) |
-| M2.1: build against MariaDB Connector/C | 🟡 macOS and Linux: build + ctest 113/113 (2026-10-08); Windows: vcpkg libmariadb installed, configure OK, build interrupted (VM became unreachable) |
+| M2.1: build against MariaDB Connector/C | ✅ done 2026-10-09: build + ctest 113/113 on macOS (3.4.11), Linux (3.4.9) and Windows (3.4.8, vcpkg); the MySQL build still passes |
 | M2.2: run against a MariaDB server | ⬜ |
 | M2.3: test suites on MariaDB | ⬜ |
 | M2.4: cleanup | ⬜ |
@@ -64,7 +64,8 @@ Connector/C on the VMs (the finder accepts a Connector/C package, Homebrew, a De
 - Windows: vcpkg port `libmariadb[openssl]:x64-windows` (3.4.8) into the existing
   `<win-home>\mrsd-deps\vcpkg` roots; headers in `include/mysql`, plugins in
   `plugins/libmariadb`. `<win-home>\mrsd-win-mariadb.cmd configure|build|ctest`
-  (build dir `build-mariadb`, tests on).
+  (build dir `<win-dev>\mrsd-build-mariadb`, tests on; C: is nearly full, F: was enlarged to
+  40 GB with `Resize-Partition`. C: can't grow past the recovery partition behind it).
 - Older Connector/C headers (3.4.8, 3.4.9) lack `MYSQL_TYPE_VECTOR` and `ER_QUERY_TIMEOUT`;
   `compat_client.h` supplies them. The Linux `libmariadb.so.3` doesn't export the
   `client_errors` tables, so `client_error_message()` keeps its own table.
@@ -153,6 +154,9 @@ ninja -C build
   VM's sshd has no SFTP and stdin streaming to PowerShell never sees EOF);
   `tools/vm/win_wip.sh` copies uncommitted changes. `refs/win/synced` is local to the Mac
   clone: if it's missing, set it to the commit the Windows clone has (`git log -1` there).
+  If `win_sync.sh` reports the old commit with `dirty: 0`, an earlier run's `git am`
+  failed (dirty clone) and left `.git\rebase-apply` behind: `git am --abort` on the VM,
+  `git update-ref refs/win/synced <Mac commit matching the clone's HEAD>`, run it again.
 - Run PowerShell on the VM: `tools/vm/win.sh <<'PS' ... PS` (quoted heredoc).
 
 - MRS functional suite: `powershell -File <win-home>\mrsd-pytest.ps1 -q [-k <test>]`
@@ -278,14 +282,10 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
   `<dev>/rest-daemon` (moved there 2026-10-07 from `<dev>/mysql/mrsd`).
 
 ## Next steps
-1. Phase M2.1, Windows: the VM stopped answering (ping, SSH) during the Connector/C build
-   (`<win-home>\mrsd-win-mariadb.cmd build`, log `<win-home>\mrsd-build-mariadb.log`);
-   check the VM, `tools/vm/win_sync.sh` (commit e6d83a6 is not on the Windows clone yet, the
-   clone has an older WIP copy), then `mrsd-win-mariadb.cmd build` and `ctest`.
-2. Phase M2.2 (run against a MariaDB server): start with the version gate
+1. Phase M2.2 (run against a MariaDB server): start with the version gate
    (`server_compatibility.cc`), `--setup`, the metadata loaders (`->>`) and the smoke test
    against `<dev>/mariadb-server/light-build/sql/mariadbd` with the 4.1.6 schema.
-3. Phase M2.1 (original plan): build against MariaDB Connector/C (macOS first). Local resources: MariaDB
+2. Phase M2.1 (original plan): build against MariaDB Connector/C (macOS first). Local resources: MariaDB
    13.2.0 Release build in `<dev>/mariadb-server/light-build` (`sql/mariadbd`, static
    `libmariadb/libmariadb/libmariadbclient.a` with `CONC_WITH_SSL=OPENSSL`), built shell in
    `<dev>/shell/bld/bin/mariadb-shell`, MRS plugins in `<dev>/mariadb-shell-plugins`.
@@ -572,6 +572,11 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
   `MYSQL_PLUGIN_DIR` to the Connector/C's plugin dir recorded at configure time
   (`MRSD_CLIENT_PLUGIN_DIR` in `router_config.h`; `MARIADB_PLUGIN_DIR` in the
   environment wins). Packaging (Milestone 4) must bundle the plugins and point there.
-- Windows: Connector/C from vcpkg (`libmariadb[openssl]:x64-windows`, 3.4.8) installed,
-  `mrsd-win-mariadb.cmd configure` finds it; the build was running (502/770, no errors)
-  when the VM became unreachable. To be finished next session.
+- Windows: Connector/C from vcpkg (`libmariadb[openssl]:x64-windows`, 3.4.8); the first
+  build attempt took the VM down (C: and F: had 1.7 GB free). After the user enlarged the
+  disks, F: was extended (`Resize-Partition`; C: is blocked by the recovery partition) and
+  the build moved to `<win-dev>\mrsd-build-mariadb`. The VM came back with its clock 8 hours
+  behind, which makes ninja loop on a "still dirty" manifest: fixed with `Set-Date`.
+  Build and ctest 113/113 (2026-10-09; `sd_notify` flaked once, passed on retry);
+  `MYSQL_SHARED_MEMORY_BASE_NAME` left out of the option get test on libmariadb.
+  **Phase M2.1 done on all three platforms.**

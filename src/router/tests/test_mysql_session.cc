@@ -191,7 +191,7 @@ using MysqlSessionOptionTypes =
                      MySQLSession::CharsetDir,  //
                      MySQLSession::CharsetName  //
 #endif
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(MRSD_CLIENT_MARIADB)  // mrsd: no get in libmariadb
                      ,
                      MySQLSession::SharedMemoryBasename
 #endif
