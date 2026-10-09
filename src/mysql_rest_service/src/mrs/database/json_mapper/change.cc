@@ -25,6 +25,7 @@
  */
 
 #include "mrs/database/json_mapper/change.h"
+#include "helper/server_flavor.h"  // mrsd: MariaDB-specific SQL
 
 #include <utility>
 #include "mrs/database/json_mapper/delete.h"
@@ -423,12 +424,19 @@ void RowChangeOperation::set_column_value(const Column &column,
   } else if (column.type == entry::ColumnType::BINARY) {
     set_column_sql_value(column, value);
   } else if (column.type == entry::ColumnType::GEOMETRY) {
-    set_column_sql_value(column,
-                         mysqlrouter::sqlstring("ST_GeomFromGeoJSON(?, 1, ?)")
-                             << value << column.srid);
+    if (helper::is_mariadb_server())  // mrsd: no SRID argument
+      set_column_sql_value(
+          column, mysqlrouter::sqlstring("ST_GeomFromGeoJSON(?)") << value);
+    else
+      set_column_sql_value(column,
+                           mysqlrouter::sqlstring("ST_GeomFromGeoJSON(?, 1, ?)")
+                               << value << column.srid);
   } else if (column.type == entry::ColumnType::VECTOR) {
-    set_column_sql_value(column, mysqlrouter::sqlstring("STRING_TO_VECTOR(?)")
-                                     << value);
+    set_column_sql_value(column,
+                         mysqlrouter::sqlstring(helper::is_mariadb_server()
+                                                    ? "VEC_FromText(?)"
+                                                    : "STRING_TO_VECTOR(?)")
+                             << value);
   } else {
     set_column_sql_value(column, value);
   }

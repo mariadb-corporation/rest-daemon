@@ -25,6 +25,7 @@
 */
 
 #include "mrs/database/json_mapper/select.h"
+#include "helper/server_flavor.h"  // mrsd: MariaDB-specific SQL
 #include <algorithm>
 #include <iostream>
 #include <memory>
@@ -79,10 +80,14 @@ mysqlrouter::sqlstring format_key_names(const Table &table) {
     if (c->type == entry::ColumnType::BINARY)
       col = mysqlrouter::sqlstring("TO_BASE64(!.!)");
     else if (c->type == entry::ColumnType::GEOMETRY)
-      col = mysqlrouter::sqlstring("ST_AsGeoJSON(!.!)");
+      col = mysqlrouter::sqlstring(helper::is_mariadb_server()
+                                       ? "JSON_EXTRACT(ST_AsGeoJSON(!.!),'$')"
+                                       : "ST_AsGeoJSON(!.!)");
     else if (c->type == entry::ColumnType::VECTOR)
       col = mysqlrouter::sqlstring(
-          "CAST(CONVERT(VECTOR_TO_STRING(!.!) using utf8mb4) AS JSON)");
+          helper::is_mariadb_server()
+              ? "JSON_EXTRACT(VEC_ToText(!.!),'$')"
+              : "CAST(CONVERT(VECTOR_TO_STRING(!.!) using utf8mb4) AS JSON)");
     else
       col = mysqlrouter::sqlstring("!.!");
     col << table.table_alias << c->column_name;
@@ -102,12 +107,18 @@ mysqlrouter::sqlstring format_key(const Table &table,
       s.append_preformatted_sep(",", mysqlrouter::sqlstring("TO_BASE64(?)")
                                          << c.second);
     else if (column->type == entry::ColumnType::GEOMETRY)
-      s.append_preformatted_sep(",", mysqlrouter::sqlstring("St_AsGeoJSON(?)")
-                                         << c.second);
+      s.append_preformatted_sep(
+          ",", mysqlrouter::sqlstring(helper::is_mariadb_server()
+                                          ? "JSON_EXTRACT(ST_AsGeoJSON(?),'$')"
+                                          : "St_AsGeoJSON(?)")
+                   << c.second);
     else if (column->type == entry::ColumnType::VECTOR)
       s.append_preformatted_sep(
           ",", mysqlrouter::sqlstring(
-                   "CAST(CONVERT(VECTOR_TO_STRING(?) using utf8mb4) AS JSON)")
+                   helper::is_mariadb_server()
+                       ? "JSON_EXTRACT(VEC_ToText(?),'$')"
+                       : "CAST(CONVERT(VECTOR_TO_STRING(?) using utf8mb4) AS "
+                         "JSON)")
                    << c.second);
     else
       s.append_preformatted_sep(",", c.second);
@@ -238,13 +249,21 @@ static mysqlrouter::sqlstring get_field_format(entry::ColumnType type,
     return {value_only ? "!.! is true" : "?, !.! is true"};
   else if (type == entry::ColumnType::BINARY)
     return {value_only ? "TO_BASE64(!.!)" : "?, TO_BASE64(!.!)"};
-  else if (type == entry::ColumnType::GEOMETRY)
+  else if (type == entry::ColumnType::GEOMETRY) {
+    // mrsd: on MariaDB the GeoJSON text must be re-typed as JSON to nest
+    if (helper::is_mariadb_server())
+      return {value_only ? "JSON_EXTRACT(ST_AsGeoJSON(!.!),'$')"
+                         : "?, JSON_EXTRACT(ST_AsGeoJSON(!.!),'$')"};
     return {value_only ? "ST_AsGeoJSON(!.!)" : "?, ST_AsGeoJSON(!.!)"};
-  else if (type == entry::ColumnType::VECTOR)
+  } else if (type == entry::ColumnType::VECTOR) {
+    if (helper::is_mariadb_server())
+      return {value_only ? "JSON_EXTRACT(VEC_ToText(!.!),'$')"
+                         : "?, JSON_EXTRACT(VEC_ToText(!.!),'$')"};
     return {
         value_only
             ? "CAST(CONVERT(VECTOR_TO_STRING(!.!) using utf8mb4)AS JSON)"
             : "?, CAST(CONVERT(VECTOR_TO_STRING(!.!)  using utf8mb4)AS JSON)"};
+  }
   return {value_only ? "!.!" : "?, !.!"};
 }
 

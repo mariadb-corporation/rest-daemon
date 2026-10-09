@@ -25,6 +25,7 @@
  */
 
 #include "mrs/database/json_mapper/insert.h"
+#include "helper/server_flavor.h"  // mrsd: MariaDB-specific SQL
 #include "helper/json/rapid_json_to_text.h"
 #include "helper/json/to_sqlstring.h"
 #include "mrs/database/json_mapper/update.h"
@@ -40,7 +41,13 @@ namespace {
 mysqlrouter::sqlstring generate_uuid(MySQLSession *session) {
   // query as base64 because query_one() will truncate \0 in binary strings
   // (should be fixed at the source)
-  auto row = session->query_one("SELECT TO_BASE64(UUID_TO_BIN(UUID(), 1))");
+  // mrsd: no UUID_TO_BIN on MariaDB; the same time-swapped binary layout
+  auto row = session->query_one(
+      helper::is_mariadb_server()
+          ? "SELECT TO_BASE64(UNHEX(CONCAT(SUBSTR(u,15,4),SUBSTR(u,10,4),"
+            "SUBSTR(u,1,8),SUBSTR(u,20,4),SUBSTR(u,25,12)))) FROM "
+            "(SELECT UUID() u) x"
+          : "SELECT TO_BASE64(UUID_TO_BIN(UUID(), 1))");
   auto tmp = mysqlrouter::sqlstring("?");
   tmp << Base64::decode((*row)[0]);
   return tmp;
@@ -142,10 +149,14 @@ mysqlrouter::sqlstring RowInsert::insert_sql() const {
   }
 
   if (upsert_) {
-    sql.append_preformatted(" AS new ON DUPLICATE KEY UPDATE ");
+    // mrsd: MariaDB has no row alias; VALUES() is its syntax
+    const bool mariadb = helper::is_mariadb_server();
+    sql.append_preformatted(mariadb ? " ON DUPLICATE KEY UPDATE "
+                                    : " AS new ON DUPLICATE KEY UPDATE ");
     bool first = true;
     for (const auto &c : columns_) {
-      mysqlrouter::sqlstring tmp(first ? "!=new.!" : ", !=new.!");
+      mysqlrouter::sqlstring tmp(mariadb ? (first ? "!=VALUES(!)" : ", !=VALUES(!)")
+                                         : (first ? "!=new.!" : ", !=new.!"));
       tmp << c << c;
       sql.append_preformatted(tmp);
       first = false;

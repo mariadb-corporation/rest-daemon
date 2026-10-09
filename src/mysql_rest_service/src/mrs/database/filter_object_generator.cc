@@ -25,6 +25,7 @@
 */
 
 #include "mrs/database/filter_object_generator.h"
+#include "helper/server_flavor.h"  // mrsd: MariaDB-specific SQL
 
 #include <map>
 #include <set>
@@ -105,11 +106,12 @@ class tosVec {
     return v->IsString() || is_vec_json(v);
   }
   mysqlrouter::sqlstring to_sqlstring(entry::Column *, Value *v) const {
-    if (v->IsString())
-      return mysqlrouter::sqlstring("STRING_TO_VECTOR(?)") << v->GetString();
+    // mrsd: MariaDB names
+    const char *fmt = helper::is_mariadb_server() ? "VEC_FromText(?)"
+                                                  : "STRING_TO_VECTOR(?)";
+    if (v->IsString()) return mysqlrouter::sqlstring(fmt) << v->GetString();
 
-    return mysqlrouter::sqlstring("STRING_TO_VECTOR(?)")
-           << helper::json::to_string(v);
+    return mysqlrouter::sqlstring(fmt) << helper::json::to_string(v);
   }
 };
 
@@ -154,6 +156,9 @@ class tosGeom {
       return mysqlrouter::sqlstring("ST_GeomFromText(?, ?)")
              << v->GetString() << dfield->srid;
 
+    if (helper::is_mariadb_server())  // mrsd: no SRID argument
+      return mysqlrouter::sqlstring("ST_GeomFromGeoJSON(?)")
+             << helper::json::to_string(v);
     return mysqlrouter::sqlstring("ST_GeomFromGeoJSON(?,1,?)")
            << helper::json::to_string(v) << dfield->srid;
   }

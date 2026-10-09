@@ -44,6 +44,7 @@ ADD_STATIC_LIBRARY(mysql_rest_service_helper
   helper/json/merge.cc
   helper/token/jwt.cc
   helper/mysql_column_types.cc
+  helper/server_flavor.cc
   helper/mysql_numeric_value.cc
   helper/digester/sha256_digest.cc
 

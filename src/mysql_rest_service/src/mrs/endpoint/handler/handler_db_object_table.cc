@@ -25,6 +25,7 @@
 */
 
 #include "mrs/endpoint/handler/handler_db_object_table.h"
+#include "helper/server_flavor.h"  // mrsd: MariaDB-specific SQL
 
 #include <algorithm>
 #include <map>
@@ -153,7 +154,9 @@ mysqlrouter::sqlstring rest_param_to_sql_value(
       return result;
     }
     case mrs::database::entry::ColumnType::VECTOR: {
-      mysqlrouter::sqlstring result{"STRING_TO_VECTOR(?)"};
+      mysqlrouter::sqlstring result{helper::is_mariadb_server()
+                                        ? "VEC_FromText(?)"
+                                        : "STRING_TO_VECTOR(?)"};
       result << value;
       return result;
     }
@@ -163,7 +166,8 @@ mysqlrouter::sqlstring rest_param_to_sql_value(
       return result;
     }
     case mrs::database::entry::ColumnType::JSON: {
-      mysqlrouter::sqlstring result{"CAST(? AS JSON)"};
+      mysqlrouter::sqlstring result{
+          helper::is_mariadb_server() ? "?" : "CAST(? AS JSON)"};
       result << value;
       return result;
     }

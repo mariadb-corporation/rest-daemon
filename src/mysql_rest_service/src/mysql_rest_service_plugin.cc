@@ -25,6 +25,7 @@
 */
 
 #include <algorithm>  // max
+#include "helper/server_flavor.h"  // mrsd: MariaDB-specific SQL
 #include <array>
 #include <map>
 #include <memory>  // unique_ptr
@@ -137,6 +138,7 @@ class MrsModule {
           collector::kMySQLConnectionMetadataRO, true);
 
       check_version_compatibility(conn1.get());
+      helper::set_mariadb_server(conn1->is_mariadb());
     } catch (const MySQLSession::Error &e) {
       if (!fail_on_no_role_granted &&
           (e.code() == ER_ROLE_NOT_GRANTED ||

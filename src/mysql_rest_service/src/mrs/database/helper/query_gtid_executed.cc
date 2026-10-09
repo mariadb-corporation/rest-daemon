@@ -50,7 +50,18 @@ static std::vector<std::string> expect_single_row_array_strings(
   return {};
 }
 
+namespace {
+// mrsd: MariaDB has neither gtid_executed nor these functions; its GTIDs
+// (domain-server-sequence) need their own implementation (Milestone 3)
+void require_mysql_gtids(mysqlrouter::MySQLSession *session) {
+  if (session->is_mariadb())
+    throw std::runtime_error(
+        "GTID based 'asof' requests are not supported on MariaDB yet");
+}
+}  // namespace
+
 GtidSets get_gtid_executed(mysqlrouter::MySQLSession *session) {
+  require_mysql_gtids(session);
   GtidSets result;
   mysqlrouter::sqlstring get_gtids{"select @@GLOBAL.gtid_executed"};
   auto gtidsets =
@@ -68,6 +79,7 @@ GtidSets get_gtid_executed(mysqlrouter::MySQLSession *session) {
 
 bool wait_gtid_executed(mysqlrouter::MySQLSession *session,
                         const mysqlrouter::sqlstring &gtid, uint64_t timeout) {
+  require_mysql_gtids(session);
   mysqlrouter::sqlstring check_gtid{
       "SELECT 0=WAIT_FOR_EXECUTED_GTID_SET(?, ?)"};
   check_gtid << gtid << timeout;
@@ -77,6 +89,7 @@ bool wait_gtid_executed(mysqlrouter::MySQLSession *session,
 
 bool is_gtid_executed(mysqlrouter::MySQLSession *session,
                       const mysqlrouter::sqlstring &gtid) {
+  require_mysql_gtids(session);
   mysqlrouter::sqlstring check_gtid{
       "SELECT GTID_SUBSET(?, @@GLOBAL.gtid_executed)"};
   check_gtid << gtid;
