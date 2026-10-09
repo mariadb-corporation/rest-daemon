@@ -20,7 +20,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 | M2.0: MariaDB dependency inventory | ✅ done 2026-10-07, verdict GO in stages ([milestone2-inventory.md](milestone2-inventory.md)) |
 | M2.1: build against MariaDB Connector/C | ✅ done 2026-10-09: build + ctest 113/113 on macOS (3.4.11), Linux (3.4.9) and Windows (3.4.8, vcpkg); the MySQL build still passes |
 | M2.2: run against a MariaDB server | 🟡 macOS (2026-10-09): smoke test incl. MRS scripts passes against MariaDB 13.2; CRUD with JSON/GEOMETRY/VECTOR verified; Linux/Windows runs pending |
-| M2.3: test suites on MariaDB | 🟡 started 2026-10-09: `tests/mrs` has a MariaDB mode; first full run in progress |
+| M2.3: test suites on MariaDB | 🟡 macOS 2026-10-09: MRS suite 97 passed, 14 skipped (vector, offline_mode, gtid_mode + the 5 MySQL skips), 10 xfailed (known differences, 3 to investigate), 13 MariaDB result files; unit + component 113/113; MySQL mode unchanged (116/5/1). Linux/Windows runs pending |
 | M2.4: cleanup | ⬜ |
 
 ## How to build and test (macOS)
@@ -300,10 +300,14 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
   `<dev>/rest-daemon` (moved there 2026-10-07 from `<dev>/mysql/mrsd`).
 
 ## Next steps
-1. Phase M2.2 (run against a MariaDB server): start with the version gate
-   (`server_compatibility.cc`), `--setup`, the metadata loaders (`->>`) and the smoke test
-   against `<dev>/mariadb-server/light-build/sql/mariadbd` with the 4.1.6 schema.
-2. Phase M2.1 (original plan): build against MariaDB Connector/C (macOS first). Local resources: MariaDB
+1. Phase M2.3 follow-ups on macOS: the three "to investigate" known failures
+   (`json_view`, `json_view_access`: the join sub-object carries all table columns;
+   `role_privileges`: the first login gets the SCRAM challenge instead of a 307), then
+   the live-DB unit tests (`RUN_WITH_LIVE_MYSQLD` with a MariaDB server).
+2. Phases M2.2/M2.3 on Linux and Windows: a MariaDB server on the VMs (Ubuntu: the
+   `mariadb-server` packages unpacked like the connector; Windows: a MariaDB zip), the
+   mariadb-shell + plugins for the smoke test, then the functional suite in MariaDB mode.
+3. Phase M2.1 (original plan, done): build against MariaDB Connector/C (macOS first). Local resources: MariaDB
    13.2.0 Release build in `<dev>/mariadb-server/light-build` (`sql/mariadbd`, static
    `libmariadb/libmariadb/libmariadbclient.a` with `CONC_WITH_SSL=OPENSSL`), built shell in
    `<dev>/shell/bld/bin/mariadb-shell`, MRS plugins in `<dev>/mariadb-shell-plugins`.
@@ -618,3 +622,22 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
   passes. Ad-hoc CRUD on a table with JSON, GEOMETRY, VECTOR, BOOLEAN columns OK.
 - `tests/mrs` MariaDB mode (above). First full run in progress.
 - The upstream-change comment marker is `restd:` now (was `mrsd:`).
+
+### 2026-10-09: session 5, continued (Phase M2.3: the MRS suite on MariaDB)
+- Full MariaDB-mode runs went 55 → 80 → 94 → 97 passed (0 failed in the end) with:
+  - daemon: JSON/VECTOR from Connector/C's extended column metadata
+    (`mrsd::effective_field_type()`), DATETIME/TIMESTAMP/TIME with microseconds like
+    MySQL's JSON_OBJECT, integer display widths stripped from the OpenAPI output,
+    geometry equality filters with the column's SRID (`ST_GeomFromWKB(ST_AsBinary(v),
+    ST_SRID(col))`: MariaDB compares SRIDs and has no column SRID attribute), prepared
+    CALLs without metadata/bind/fetch on field-less results, best-effort default role.
+  - harness: `mrstest/mariadb_sql.py` rewrites (SRID attribute, VECTOR→BLOB in DDL only,
+    vector functions, CAST AS JSON, SRS_ID, JSON arrows, FROM_BASE64 guard with
+    whitespace, RESET BINARY LOGS AND GTIDS, super_read_only, role_edges→roles_mapping,
+    performance_schema.processlist, mysql.user column aliases) and output normalisation
+    (sorted keys, etags, lengths, integral floats, gtid lines); MariaDB result files for
+    13 tests; failure messages made printable (binary responses crashed xdist workers).
+  - `docs/mariadb-differences.md`: what behaves differently on MariaDB, for users.
+- MariaDB reports `RETURNS JSON` routine results and JSON parameters as LONGTEXT
+  everywhere: JSON function results stay strings (documented).
+- MySQL mode of the suite after the harness changes: 116 passed, 5 skipped, 1 xpassed.

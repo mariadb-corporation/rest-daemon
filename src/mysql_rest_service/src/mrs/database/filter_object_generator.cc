@@ -415,6 +415,22 @@ FilterObjectGenerator::parse_complex_operator_object(
   return {};
 }
 
+namespace {
+// restd: MariaDB compares the SRID too and has no SRID attribute on columns
+// (the metadata can't tell), so a filter geometry (SRID 0) never equals a
+// column value with another SRID: give it the column's SRID
+mysqlrouter::sqlstring with_column_srid(const mysqlrouter::sqlstring &column,
+                                        const entry::Column *dfield,
+                                        mysqlrouter::sqlstring value) {
+  if (!helper::is_mariadb_server() || !dfield ||
+      dfield->type != entry::ColumnType::GEOMETRY)
+    return value;
+  mysqlrouter::sqlstring result{"ST_GeomFromWKB(ST_AsBinary(?), ST_SRID(?))"};
+  result << value << column;
+  return result;
+}
+}  // namespace
+
 std::optional<mysqlrouter::sqlstring>
 FilterObjectGenerator::parse_simple_operator_object(
     const std::string_view &column_name, Value *object) {
@@ -434,16 +450,18 @@ FilterObjectGenerator::parse_simple_operator_object(
     log_debug2("parse_simple_operator_object $eq");
     result.append_preformatted(db_name)
         .append_preformatted(" = ")
-        .append_preformatted(
+        .append_preformatted(with_column_srid(
+            db_name, dfield.get(),
             to_sqlstring<tosVec, tosGeom, tosString, tosBoolean, tosNumber,
-                         tosDate>(dfield.get(), value));
+                         tosDate>(dfield.get(), value)));
   } else if ("$ne"s == name) {
     log_debug2("parse_simple_operator_object $ne");
     result.append_preformatted(db_name)
         .append_preformatted(" <> ")
-        .append_preformatted(
+        .append_preformatted(with_column_srid(
+            db_name, dfield.get(),
             to_sqlstring<tosVec, tosGeom, tosString, tosBoolean, tosNumber,
-                         tosDate>(dfield.get(), value));
+                         tosDate>(dfield.get(), value)));
   } else if ("$lt"s == name) {
     log_debug2("parse_simple_operator_object $lt");
     result.append_preformatted(db_name)
@@ -600,8 +618,10 @@ std::optional<mysqlrouter::sqlstring> FilterObjectGenerator::parse_direct_value(
     result.append_preformatted(
         mysqlrouter::sqlstring("!=?")
         << dbname
-        << to_sqlstring<tosVec, tosGeom, tosString, tosBoolean, tosNumber,
-                        tosDate>(dfield.get(), value));
+        << with_column_srid(
+               dbname, dfield.get(),
+               to_sqlstring<tosVec, tosGeom, tosString, tosBoolean, tosNumber,
+                            tosDate>(dfield.get(), value)));
   } catch (const RestError &) {
     // If it is an object we try the other matchers so don't throw, just leave.
     // According to the grammar we could just leave at the beginning of this

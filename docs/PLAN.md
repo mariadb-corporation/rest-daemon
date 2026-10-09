@@ -216,6 +216,7 @@ document generation, GTID tracking, `mysql_tasks`, account setup, tests.
   Connector/C extended metadata; `VEC_FromText`/`VEC_ToText`; GIS SRID handling.
 - GTID / "asof" and REST async tasks: disabled on MariaDB with a clear error (Milestone 3).
 - Smoke test variant for MariaDB (`mariadbd`, `mariadb-shell` + plugins, schema 4.1.6).
+- Behaviour differences for users: [mariadb-differences.md](mariadb-differences.md).
 - Exit: smoke test (REST view GET, and MRS scripts if in scope) passes on MariaDB on all
   three platforms.
 

@@ -305,7 +305,8 @@ std::optional<rapidjson::Value> OpenApiCreator::get_type_info(
 // use the bare type. "tinyint(1)" stays, it is the BOOLEAN of both servers.
 static std::string without_display_width(const std::string &datatype) {
   static const char *const k_integers[] = {"bigint",  "mediumint", "smallint",
-                                           "integer", "int",       "tinyint"};
+                                           "integer", "int",       "tinyint",
+                                           "year"};
   for (const char *name : k_integers) {
     const size_t len = strlen(name);
     if (datatype.compare(0, len, name) != 0 || datatype.size() <= len ||

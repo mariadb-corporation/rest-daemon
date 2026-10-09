@@ -51,6 +51,12 @@ MARIADB_DISABLED = read_def("disabled.mariadb.def")
 MARIADB_KNOWN_FAILURES = read_def("known_failures.mariadb.def")
 
 
+def printable(text: str) -> str:
+    """binary response data (surrogateescape) in a failure message can't be
+    serialized by the pytest-xdist workers: replace it"""
+    return text.encode("utf-8", "replace").decode("utf-8")
+
+
 def shell() -> list[str]:
     # the shell mysqltest's exec uses: popen() runs cmd.exe on Windows
     if IS_WINDOWS:
@@ -126,9 +132,9 @@ def test_mrs(name, paths, mysqld, tmp_path, request):
     except ScriptSkipped as e:
         pytest.skip(str(e))
     except ScriptFailed as e:
-        pytest.fail(f"{e}\n\n--- output so far (last 60 lines) ---\n" +
-                    "\n".join(interp.output().splitlines()[-60:]) +
-                    f"\n\nrouter log: {mrsd.logfile}")
+        pytest.fail(printable(f"{e}\n\n--- output so far (last 60 lines) ---\n" +
+                              "\n".join(interp.output().splitlines()[-60:]) +
+                              f"\n\nrouter log: {mrsd.logfile}"))
     finally:
         interp.close()
         mrsd.stop()
@@ -154,4 +160,4 @@ def test_mrs(name, paths, mysqld, tmp_path, request):
         lines = diff.splitlines()
         if len(lines) > 80:
             diff = "\n".join(lines[:80]) + f"\n... ({len(lines) - 80} more lines)"
-        pytest.fail(f"result mismatch, reject file: {reject}\n{diff}")
+        pytest.fail(printable(f"result mismatch, reject file: {reject}\n{diff}"))
