@@ -1321,6 +1321,12 @@ bool MySQLSession::is_ssl_session_reused() {
 #endif
 }
 
+bool MySQLSession::is_mariadb() {
+  if (!connection_ || !connected_) return false;
+  const char *info = mysql_get_server_info(connection_);
+  return info && strstr(info, "MariaDB") != nullptr;
+}
+
 unsigned long MySQLSession::server_version() {
   return connection_ ? mysql_get_server_version(connection_) : 0;
 }

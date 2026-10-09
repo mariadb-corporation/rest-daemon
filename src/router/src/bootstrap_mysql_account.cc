@@ -392,8 +392,11 @@ void BootstrapMySQLAccount::create_users(const std::string &username,
   // build string containing account/auth list
   std::string accounts_with_auth;
   {
+    // mrsd: MariaDB has no caching_sha2_password by default; its default
+    // authentication plugin is used there
     const std::string auth_part =
-        " IDENTIFIED WITH `caching_sha2_password` BY "s +
+        (mysql_->is_mariadb() ? " IDENTIFIED BY "s
+                              : " IDENTIFIED WITH `caching_sha2_password` BY "s) +
         mysql_->quote(password);
 
     const std::string quoted_username = mysql_->quote(username);
@@ -454,7 +457,16 @@ void BootstrapMySQLAccount::give_grants_to_users(
     // if we were granting some roles we need to make sure they are enabled by
     // default
     if (user_options.grant_role.size() > 0) {
-      statements.push_back("SET DEFAULT ROLE ALL TO " + new_accounts);
+      if (mysql_->is_mariadb()) {
+        // mrsd: one default role per account on MariaDB; the connection
+        // pools SET ROLE explicitly, the default only matters for ad-hoc
+        // connections
+        statements.push_back("SET DEFAULT ROLE "s +
+                             user_options.grant_role.front() + " FOR " +
+                             new_accounts);
+      } else {
+        statements.push_back("SET DEFAULT ROLE ALL TO " + new_accounts);
+      }
     }
 
     for (const auto &s : statements) {

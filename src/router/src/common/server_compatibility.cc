@@ -31,20 +31,31 @@
 #include "mysqlrouter/mysql_session.h"
 
 void check_version_compatibility(mysqlrouter::MySQLSession *session) {
-  auto row = session->query_one(
-      "SELECT substring_index(@@version, '.', 1), concat(@@version_comment, "
-      "@@version)");
   bool ok = true;
-  // @@version_comment must either start with "MySQL" or contain "Source
-  // distribution"
-  if (std::atoi((*row)[0]) < 8 ||
-      (strncmp((*row)[1], "MySQL", 5) != 0 &&
-       strstr((*row)[1], "Source distribution") == nullptr)) {
-    std::cout << "Unsupported MySQL server version: " << (*row)[1] << "\n";
-    ok = false;
+  if (session->is_mariadb()) {
+    // mrsd: MariaDB 10.11 (the oldest supported LTS) or later
+    const unsigned long version = session->server_version();  // e.g. 101106
+    if (version < 101100) {
+      std::cout << "Unsupported MariaDB server version: "
+                << (*session->query_one("SELECT @@version"))[0]
+                << " (10.11 or later is required)\n";
+      ok = false;
+    }
+  } else {
+    auto row = session->query_one(
+        "SELECT substring_index(@@version, '.', 1), concat(@@version_comment, "
+        "@@version)");
+    // @@version_comment must either start with "MySQL" or contain "Source
+    // distribution"
+    if (std::atoi((*row)[0]) < 8 ||
+        (strncmp((*row)[1], "MySQL", 5) != 0 &&
+         strstr((*row)[1], "Source distribution") == nullptr)) {
+      std::cout << "Unsupported MySQL server version: " << (*row)[1] << "\n";
+      ok = false;
+    }
   }
 
-  row = session->query_one("SELECT @@basedir");
+  auto row = session->query_one("SELECT @@basedir");
   if (strstr((*row)[0], "rds")) {
     ok = false;
   }

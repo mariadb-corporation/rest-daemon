@@ -25,6 +25,8 @@
 */
 
 #include "mrsd/compat_client.h"  // mrsd: MySQL-only ER_* codes
+
+#include <cstring>
 #include "mrs/database/schema_monitor.h"
 
 #include <chrono>
@@ -105,15 +107,21 @@ mrs::interface::SupportedMrsMetadataVersion check_supported_mrs_version(
 }
 
 bool query_is_node_read_only(mysqlrouter::MySQLSession *session) {
-  mysqlrouter::sqlstring q = "select @@super_read_only, @@read_only";
+  // mrsd: no super_read_only on MariaDB
+  mysqlrouter::sqlstring q = session->is_mariadb()
+                                 ? "select @@read_only, @@read_only"
+                                 : "select @@super_read_only, @@read_only";
 
   auto result{session->query_one(q)};
 
   if (nullptr == result.get()) return false;
   if (!(*result)[0] || (!(*result)[1])) return false;
 
-  return std::stoul(std::string((*result)[0])) == 1 ||
-         std::stoul(std::string((*result)[1])) == 1;
+  // mrsd: MariaDB renders the boolean as ON/OFF, MySQL as 1/0
+  auto is_on = [](const char *v) {
+    return strcmp(v, "1") == 0 || strcmp(v, "ON") == 0;
+  };
+  return is_on((*result)[0]) || is_on((*result)[1]);
 }
 
 void update_router_attributes_on_start(mysqlrouter::MySQLSession *session,

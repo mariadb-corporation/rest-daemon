@@ -109,6 +109,9 @@ void CountedMySQLSession::execute_initial_sqls() {
   for (const auto &sql : initial_sqls_) {
     execute(sql);
   }
+  if (track_own_gtids_ && !is_mariadb()) {
+    execute("SET @@SESSION.session_track_gtids=\"OWN_GTID\";");
+  }
 }
 
 CountedMySQLSession::Sqls CountedMySQLSession::get_initial_sqls() const {

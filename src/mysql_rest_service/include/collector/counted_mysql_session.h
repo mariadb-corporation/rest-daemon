@@ -74,6 +74,10 @@ class CountedMySQLSession : public mysqlrouter::MySQLSession {
   virtual Sqls get_initial_sqls() const;
   virtual void connect_and_set_opts(
       const ConnectionParameters &connection_params, const Sqls &initial_sqls);
+  // mrsd: track the GTIDs of the connection's own transactions (initial SQL
+  // after every (re)connect). Not available on MariaDB, where the SET is
+  // skipped (Milestone 3 brings its own tracking).
+  void set_track_own_gtids(bool track) { track_own_gtids_ = track; }
   virtual void connect(const ConnectionParameters &connection_params);
 
   void connect(const MySQLSession &other, const std::string &username,
@@ -114,6 +118,7 @@ class CountedMySQLSession : public mysqlrouter::MySQLSession {
   ConnectionParameters connection_params_;
   bool reconnect_at_next_query_{false};
   Sqls initial_sqls_;
+  bool track_own_gtids_{false};
 };
 
 }  // namespace collector

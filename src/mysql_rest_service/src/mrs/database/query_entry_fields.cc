@@ -72,10 +72,10 @@ bool QueryEntryFields::query_parameters(MySQLSession *session,
   processing_ = OnRow::k_fields;
   query_ = {
       "SELECT ofx.id, ofx.represents_reference_id, ofx.name,"
-      "       ofx.db_column->>'$.in', ofx.db_column->>'$.out',"
-      "       ofx.db_column->>'$.name', ofx.db_column->>'$.datatype',"
-      "       JSON_CONTAINS(d.options->'$.mysqlTask.userVariables',"
-      "         ofx.db_column->'$.name')"
+      "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.in')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.out')),"
+      "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.name')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.datatype')),"
+      "       JSON_CONTAINS(JSON_EXTRACT(d.options,'$.mysqlTask.userVariables'),"
+      "         JSON_EXTRACT(ofx.db_column,'$.name'))"
       "   FROM mysql_rest_service_metadata.object_field as ofx"
       "   JOIN mysql_rest_service_metadata.object as o on ofx.object_id=o.id"
       "   JOIN mysql_rest_service_metadata.db_object d on o.db_object_id=d.id"
@@ -99,10 +99,10 @@ bool QueryEntryFields::query_parameters(MySQLSession *session,
     output_result_ = &item;
     query_ = {
         "SELECT ofx.id, ofx.represents_reference_id, ofx.name,"
-        "       ofx.db_column->>'$.in', ofx.db_column->>'$.out',"
-        "       ofx.db_column->>'$.name', ofx.db_column->>'$.datatype',"
-        "       JSON_CONTAINS(d.options->'$.mysqlTask.userVariables',"
-        "         ofx.db_column->'$.name')"
+        "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.in')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.out')),"
+        "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.name')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.datatype')),"
+        "       JSON_CONTAINS(JSON_EXTRACT(d.options,'$.mysqlTask.userVariables'),"
+        "         JSON_EXTRACT(ofx.db_column,'$.name'))"
         "   FROM mysql_rest_service_metadata.object_field as ofx"
         "   JOIN mysql_rest_service_metadata.object as o on ofx.object_id=o.id"
         "   JOIN mysql_rest_service_metadata.db_object d on o.db_object_id=d.id"

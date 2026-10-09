@@ -46,7 +46,16 @@ set -euo pipefail
 if [ -z "${MRSD_INSTALL:-}" ]; then
   MRSD_BUILD=${MRSD_BUILD:?set MRSD_BUILD or MRSD_INSTALL}
 fi
-MYSQL_PACKAGE_DIR=${MYSQL_PACKAGE_DIR:?set MYSQL_PACKAGE_DIR}
+# MariaDB mode (Milestone 2): MARIADB_BUILD_DIR is a MariaDB server build tree
+# (sql/mariadbd, client/mariadb, scripts/mariadb-install-db, which needs
+# MARIADB_SOURCE_DIR), MYSQLSH the mariadb-shell and SHELL_PLUGINS the
+# mariadb-shell-plugins checkout, linked into the shell's user plugins.
+# Otherwise MYSQL_PACKAGE_DIR is a MySQL server package.
+if [ -n "${MARIADB_BUILD_DIR:-}" ]; then
+  MARIADB_SOURCE_DIR=${MARIADB_SOURCE_DIR:?set MARIADB_SOURCE_DIR}
+else
+  MYSQL_PACKAGE_DIR=${MYSQL_PACKAGE_DIR:?set MYSQL_PACKAGE_DIR}
+fi
 MYSQLSH=${MYSQLSH:?set MYSQLSH}
 SHELL_PLUGINS=${SHELL_PLUGINS:?set SHELL_PLUGINS}
 WORK=${1:-$(mktemp -d)}
@@ -66,13 +75,23 @@ if command -v cygpath >/dev/null 2>&1; then
 fi
 
 SCHEMA_DIR=$SHELL_PLUGINS/mrs_plugin/db_schema
-TASKS_SQL=$(ls "$SCHEMA_DIR"/mysql_tasks.msm.project/releases/deployment/*.sql | sort -V | tail -1)
+# mysql_tasks (REST async tasks) only on MySQL; the MariaDB plugins don't ship it
+TASKS_SQL=$( (ls "$SCHEMA_DIR"/mysql_tasks.msm.project/releases/deployment/*.sql 2>/dev/null || true) | sort -V | tail -1)
 MRS_SQL=$(ls "$SCHEMA_DIR"/mysql_rest_service_metadata.msm.project/releases/deployment/*.sql | sort -V | tail -1)
 
 mkdir -p "$WORK"/{log,shellhome}
 echo "workdir: $WORK"
 
-mysql_cli() { "$MYSQL_PACKAGE_DIR/bin/mysql" -uroot -h127.0.0.1 -P"$PORT" "$@"; }
+if [ -n "${MARIADB_BUILD_DIR:-}" ]; then
+  mysql_cli() { "$MARIADB_BUILD_DIR/client/mariadb" -uroot -h127.0.0.1 -P"$PORT" "$@"; }
+  # the shell's own plugin directory: <MARIADB_SHELL_USER_CONFIG_HOME>/plugins
+  mkdir -p "$WORK/shellhome/plugins"
+  ln -sfn "$SHELL_PLUGINS/mrs_plugin" "$WORK/shellhome/plugins/mrs_plugin"
+  ln -sfn "$SHELL_PLUGINS/msm_plugin" "$WORK/shellhome/plugins/msm_plugin"  # used by mrs
+  export MARIADB_SHELL_USER_CONFIG_HOME="$WORK/shellhome"
+else
+  mysql_cli() { "$MYSQL_PACKAGE_DIR/bin/mysql" -uroot -h127.0.0.1 -P"$PORT" "$@"; }
+fi
 cleanup() {
   [ -n "${MRSD_PID:-}" ] && kill "$MRSD_PID" 2>/dev/null || true
   [ -n "${MYSQLD_PID:-}" ] && kill "$MYSQLD_PID" 2>/dev/null || true
@@ -80,20 +99,44 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# --- mysqld ------------------------------------------------------------------
-"$MYSQL_PACKAGE_DIR/bin/mysqld" --no-defaults --initialize-insecure \
-  --datadir="$WORK/mysqld" --basedir="$MYSQL_PACKAGE_DIR" > "$WORK/log/init.log" 2>&1
-# relative socket name: the absolute path may exceed the 104-byte limit
-"$MYSQL_PACKAGE_DIR/bin/mysqld" --no-defaults --datadir="$WORK/mysqld" \
-  --basedir="$MYSQL_PACKAGE_DIR" --port="$PORT" --bind-address=127.0.0.1 \
-  --socket=m.sock --mysqlx=OFF > "$WORK/log/mysqld.log" 2>&1 &
-MYSQLD_PID=$!
-for _ in $(seq 1 60); do
-  grep -q 'ready for connections' "$WORK/log/mysqld.log" && break
-  sleep 0.5
-done
+# --- mysqld / mariadbd -------------------------------------------------------
+if [ -n "${MARIADB_BUILD_DIR:-}" ]; then
+  # absolute socket path: may exceed the 104-byte limit under $WORK
+  SOCK=/tmp/mrsd-smoke-$PORT.sock
+  "$MARIADB_BUILD_DIR/scripts/mariadb-install-db" --no-defaults \
+    --srcdir="$MARIADB_SOURCE_DIR" --builddir="$MARIADB_BUILD_DIR" \
+    --datadir="$WORK/mysqld" --auth-root-authentication-method=normal \
+    > "$WORK/log/init.log" 2>&1
+  "$MARIADB_BUILD_DIR/sql/mariadbd" --no-defaults --datadir="$WORK/mysqld" \
+    --lc-messages-dir="$MARIADB_BUILD_DIR/sql/share" --port="$PORT" \
+    --bind-address=127.0.0.1 --socket="$SOCK" > "$WORK/log/mysqld.log" 2>&1 &
+  MYSQLD_PID=$!
+  for _ in $(seq 1 60); do
+    grep -q 'ready for connections' "$WORK/log/mysqld.log" && break
+    sleep 0.5
+  done
+  # mariadb-install-db creates root@localhost only, plus anonymous accounts
+  # (''@localhost, ''@<host>) that shadow every '%' account for local
+  # connections, the daemon's included
+  "$MARIADB_BUILD_DIR/client/mariadb" -uroot -S "$SOCK" -e "
+    CREATE USER IF NOT EXISTS root@'127.0.0.1'; GRANT ALL ON *.* TO root@'127.0.0.1' WITH GRANT OPTION;
+    DELETE FROM mysql.global_priv WHERE user=''; FLUSH PRIVILEGES;"
+else
+  "$MYSQL_PACKAGE_DIR/bin/mysqld" --no-defaults --initialize-insecure \
+    --datadir="$WORK/mysqld" --basedir="$MYSQL_PACKAGE_DIR" > "$WORK/log/init.log" 2>&1
+  # relative socket name: the absolute path may exceed the 104-byte limit
+  "$MYSQL_PACKAGE_DIR/bin/mysqld" --no-defaults --datadir="$WORK/mysqld" \
+    --basedir="$MYSQL_PACKAGE_DIR" --port="$PORT" --bind-address=127.0.0.1 \
+    --socket=m.sock --mysqlx=OFF > "$WORK/log/mysqld.log" 2>&1 &
+  MYSQLD_PID=$!
+  for _ in $(seq 1 60); do
+    grep -q 'ready for connections' "$WORK/log/mysqld.log" && break
+    sleep 0.5
+  done
 
-mysql_cli < "$TASKS_SQL"
+fi
+
+[ -n "$TASKS_SQL" ] && mysql_cli < "$TASKS_SQL"
 mysql_cli < "$MRS_SQL"
 mysql_cli -e "
   CREATE SCHEMA smoke;

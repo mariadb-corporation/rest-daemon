@@ -120,8 +120,8 @@ Object MysqlCacheManager::MysqlCacheCallbacks::object_allocate(bool wait) {
     sqls.push_back("SET ROLE "s + role_);
   }
 
-  if (connection_configuration_.is_rw())
-    sqls.push_back("SET @@SESSION.session_track_gtids=\"OWN_GTID\";");
+  // mrsd: appended by execute_initial_sqls(), on MySQL only
+  obj->set_track_own_gtids(connection_configuration_.is_rw());
 
   obj->connect_and_set_opts(new_connection_params(wait), sqls);
   mrs::Counter<kEntityCounterMySQLConnectionsCreated>::increment();

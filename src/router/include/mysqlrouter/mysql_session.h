@@ -533,6 +533,10 @@ class ROUTER_MYSQL_EXPORT MySQLSession {
 
   virtual unsigned long server_version();
 
+  // mrsd: the connected server is a MariaDB server (from the version string
+  // of the handshake, no query); false before connect()
+  virtual bool is_mariadb();
+
   MYSQL *get_handle() { return connection_; }
 
   void log_queries(bool log) { log_queries_ = log; }
