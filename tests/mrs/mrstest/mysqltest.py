@@ -323,6 +323,10 @@ class Environment:
     # internal commands (--mrsd_stop, --mrsd_restart, ...) used by the
     # harness' versions of mtr's router restart includes
     hooks: dict[str, Callable[[str], None]] = field(default_factory=dict)
+    # applied to every statement before it is sent (MariaDB mode: the
+    # MySQL-only SQL of the upstream scripts, see mariadb_sql.py); the
+    # echoed statement stays the original
+    sql_rewrite: Callable[[str], str] | None = None
 
 
 class Interpreter:
@@ -767,7 +771,7 @@ class Interpreter:
         """value of `...` in let/if: the first row's non-NULL columns joined by
         tabs; "" if there is no row or its first column is NULL"""
         with self.current.conn.cursor() as cur:
-            cur.execute(sql)
+            cur.execute(self.rewrite_sql(sql))
             row = cur.fetchone()
             while cur.nextset():
                 pass
@@ -779,7 +783,7 @@ class Interpreter:
         """mysqltest's query_get_value(query, column, row): row is 1-based;
         "No such row" when there are fewer rows"""
         with self.current.conn.cursor() as cur:
-            cur.execute(sql)
+            cur.execute(self.rewrite_sql(sql))
             names = [d[0] for d in cur.description or []]
             rows = cur.fetchall()
             while cur.nextset():
@@ -789,6 +793,9 @@ class Interpreter:
         if row > len(rows):
             return "No such row"
         return self.format_value(rows[row - 1][names.index(column)])
+
+    def rewrite_sql(self, sql: str) -> str:
+        return self.envn.sql_rewrite(sql) if self.envn.sql_rewrite else sql
 
     @staticmethod
     def format_value(v) -> str:
@@ -807,7 +814,7 @@ class Interpreter:
         buf: list[str] = []
         try:
             with self.current.conn.cursor() as cur:
-                cur.execute(sql)
+                cur.execute(self.rewrite_sql(sql))
                 while True:
                     if cur.description is not None:
                         rows = cur.fetchall()

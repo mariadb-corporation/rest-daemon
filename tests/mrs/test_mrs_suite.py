@@ -19,6 +19,7 @@ tests/mrs/r/<name>.result (see conftest.py and mrstest/mysqltest.py)."""
 from __future__ import annotations
 
 import difflib
+import re
 import os
 import sys
 from pathlib import Path
@@ -26,6 +27,7 @@ from pathlib import Path
 import pytest
 
 from conftest import IS_WINDOWS, SUITE_DIR, Mrsd, server_options_for
+from mrstest import mariadb_sql
 from mrstest.mysqltest import Environment, Interpreter, ScriptFailed, ScriptSkipped
 
 
@@ -44,6 +46,9 @@ def read_def(filename: str) -> dict[str, str]:
 TESTS = sorted(p.stem for p in (SUITE_DIR / "t").glob("*.test"))
 DISABLED = read_def("disabled.def")
 KNOWN_FAILURES = read_def("known_failures.def")
+# MariaDB mode: more disabled tests and known failures (reasons in the files)
+MARIADB_DISABLED = read_def("disabled.mariadb.def")
+MARIADB_KNOWN_FAILURES = read_def("known_failures.mariadb.def")
 
 
 def shell() -> list[str]:
@@ -55,13 +60,21 @@ def shell() -> list[str]:
 
 @pytest.mark.parametrize("name", TESTS)
 def test_mrs(name, paths, mysqld, tmp_path, request):
-    if name in DISABLED:
-        pytest.skip(DISABLED[name])
-    if name in KNOWN_FAILURES:
-        request.applymarker(pytest.mark.xfail(reason=KNOWN_FAILURES[name], strict=False))
+    disabled = {**DISABLED, **MARIADB_DISABLED} if paths.is_mariadb else DISABLED
+    known = {**KNOWN_FAILURES, **MARIADB_KNOWN_FAILURES} if paths.is_mariadb else KNOWN_FAILURES
+    if name in disabled:
+        pytest.skip(disabled[name])
+    if name in known:
+        request.applymarker(pytest.mark.xfail(reason=known[name], strict=False))
 
     test_file = SUITE_DIR / "t" / f"{name}.test"
     result_file = SUITE_DIR / "r" / f"{name}.result"
+    if paths.is_mariadb:
+        # a MariaDB-specific expected result, where the output legitimately
+        # differs (error texts, server-specific values)
+        mariadb_result = SUITE_DIR / "r" / f"{name}.mariadb.result"
+        if mariadb_result.exists() or request.config.getoption("--record-mariadb"):
+            result_file = mariadb_result
     router_cnf = SUITE_DIR / "t" / f"{name}-router.cnf"
 
     mysqld.ensure_options(server_options_for(SUITE_DIR / "t" / f"{name}.cnf"))
@@ -89,6 +102,8 @@ def test_mrs(name, paths, mysqld, tmp_path, request):
         "_MRS_CONTROL_START": "1",
         "USER": os.environ.get("USER", os.environ.get("USERNAME", "")),
     }
+    if paths.is_mariadb:
+        env["MARIADB"] = "1"  # for the .inc files
 
     def require_jit(_arg):
         if not paths.has_jit:
@@ -102,7 +117,8 @@ def test_mrs(name, paths, mysqld, tmp_path, request):
         hooks={"mrsd_stop": mrsd.hook_stop,
                "mrsd_wait_stopped": mrsd.hook_wait_stopped,
                "mrsd_restart": mrsd.hook_restart,
-               "mrsd_require_jit": require_jit})
+               "mrsd_require_jit": require_jit},
+        sql_rewrite=mariadb_sql.rewrite if paths.is_mariadb else None)
 
     interp = Interpreter(envn)
     try:
@@ -119,13 +135,19 @@ def test_mrs(name, paths, mysqld, tmp_path, request):
         mysqld.reset()
 
     actual = interp.output()
-    if request.config.getoption("--record"):
+    if request.config.getoption("--record") or request.config.getoption("--record-mariadb"):
         result_file.write_text(actual, encoding="utf-8",
                                errors="surrogateescape", newline="")
         return
     # binary data in responses: compare the bytes (surrogateescape round-trips)
     expected = (result_file.read_text(encoding="utf-8", errors="surrogateescape")
                 if result_file.exists() else "")
+    if paths.is_mariadb:
+        # MariaDB returns JSON text as stored, MySQL normalized (": " and ", ")
+        # so the length of documents with JSON values differs; the bodies
+        # are compared pretty-printed anyway
+        mask = lambda t: re.sub(r"(Content-Length  ->  )\d+", r"\1<n>", t)
+        expected, actual = mask(expected), mask(actual)
     if actual != expected:
         reject = tmp_path / f"{name}.reject"
         reject.write_text(actual, encoding="utf-8", errors="surrogateescape",

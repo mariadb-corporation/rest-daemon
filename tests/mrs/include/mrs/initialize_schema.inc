@@ -14,7 +14,15 @@
 
 if ($mrs_schema_version == 4)
 {
-  --source ../schema/mrs_metadata_schema-version4.sql
+  if ($MARIADB)
+  {
+    # the MariaDB shell plugins' deployment script (4.1.6+)
+    --source ../schema/mrs_metadata_schema-version4-mariadb.sql
+  }
+  if (!$MARIADB)
+  {
+    --source ../schema/mrs_metadata_schema-version4.sql
+  }
   --let $_mrs_schema_version_supported=1
 }
 

@@ -1005,7 +1005,8 @@ void MySQLSession::prepare_execute_with_bind_parameters(
   int status;
   do {
     unsigned int nfields = mysql_stmt_field_count(stmt);
-    MYSQL_RES *rs_metadata = mysql_stmt_result_metadata(stmt);
+    // mrsd: libmariadb sets CR_NO_STMT_METADATA on a result without fields
+    MYSQL_RES *rs_metadata = nfields ? mysql_stmt_result_metadata(stmt) : nullptr;
     MYSQL_FIELD *fields =
         rs_metadata ? mysql_fetch_fields(rs_metadata) : nullptr;
     if (nfields > 0 && !fields) {
@@ -1029,11 +1030,16 @@ void MySQLSession::prepare_execute_with_bind_parameters(
       my_bind[i].length = &length[i];
     }
 
-    mysql_stmt_bind_result(stmt, my_bind.get());
+    // mrsd: nothing to bind on a result without fields (libmariadb would
+    // set CR_NO_STMT_METADATA)
+    if (nfields > 0) mysql_stmt_bind_result(stmt, my_bind.get());
 
     std::vector<const char *> outrow;
     outrow.resize(nfields);
-    while (true) {
+    // mrsd: a result without fields (the OK of a CALL) has nothing to fetch;
+    // libmariadb reports "commands out of sync" for a fetch on it
+    status = nfields == 0 ? MYSQL_NO_DATA : 0;
+    while (nfields > 0) {
       status = mysql_stmt_fetch(stmt);
       if (status == 1 || status == MYSQL_NO_DATA) break;
       for (unsigned int i = 0; i < nfields; i++) {
@@ -1053,6 +1059,8 @@ void MySQLSession::prepare_execute_with_bind_parameters(
   } while (status == 0);
 
   if (status == MYSQL_NO_DATA) return;
+  // mrsd: -1 from mysql_stmt_next_result() is "no more results"
+  if (status == -1 && mysql_stmt_errno(stmt) == 0) return;
 #ifndef MRSD_CLIENT_MARIADB
   if (status == CR_NO_RESULT_SET) return;
 #endif

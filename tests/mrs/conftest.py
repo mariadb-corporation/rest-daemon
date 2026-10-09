@@ -24,7 +24,15 @@ Options (or environment variables):
   --mrsd-build       MRSD_BUILD         mrsd build directory (built with
                                         -DWITH_UNIT_TESTS=ON for mrs_client)
   --mysql-package    MYSQL_PACKAGE_DIR  extracted MySQL server package
+  --mariadb-build    MARIADB_BUILD_DIR  a MariaDB server build tree instead
+                                        (sql/mariadbd, scripts/mariadb-install-db)
+  --mariadb-source   MARIADB_SOURCE_DIR its source tree (mariadb-install-db)
   --record                              write the output as the new .result
+
+MariaDB mode (Milestone 2): the metadata schema is the MariaDB shell plugins'
+deployment script (include/schema/*-mariadb.sql, $MARIADB is set for the
+.inc files), results are compared with r/<name>.mariadb.result where one
+exists, and disabled.mariadb.def adds to disabled.def.
 """
 
 from __future__ import annotations
@@ -52,8 +60,12 @@ EXE = ".exe" if IS_WINDOWS else ""
 def pytest_addoption(parser):
     parser.addoption("--mrsd-build", default=os.environ.get("MRSD_BUILD"))
     parser.addoption("--mysql-package", default=os.environ.get("MYSQL_PACKAGE_DIR"))
+    parser.addoption("--mariadb-build", default=os.environ.get("MARIADB_BUILD_DIR"))
+    parser.addoption("--mariadb-source", default=os.environ.get("MARIADB_SOURCE_DIR"))
     parser.addoption("--record", action="store_true",
                      help="write the test output as the new .result file")
+    parser.addoption("--record-mariadb", action="store_true",
+                     help="MariaDB mode: write the output as r/<name>.mariadb.result")
 
 
 def free_port() -> int:
@@ -79,11 +91,22 @@ class Paths:
     def __init__(self, config):
         build = config.getoption("--mrsd-build")
         pkg = config.getoption("--mysql-package")
-        if not build or not pkg:
-            pytest.exit("need --mrsd-build and --mysql-package "
-                        "(or MRSD_BUILD / MYSQL_PACKAGE_DIR)", returncode=4)
+        mariadb = config.getoption("--mariadb-build")
+        if not build or not (pkg or mariadb):
+            pytest.exit("need --mrsd-build and --mysql-package or --mariadb-build "
+                        "(or MRSD_BUILD / MYSQL_PACKAGE_DIR / MARIADB_BUILD_DIR)",
+                        returncode=4)
         self.build = Path(build).resolve()
-        self.package = Path(pkg).resolve()
+        self.is_mariadb = bool(mariadb)
+        if self.is_mariadb:
+            source = config.getoption("--mariadb-source")
+            if not source:
+                pytest.exit("need --mariadb-source (or MARIADB_SOURCE_DIR) with "
+                            "--mariadb-build", returncode=4)
+            self.package = Path(mariadb).resolve()
+            self.mariadb_source = Path(source).resolve()
+        else:
+            self.package = Path(pkg).resolve()
         self.bin = self.build / "runtime_output_directory"
         self.plugins = self.build / "plugin_output_directory"
         # the program name is set in cmake/settings.cmake
@@ -93,7 +116,11 @@ class Paths:
         self.mrsd = self.bin / f"{self.program}{EXE}"
         self.keyring = self.bin / f"{self.program}-keyring{EXE}"
         self.mrs_client = self.bin / f"mysqlrouter_mrs_client{EXE}"
-        self.mysqld = self.package / "bin" / f"mysqld{EXE}"
+        if self.is_mariadb:
+            self.mysqld = self.package / "sql" / f"mariadbd{EXE}"
+            self.install_db = self.package / "scripts" / "mariadb-install-db"
+        else:
+            self.mysqld = self.package / "bin" / f"mysqld{EXE}"
         for p in (self.mrsd, self.keyring, self.mrs_client, self.mysqld):
             if not p.exists():
                 pytest.exit(f"missing {p}", returncode=4)
@@ -129,20 +156,35 @@ class Mysqld:
             self.start(extra)
 
     def start(self, extra: list[str] | None = None) -> None:
-        if not self.datadir.exists():
-            subprocess.run([str(self.paths.mysqld), "--no-defaults",
-                            "--initialize-insecure", f"--datadir={self.datadir}",
-                            f"--basedir={self.paths.package}"],
-                           check=True, capture_output=True)
+        mariadb = self.paths.is_mariadb
+        first_start = not self.datadir.exists()
+        if first_start:
+            if mariadb:
+                subprocess.run([str(self.paths.install_db), "--no-defaults",
+                                f"--srcdir={self.paths.mariadb_source}",
+                                f"--builddir={self.paths.package}",
+                                f"--datadir={self.datadir}",
+                                "--auth-root-authentication-method=normal"],
+                               check=True, capture_output=True)
+            else:
+                subprocess.run([str(self.paths.mysqld), "--no-defaults",
+                                "--initialize-insecure", f"--datadir={self.datadir}",
+                                f"--basedir={self.paths.package}"],
+                               check=True, capture_output=True)
         args = [str(self.paths.mysqld),
                 f"--defaults-file={SUITE_DIR / 'mysqld.cnf'}",
-                f"--datadir={self.datadir}", f"--basedir={self.paths.package}",
+                f"--datadir={self.datadir}",
                 f"--port={self.port}", "--bind-address=127.0.0.1",
                 # relative: the absolute path may exceed the socket path limit
-                "--socket=m.sock", "--mysqlx=OFF",
+                "--socket=m.sock",
                 f"--log-error={self.base / 'mysqld.err'}",
-                "--gtid-mode=ON", "--enforce-gtid-consistency=ON",
-                "--secure-file-priv="] + (extra or [])
+                "--secure-file-priv="]
+        if mariadb:
+            args += [f"--lc-messages-dir={self.paths.package / 'sql' / 'share'}"]
+        else:
+            args += [f"--basedir={self.paths.package}", "--mysqlx=OFF",
+                     "--gtid-mode=ON", "--enforce-gtid-consistency=ON"]
+        args += extra or []
         self.extra = list(extra or [])
         self.proc = subprocess.Popen(args, stdout=subprocess.DEVNULL,
                                      stderr=subprocess.DEVNULL)
@@ -151,10 +193,18 @@ class Mysqld:
             try:
                 c = pymysql.connect(host="127.0.0.1", port=self.port, user="root")
                 with c.cursor() as cur:
+                    if first_start and mariadb:
+                        # mariadb-install-db's anonymous accounts (''@localhost,
+                        # ''@<host>) shadow every '%' account for local
+                        # connections, so they go. root@localhost matches TCP
+                        # connections from 127.0.0.1 (name resolution).
+                        cur.execute("DELETE FROM mysql.global_priv WHERE user=''")
+                        cur.execute("FLUSH PRIVILEGES")
                     cur.execute("CREATE DATABASE IF NOT EXISTS test")
                 c.close()
                 if not hasattr(self, "baseline"):
                     self.baseline = self.global_variables()
+                    self.baseline_schemas, self.baseline_accounts = self.schemas_and_accounts()
                 return
             except pymysql.err.OperationalError:
                 if self.proc.poll() is not None:
@@ -171,8 +221,11 @@ class Mysqld:
                 self.proc.kill()
 
     # globals that change on their own; everything else must be as at startup
+    # (MariaDB: gtid_binlog_pos, gtid_current_pos, ... and more)
     VOLATILE_GLOBALS = {"gtid_executed", "gtid_purged", "gtid_owned",
-                        "innodb_buffer_pool_size", "server_uuid"}
+                        "innodb_buffer_pool_size", "server_uuid",
+                        "gtid_binlog_pos", "gtid_binlog_state", "gtid_current_pos",
+                        "gtid_slave_pos", "gtid_cleanup_batch_size"}
 
     def global_variables(self) -> dict[str, str]:
         c = pymysql.connect(host="127.0.0.1", port=self.port, user="root")
@@ -182,9 +235,16 @@ class Mysqld:
         c.close()
         return result
 
-    SYSTEM_SCHEMAS = {"mysql", "sys", "information_schema", "performance_schema"}
-    SYSTEM_ACCOUNTS = {("root", "localhost"), ("mysql.session", "localhost"),
-                       ("mysql.sys", "localhost"), ("mysql.infoschema", "localhost")}
+    def schemas_and_accounts(self) -> tuple[set[str], set[tuple[str, str]]]:
+        """what a fresh server has; reset() drops everything else"""
+        c = pymysql.connect(host="127.0.0.1", port=self.port, user="root")
+        with c.cursor() as cur:
+            cur.execute("SELECT schema_name FROM information_schema.schemata")
+            schemas = {name.lower() for (name,) in cur.fetchall()} - {"test"}
+            cur.execute("SELECT user, host FROM mysql.user")
+            accounts = set(cur.fetchall())
+        c.close()
+        return schemas, accounts
 
     def reset(self) -> None:
         """undo what a test (especially a failed one) left behind.
@@ -200,16 +260,22 @@ class Mysqld:
         c = pymysql.connect(host="127.0.0.1", port=self.port, user="root",
                             autocommit=True)
         with c.cursor() as cur:
-            cur.execute("SELECT schema_name FROM information_schema.schemata")
-            for (name,) in cur.fetchall():
-                if name.lower() not in self.SYSTEM_SCHEMAS:
-                    cur.execute(f"DROP DATABASE IF EXISTS `{name}`")
+            schemas, accounts = self.schemas_and_accounts()
+            for name in schemas - self.baseline_schemas:
+                cur.execute(f"DROP DATABASE IF EXISTS `{name}`")
+            cur.execute("DROP DATABASE IF EXISTS test")
             cur.execute("CREATE DATABASE test")
-            cur.execute("SELECT user, host FROM mysql.user")
-            for user, host in cur.fetchall():
-                if (user, host) not in self.SYSTEM_ACCOUNTS:
+            for user, host in accounts - self.baseline_accounts:
+                if host == "":
+                    cur.execute("DROP ROLE IF EXISTS %s", (user,))  # MariaDB roles
+                else:
                     cur.execute("DROP USER IF EXISTS %s@%s", (user, host))
-            cur.execute("RESET BINARY LOGS AND GTIDS")
+            if self.paths.is_mariadb:
+                cur.execute("SELECT @@log_bin")
+                if cur.fetchone()[0]:
+                    cur.execute("RESET MASTER")
+            else:
+                cur.execute("RESET BINARY LOGS AND GTIDS")
         c.close()
 
 
