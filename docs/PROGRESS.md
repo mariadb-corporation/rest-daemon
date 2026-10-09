@@ -19,8 +19,8 @@ tick tasks, add a session entry, and rewrite "Next steps".
 |---|---|
 | M2.0: MariaDB dependency inventory | ✅ done 2026-10-07, verdict GO in stages ([milestone2-inventory.md](milestone2-inventory.md)) |
 | M2.1: build against MariaDB Connector/C | ✅ done 2026-10-09: build + ctest 113/113 on macOS (3.4.11), Linux (3.4.9) and Windows (3.4.8, vcpkg); the MySQL build still passes |
-| M2.2: run against a MariaDB server | ⬜ |
-| M2.3: test suites on MariaDB | ⬜ |
+| M2.2: run against a MariaDB server | 🟡 macOS (2026-10-09): smoke test incl. MRS scripts passes against MariaDB 13.2; CRUD with JSON/GEOMETRY/VECTOR verified; Linux/Windows runs pending |
+| M2.3: test suites on MariaDB | 🟡 started 2026-10-09: `tests/mrs` has a MariaDB mode; first full run in progress |
 | M2.4: cleanup | ⬜ |
 
 ## How to build and test (macOS)
@@ -71,6 +71,24 @@ Connector/C on the VMs (the finder accepts a Connector/C package, Homebrew, a De
   `client_errors` tables, so `client_error_message()` keeps its own table.
 
 ### MRS functional suite (pytest, `tests/mrs`)
+
+MariaDB mode (Milestone 2; see the docstring of `tests/mrs/conftest.py`):
+```sh
+python3 -m venv build-mariadb/mrs-venv && build-mariadb/mrs-venv/bin/pip install -r tests/mrs/requirements.txt pytest-xdist
+MRSD_BUILD=$PWD/build-mariadb MARIADB_BUILD_DIR=<dev>/mariadb-server/light-build \
+MARIADB_SOURCE_DIR=<dev>/mariadb-server \
+  build-mariadb/mrs-venv/bin/python -m pytest tests/mrs -q -n 4 [-k <test>] [--record-mariadb]
+```
+- `include/schema/mrs_metadata_schema-version4-mariadb.sql` is the MariaDB plugins' 4.1.6
+  deployment script with its `--` comments turned into `#` (mysqltest syntax); the `.inc`
+  files see `$MARIADB`.
+- `mrstest/mariadb_sql.py` rewrites the MySQL-only SQL of the upstream scripts before it is
+  sent (the echoed statement stays the original); `r/<name>.mariadb.result`,
+  `disabled.mariadb.def` and `known_failures.mariadb.def` are MariaDB overlays;
+  `Content-Length` values are masked (MariaDB returns JSON text as stored).
+- Smoke test in MariaDB mode: `MARIADB_BUILD_DIR=... MARIADB_SOURCE_DIR=...
+  MYSQLSH=<dev>/shell/bld/bin/mariadb-shell SHELL_PLUGINS=<dev>/mariadb-shell-plugins
+  tools/smoke/run_smoke.sh` (plus `MRS_SCRIPTS_DIR` for the scripts step).
 
 ```sh
 python3 -m venv build-test/mrs-venv && build-test/mrs-venv/bin/pip install -r tests/mrs/requirements.txt
@@ -322,10 +340,10 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
 - `compat/`: thread names, aligned malloc, crash stack traces, client error texts
   (copied from libmysql/errmsg.cc), collation → mbmaxlen table (generated from
   MySQL 26.7.0 information_schema), `build_version`, vendored dtoa.
-- Source changes (behaviour changes marked `mrsd:` in comments; mechanical ones not):
-  - `mysql_session.cc`: `my_get_err_msg` → `mrsd::client_error_message`;
+- Source changes (behaviour changes marked `restd:` in comments; mechanical ones not):
+  - `mysql_session.cc`: `my_get_err_msg` → `restd::client_error_message`;
     `vio_io_wait` → `poll()` on `NET::fd`; no more `violite.h`/`my_sys.h`
-  - MRS `mysql_column_types.cc`: `get_charset()` → `mrsd::charset_mbmaxlen()`
+  - MRS `mysql_column_types.cc`: `get_charset()` → `restd::charset_mbmaxlen()`
   - MRS plugin: `my_init()` → `mysql_library_init()`; routing wait removed
   - MRS plugin config: static destinations + `mysql_ssl_*` options; supported-options list updated
   - http: `metadata_cache` auth backend removed; `router_protobuf` requirement removed from http plugins
@@ -580,3 +598,23 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
   Build and ctest 113/113 (2026-10-09; `sd_notify` flaked once, passed on retry);
   `MYSQL_SHARED_MEMORY_BASE_NAME` left out of the option get test on libmariadb.
   **Phase M2.1 done on all three platforms.**
+
+### 2026-10-09: session 5 (Phase M2.2 and M2.3 on macOS)
+- `MySQLSession::is_mariadb()` (handshake version string) and
+  `helper::is_mariadb_server()` (set at plugin start, for the SQL generators without a
+  session) drive the server-specific SQL. Ported: version gate (MariaDB 10.11+), `--setup`
+  accounts (`IDENTIFIED BY`, one default role), RW pools without `session_track_gtids`,
+  no `SET ROLE ALL`, `read_only` (ON/OFF), `->`/`->>` → `JSON_EXTRACT` (both servers),
+  UUID generation, `VALUES()` upserts, no JSON cast, `VEC_FromText`/`VEC_ToText`,
+  `ST_GeomFromGeoJSON` without SRID, `JSON_EXTRACT(...,'$')` around `ST_AsGeoJSON`/
+  `VEC_ToText` so they nest as JSON. Measured on 13.2: JSON columns, subqueries,
+  `COALESCE` and booleans nest correctly in `JSON_OBJECT`; only those two functions needed
+  the wrapper. The GTID helpers of `asof` refuse MariaDB (Milestone 3).
+- Prepared `CALL`s on libmariadb: no metadata/bind/fetch on a result without fields,
+  `-1` from `mysql_stmt_next_result()` is the end.
+- Smoke test in MariaDB mode (mariadbd from the server build, mariadb-shell with the
+  MariaDB plugins; `mariadb-install-db`'s anonymous accounts shadow every `'%'` account
+  for local connections and are dropped) passes incl. MRS scripts; the MySQL mode still
+  passes. Ad-hoc CRUD on a table with JSON, GEOMETRY, VECTOR, BOOLEAN columns OK.
+- `tests/mrs` MariaDB mode (above). First full run in progress.
+- The upstream-change comment marker is `restd:` now (was `mrsd:`).

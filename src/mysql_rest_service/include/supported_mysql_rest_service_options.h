@@ -32,7 +32,7 @@
 static constexpr std::array mysql_rest_service_supported_options{
     "mysql_user",
     "mysql_user_data_access",
-    // mrsd: backend destinations and TLS settings, replacing upstream's
+    // restd: backend destinations and TLS settings, replacing upstream's
     // mysql_read_write_route/mysql_read_only_route
     "mysql_read_write_destinations",
     "mysql_read_only_destinations",

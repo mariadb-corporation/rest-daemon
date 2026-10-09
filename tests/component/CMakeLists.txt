@@ -47,7 +47,7 @@ ADD_SUBDIRECTORY(rest_signal)
 
 ADD_DEFINITIONS(-DSSL_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data/ssl/")
 ADD_DEFINITIONS(-DCMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
-# mrsd: only the component tests that apply to an MRS daemon; the routing,
+# restd: only the component tests that apply to an MRS daemon; the routing,
 # cluster, bootstrap, metadata-cache and connection-pool tests were dropped.
 FOREACH(test_file
     test_component_test_framework.cc

@@ -303,7 +303,7 @@ TEST_P(PluginInfoAppTestReadInfo, ReadInfo) {
 }
 
 const Plugin_data router_plugins[]{
-    // mrsd: upstream checks the routing and metadata_cache plugins
+    // restd: upstream checks the routing and metadata_cache plugins
     {"http_server", "HTTP_SERVER", "0.0.1", R"(
         "logger",
         "router_openssl",

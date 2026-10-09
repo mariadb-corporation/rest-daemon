@@ -373,7 +373,7 @@ static void start(mysql_harness::PluginFuncEnv *env) {
 static constexpr std::array required{
     "logger",
     "router_openssl",
-    // mrsd: upstream also requires "router_protobuf" here, only because
+    // restd: upstream also requires "router_protobuf" here, only because
     // http_auth_backend_lib linked against metadata_cache.
     "io",
 };

@@ -20,7 +20,7 @@
 
 namespace helper {
 
-// mrsd: the kind of server the service runs against, for the SQL generators
+// restd: the kind of server the service runs against, for the SQL generators
 // that have no session at hand. Set once at plugin start from the first
 // connection (MySQLSession::is_mariadb()); MySQL until then.
 bool is_mariadb_server();

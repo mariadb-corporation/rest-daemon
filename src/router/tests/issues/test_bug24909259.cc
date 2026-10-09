@@ -101,7 +101,7 @@ TEST(Bug24909259, PasswordPrompt_plain) {
         return my_prompt_password(prompt, &num_password_prompts);
       });
 
-  // mrsd: [mysql_rest_service] instead of the router's [metadata_cache]
+  // restd: [mysql_rest_service] instead of the router's [metadata_cache]
   mysql_harness::reset_keyring();
   EXPECT_TRUE(mysql_harness::get_keyring() == nullptr);
   {
@@ -179,7 +179,7 @@ TEST(Bug24909259, PasswordPrompt_keyed) {
         return my_prompt_password(prompt, &num_password_prompts);
       });
 
-  // mrsd: [mysql_rest_service] instead of the router's [metadata_cache]
+  // restd: [mysql_rest_service] instead of the router's [metadata_cache]
   mysql_harness::reset_keyring();
   EXPECT_TRUE(mysql_harness::get_keyring() == nullptr);
   {

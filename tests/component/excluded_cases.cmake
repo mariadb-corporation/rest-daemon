@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1335 USA
 
-# mrsd: component test cases excluded because they exercise features that
+# restd: component test cases excluded because they exercise features that
 # are not part of mrsd (routing, metadata_cache/cluster, bootstrap, X protocol).
 # Generated from the failing cases of the upstream suites; each entry is a
 # full GoogleTest name, applied as a negative GTEST_FILTER.

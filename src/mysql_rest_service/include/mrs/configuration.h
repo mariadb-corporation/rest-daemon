@@ -56,7 +56,7 @@ class Configuration {
 
   std::chrono::milliseconds metadata_refresh_interval_;
 
-  // mrsd: backend destinations (comma-separated), replacing upstream's
+  // restd: backend destinations (comma-separated), replacing upstream's
   // mysql_read_{write,only}_route options that pointed at routing plugins.
   std::string destinations_ro_;
   std::string destinations_rw_;

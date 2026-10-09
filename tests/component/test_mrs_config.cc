@@ -66,7 +66,7 @@ class RouterMrsConfig : public RouterComponentTest {
                                          true, false, wait_for);
   }
 
-  // mrsd: backends are configured with mysql_read_{only,write}_destinations
+  // restd: backends are configured with mysql_read_{only,write}_destinations
   // instead of upstream's mysql_read_{only,write}_route (routing plugin).
   std::string get_mrs_section(
       const std::optional<std::string> &mysql_read_only_destinations,
@@ -188,7 +188,7 @@ TEST_F(RouterMrsConfig, id_mismatch) {
                                 "as '.*' at '.*' with id: \\d+, new id: \\d+",
                                 5s));
 
-  // mrsd: wait for the router to exit by itself; otherwise teardown may stop
+  // restd: wait for the router to exit by itself; otherwise teardown may stop
   // it while it is still shutting down (seen on Windows under load).
   check_exit_code(router, EXIT_FAILURE);
 }

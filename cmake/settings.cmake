@@ -25,7 +25,7 @@
 # Settings for building MySQL Router
 
 # General
-# mrsd: the program and product names are set here only; the executables,
+# restd: the program and product names are set here only; the executables,
 # the default configuration and log file names, the Windows service and the
 # MRS metadata registration derive from them. Plain variables, so that a
 # change also reaches existing build directories.

@@ -25,7 +25,7 @@
  */
 
 #include "mrs/database/json_mapper/insert.h"
-#include "helper/server_flavor.h"  // mrsd: MariaDB-specific SQL
+#include "helper/server_flavor.h"  // restd: MariaDB-specific SQL
 #include "helper/json/rapid_json_to_text.h"
 #include "helper/json/to_sqlstring.h"
 #include "mrs/database/json_mapper/update.h"
@@ -41,7 +41,7 @@ namespace {
 mysqlrouter::sqlstring generate_uuid(MySQLSession *session) {
   // query as base64 because query_one() will truncate \0 in binary strings
   // (should be fixed at the source)
-  // mrsd: no UUID_TO_BIN on MariaDB; the same time-swapped binary layout
+  // restd: no UUID_TO_BIN on MariaDB; the same time-swapped binary layout
   auto row = session->query_one(
       helper::is_mariadb_server()
           ? "SELECT TO_BASE64(UNHEX(CONCAT(SUBSTR(u,15,4),SUBSTR(u,10,4),"
@@ -149,7 +149,7 @@ mysqlrouter::sqlstring RowInsert::insert_sql() const {
   }
 
   if (upsert_) {
-    // mrsd: MariaDB has no row alias; VALUES() is its syntax
+    // restd: MariaDB has no row alias; VALUES() is its syntax
     const bool mariadb = helper::is_mariadb_server();
     sql.append_preformatted(mariadb ? " ON DUPLICATE KEY UPDATE "
                                     : " AS new ON DUPLICATE KEY UPDATE ");

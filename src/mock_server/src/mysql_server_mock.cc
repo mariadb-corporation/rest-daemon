@@ -174,7 +174,7 @@ class Acceptor {
     auto reader = reader_maker_();
 
     auto session_it = client_sessions_([&](auto &socks) {
-      // mrsd: classic protocol only (X protocol is out of scope)
+      // restd: classic protocol only (X protocol is out of scope)
       socks.emplace_back(std::make_unique<MySQLServerMockSessionClassic>(
           std::move(client_sock), client_ep_, tls_server_ctx_,
           std::move(reader), false, with_tls_));

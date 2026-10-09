@@ -64,7 +64,7 @@ using namespace std::string_literals;
 namespace {
 
 #ifndef MRSD_CLIENT_MARIADB
-// mrsd: libmariadb has no TLS session resumption API; the cache is dropped
+// restd: libmariadb has no TLS session resumption API; the cache is dropped
 // there (a performance feature only)
 class SSLSessionsCache {
  public:
@@ -148,7 +148,7 @@ MySQLSession::MySQLSession() {
   }
 
 #ifdef MRSD_CLIENT_MARIADB
-  // mrsd: libmariadb 3.4 defaults to TLS with certificate verification, which
+  // restd: libmariadb 3.4 defaults to TLS with certificate verification, which
   // refuses servers without TLS. libmysqlclient's default is PREFERRED.
   set_ssl_options(SSL_MODE_PREFERRED, "", "", "", "", "", "");
 
@@ -249,7 +249,7 @@ void MySQLSession::set_ssl_options(mysql_ssl_mode ssl_mode,
   }
 
 #ifdef MRSD_CLIENT_MARIADB
-  // mrsd: libmariadb has no MYSQL_OPT_SSL_MODE. TLS is used iff
+  // restd: libmariadb has no MYSQL_OPT_SSL_MODE. TLS is used iff
   // MYSQL_OPT_SSL_ENFORCE is set (setting a CA, CRL, cert or key sets it
   // too, hence last), and the server certificate is verified unless
   // MYSQL_OPT_SSL_VERIFY_SERVER_CERT is cleared (it is set by default).
@@ -486,7 +486,7 @@ void MySQLSession::connect(const std::string &host, unsigned int port,
   }
 
 #ifdef MRSD_CLIENT_MARIADB
-  // mrsd: with certificate verification off, libmariadb connects without TLS
+  // restd: with certificate verification off, libmariadb connects without TLS
   // when the server has none; REQUIRED must not accept that
   if (ssl_mode() == SSL_MODE_REQUIRED &&
       mysql_get_ssl_cipher(connection_) == nullptr) {
@@ -591,7 +591,7 @@ const std::error_category &mysql_category() noexcept {
    public:
     const char *name() const noexcept override { return "mysql_client"; }
     std::string message(int ev) const override {
-      return mrsd::client_error_message(ev ? ev : CR_UNKNOWN_ERROR);
+      return restd::client_error_message(ev ? ev : CR_UNKNOWN_ERROR);
     }
   };
 
@@ -600,7 +600,7 @@ const std::error_category &mysql_category() noexcept {
 }
 
 static MysqlError make_mysql_error_code(unsigned int e) {
-  return {e, mrsd::client_error_message(e ? e : CR_UNKNOWN_ERROR), "HY000"};
+  return {e, restd::client_error_message(e ? e : CR_UNKNOWN_ERROR), "HY000"};
 }
 
 static MysqlError make_mysql_error_code(MYSQL *m) {
@@ -633,7 +633,7 @@ MySQLSession::real_query(const std::string &q) {
 #ifdef MRSD_CLIENT_MARIADB
 // mysql_error=0 means ASYNC_NOT_READY
 //
-// mrsd: libmariadb has no mysql_*_nonblocking(). Its mysql_*_start()/_cont()
+// restd: libmariadb has no mysql_*_nonblocking(). Its mysql_*_start()/_cont()
 // run the operation in a coroutine (MYSQL_OPT_NONBLOCK) and return a
 // MYSQL_WAIT_* mask while they wait for the socket; the next call must be
 // _cont() with the events that happened. async_wait_status_ keeps that mask
@@ -1005,7 +1005,7 @@ void MySQLSession::prepare_execute_with_bind_parameters(
   int status;
   do {
     unsigned int nfields = mysql_stmt_field_count(stmt);
-    // mrsd: libmariadb sets CR_NO_STMT_METADATA on a result without fields
+    // restd: libmariadb sets CR_NO_STMT_METADATA on a result without fields
     MYSQL_RES *rs_metadata = nfields ? mysql_stmt_result_metadata(stmt) : nullptr;
     MYSQL_FIELD *fields =
         rs_metadata ? mysql_fetch_fields(rs_metadata) : nullptr;
@@ -1015,8 +1015,8 @@ void MySQLSession::prepare_execute_with_bind_parameters(
     }
     std::unique_ptr<MYSQL_BIND[]> my_bind{new MYSQL_BIND[nfields]};
     std::unique_ptr<unsigned long[]> length{new unsigned long[nfields]};
-    std::unique_ptr<mrsd::bind_bool_t[]> is_null{
-        new mrsd::bind_bool_t[nfields]};
+    std::unique_ptr<restd::bind_bool_t[]> is_null{
+        new restd::bind_bool_t[nfields]};
     memset(my_bind.get(), 0, sizeof(MYSQL_BIND) * nfields);
 
     validator(nfields, fields);
@@ -1030,13 +1030,13 @@ void MySQLSession::prepare_execute_with_bind_parameters(
       my_bind[i].length = &length[i];
     }
 
-    // mrsd: nothing to bind on a result without fields (libmariadb would
+    // restd: nothing to bind on a result without fields (libmariadb would
     // set CR_NO_STMT_METADATA)
     if (nfields > 0) mysql_stmt_bind_result(stmt, my_bind.get());
 
     std::vector<const char *> outrow;
     outrow.resize(nfields);
-    // mrsd: a result without fields (the OK of a CALL) has nothing to fetch;
+    // restd: a result without fields (the OK of a CALL) has nothing to fetch;
     // libmariadb reports "commands out of sync" for a fetch on it
     status = nfields == 0 ? MYSQL_NO_DATA : 0;
     while (nfields > 0) {
@@ -1059,7 +1059,7 @@ void MySQLSession::prepare_execute_with_bind_parameters(
   } while (status == 0);
 
   if (status == MYSQL_NO_DATA) return;
-  // mrsd: -1 from mysql_stmt_next_result() is "no more results"
+  // restd: -1 from mysql_stmt_next_result() is "no more results"
   if (status == -1 && mysql_stmt_errno(stmt) == 0) return;
 #ifndef MRSD_CLIENT_MARIADB
   if (status == CR_NO_RESULT_SET) return;
@@ -1292,7 +1292,7 @@ std::string MySQLSession::quote(const std::string &s, char qchar) const {
   r.resize(s.length() * 2 + 3);
   r[0] = qchar;
 #ifdef MRSD_CLIENT_MARIADB
-  // mrsd: no mysql_real_escape_string_quote() in libmariadb;
+  // restd: no mysql_real_escape_string_quote() in libmariadb;
   // mysql_real_escape_string() escapes ' and " (and handles
   // NO_BACKSLASH_ESCAPES), which covers the quote chars used here
   unsigned long len =

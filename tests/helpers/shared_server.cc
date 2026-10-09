@@ -108,7 +108,7 @@ stdx::expected<void, MysqlError> SharedServer::shutdown(MysqlClient &cli) {
 #endif
 
 namespace {
-// mrsd: mysqld comes from a MySQL server package (MYSQL_PACKAGE_DIR at build
+// restd: mysqld comes from a MySQL server package (MYSQL_PACKAGE_DIR at build
 // time, MRSD_MYSQL_PACKAGE_DIR in the environment overrides it) instead of
 // the server build tree the tests upstream run in.
 std::optional<mysql_harness::Path> mysql_package_dir() {

@@ -180,7 +180,7 @@ std::shared_ptr<IResult> Session::run_sql(
   };
 
 #ifdef MRSD_CLIENT_MARIADB
-  // mrsd: no query attributes in the MariaDB protocol; they are ignored
+  // restd: no query attributes in the MariaDB protocol; they are ignored
   (void)query_attributes;
 #else
   // Attribute references need to be alive while the query is executed

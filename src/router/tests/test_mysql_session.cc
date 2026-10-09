@@ -145,7 +145,7 @@ class MysqlSessionOptionTest : public ::testing::Test {};
 
 using MysqlSessionOptionTypes =
     ::testing::Types<MySQLSession::DefaultAuthentication,  //
-#ifndef MRSD_CLIENT_MARIADB  // mrsd: not readable in libmariadb
+#ifndef MRSD_CLIENT_MARIADB  // restd: not readable in libmariadb
                      MySQLSession::EnableCleartextPlugin,  //
 #endif
                      // InitCommand - set-only
@@ -186,12 +186,12 @@ using MysqlSessionOptionTypes =
                      MySQLSession::ServerPluginKey,   //
                      MySQLSession::ReadDefaultFile,   //
                      MySQLSession::ReadDefaultGroup   //
-#ifndef MRSD_CLIENT_MARIADB  // mrsd: libmariadb doesn't store these as set
+#ifndef MRSD_CLIENT_MARIADB  // restd: libmariadb doesn't store these as set
                      ,
                      MySQLSession::CharsetDir,  //
                      MySQLSession::CharsetName  //
 #endif
-#if defined(_WIN32) && !defined(MRSD_CLIENT_MARIADB)  // mrsd: no get in libmariadb
+#if defined(_WIN32) && !defined(MRSD_CLIENT_MARIADB)  // restd: no get in libmariadb
                      ,
                      MySQLSession::SharedMemoryBasename
 #endif
@@ -257,7 +257,7 @@ using MysqlSessionGettableOptionTypes =
 #ifndef MRSD_CLIENT_MARIADB
         MySQLSession::LoadDataLocalDir  // needs real directory
 #else
-        // mrsd: readable in libmariadb, but not as the value that was set
+        // restd: readable in libmariadb, but not as the value that was set
         // (no LoadDataLocalDir there). InitCommand is in no list: its get
         // writes a count to a second out-parameter the wrapper doesn't pass.
         MySQLSession::CharsetDir,           //
@@ -298,7 +298,7 @@ using MysqlSessionSettableOptionTypes =
                      MySQLSession::ZstdCompressionLevel,  // Bug#32483980
                      MySQLSession::CompressionAlgorithms  // Bug#32483980
 #else
-                     MySQLSession::EnableCleartextPlugin  // mrsd: not readable
+                     MySQLSession::EnableCleartextPlugin  // restd: not readable
 #endif
                      >;
 

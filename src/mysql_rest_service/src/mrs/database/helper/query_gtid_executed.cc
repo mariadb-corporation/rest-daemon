@@ -51,7 +51,7 @@ static std::vector<std::string> expect_single_row_array_strings(
 }
 
 namespace {
-// mrsd: MariaDB has neither gtid_executed nor these functions; its GTIDs
+// restd: MariaDB has neither gtid_executed nor these functions; its GTIDs
 // (domain-server-sequence) need their own implementation (Milestone 3)
 void require_mysql_gtids(mysqlrouter::MySQLSession *session) {
   if (session->is_mariadb())

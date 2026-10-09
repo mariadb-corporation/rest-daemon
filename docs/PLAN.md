@@ -1,4 +1,4 @@
-# mrsd: standalone MySQL REST Service daemon (plan)
+# restd: standalone MySQL REST Service daemon (plan)
 
 This is the plan of record. Progress is tracked in [PROGRESS.md](PROGRESS.md) and
 findings in [phase0-inventory.md](phase0-inventory.md). If the plan changes, update this
@@ -229,7 +229,7 @@ document generation, GTID tracking, `mysql_tasks`, account setup, tests.
 
 ### Phase M2.4: cleanup
 - Remove MySQL-only code paths that are no longer reachable (or keep the dual build, per
-  decision), README/docs for MariaDB, `mrsd:` markers.
+  decision), README/docs for MariaDB, `restd:` markers.
 
 ## Milestone 3: MariaDB, second stage
 

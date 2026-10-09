@@ -40,7 +40,7 @@ SET(helper_sources
   # used by the MRS database tests (src/mysql_rest_service/tests)
   helpers/shared_server.cc
 )
-# mrsd: helpers of the component suites; they still depend on routing and
+# restd: helpers of the component suites; they still depend on routing and
 # cluster metadata code.
 IF(WITH_COMPONENT_TESTS)
   LIST(APPEND helper_sources
@@ -67,7 +67,7 @@ TARGET_LINK_LIBRARIES(routertest_helpers
   router_mysql
   mock_server_rest_client
   )
-# mrsd: shared_server starts mysqld from the MySQL server package
+# restd: shared_server starts mysqld from the MySQL server package
 TARGET_COMPILE_DEFINITIONS(routertest_helpers PRIVATE
   MRSD_MYSQL_PACKAGE_DIR="${MYSQL_PACKAGE_DIR}")
 
@@ -77,7 +77,7 @@ TARGET_INCLUDE_DIRECTORIES(routertest_helpers
   ${PROJECT_SOURCE_DIR}/src/harness/shared/include/
   )
 
-# mrsd: the cases that test routing, clusters or bootstrap are excluded in
+# restd: the cases that test routing, clusters or bootstrap are excluded in
 # component/excluded_cases.cmake
 IF(WITH_COMPONENT_TESTS)
   ADD_SUBDIRECTORY(component)

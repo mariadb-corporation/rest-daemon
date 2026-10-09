@@ -137,7 +137,7 @@ IF(WIN32)
     ../../harness/src/logging/eventlog_rc/MSG00001.bin)
 ENDIF()
 
-# mrsd: --setup (mrsd_setup.cc; bootstrap_mysql_account.cc is upstream's
+# restd: --setup (mrsd_setup.cc; bootstrap_mysql_account.cc is upstream's
 # router/src/bootstrap/src/bootstrap_mysql_account.cc)
 MYSQL_ADD_EXECUTABLE(mysqlrouter
   main.cc
@@ -155,7 +155,7 @@ MYSQL_ADD_EXECUTABLE(mysqlrouter
   ${CMAKE_DL_LIBS}
   )
 
-# mrsd: the targets keep the router's names; the files get mrsd's
+# restd: the targets keep the router's names; the files get mrsd's
 SET_TARGET_PROPERTIES(mysqlrouter PROPERTIES
   OUTPUT_NAME "${MRSD_PROGRAM_NAME}")
 

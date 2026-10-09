@@ -49,7 +49,7 @@ void MysqlBind::fill_null_as_inout(DataType data_type) {
   bind->length = lengths_.back().get();
   *bind->length = 0;
 
-  nulls_.emplace_back(new mrsd::bind_bool_t);
+  nulls_.emplace_back(new restd::bind_bool_t);
   bind->is_null = nulls_.back().get();
   *bind->is_null = true;
 }

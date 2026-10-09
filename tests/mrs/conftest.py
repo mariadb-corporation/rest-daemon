@@ -393,7 +393,7 @@ class Mrsd:
                 if extra.has_section("mysql_rest_service") else None
             for section in extra.sections():
                 if section.startswith("routing"):
-                    # mrsd: no routing plugin; a route to the server's socket
+                    # restd: no routing plugin; a route to the server's socket
                     # becomes a local: destination
                     if extra[section].get("use_socket_as_destination") == "1":
                         cfg["mysql_rest_service"]["mysql_read_write_destinations"] = \

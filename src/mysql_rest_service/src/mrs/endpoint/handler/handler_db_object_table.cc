@@ -25,7 +25,7 @@
 */
 
 #include "mrs/endpoint/handler/handler_db_object_table.h"
-#include "helper/server_flavor.h"  // mrsd: MariaDB-specific SQL
+#include "helper/server_flavor.h"  // restd: MariaDB-specific SQL
 
 #include <algorithm>
 #include <map>

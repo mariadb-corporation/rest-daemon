@@ -24,7 +24,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "mrsd/compat_client.h"  // mrsd: MySQL-only ER_* codes
+#include "mrsd/compat_client.h"  // restd: MySQL-only ER_* codes
 
 #include <cstring>
 #include "mrs/database/schema_monitor.h"
@@ -107,7 +107,7 @@ mrs::interface::SupportedMrsMetadataVersion check_supported_mrs_version(
 }
 
 bool query_is_node_read_only(mysqlrouter::MySQLSession *session) {
-  // mrsd: no super_read_only on MariaDB
+  // restd: no super_read_only on MariaDB
   mysqlrouter::sqlstring q = session->is_mariadb()
                                  ? "select @@read_only, @@read_only"
                                  : "select @@super_read_only, @@read_only";
@@ -117,7 +117,7 @@ bool query_is_node_read_only(mysqlrouter::MySQLSession *session) {
   if (nullptr == result.get()) return false;
   if (!(*result)[0] || (!(*result)[1])) return false;
 
-  // mrsd: MariaDB renders the boolean as ON/OFF, MySQL as 1/0
+  // restd: MariaDB renders the boolean as ON/OFF, MySQL as 1/0
   auto is_on = [](const char *v) {
     return strcmp(v, "1") == 0 || strcmp(v, "ON") == 0;
   };

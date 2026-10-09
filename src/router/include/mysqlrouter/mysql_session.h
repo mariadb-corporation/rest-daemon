@@ -39,7 +39,7 @@
 
 #include <mysql.h>  // enum mysql_ssl_mode
 
-#include "mrsd/compat_client.h"  // mrsd: mysql_ssl_mode on libmariadb
+#include "mrsd/compat_client.h"  // restd: mysql_ssl_mode on libmariadb
 #include <string.h>
 
 #include "mysql/harness/stdx/expected.h"
@@ -239,7 +239,7 @@ class ROUTER_MYSQL_EXPORT MySQLSession {
 #endif
   using SslKey = ConstCharOption<MYSQL_OPT_SSL_KEY>;
 #ifdef MRSD_CLIENT_MARIADB
-  // mrsd: libmariadb has no MYSQL_OPT_SSL_MODE; set_ssl_options() emulates
+  // restd: libmariadb has no MYSQL_OPT_SSL_MODE; set_ssl_options() emulates
   // the modes with these two
   using SslEnforce = BooleanOption<MYSQL_OPT_SSL_ENFORCE>;
   using SslVerifyServerCert = BooleanOption<MYSQL_OPT_SSL_VERIFY_SERVER_CERT>;
@@ -533,7 +533,7 @@ class ROUTER_MYSQL_EXPORT MySQLSession {
 
   virtual unsigned long server_version();
 
-  // mrsd: the connected server is a MariaDB server (from the version string
+  // restd: the connected server is a MariaDB server (from the version string
   // of the handshake, no query); false before connect()
   virtual bool is_mariadb();
 
@@ -577,7 +577,7 @@ class ROUTER_MYSQL_EXPORT MySQLSession {
   AsyncQueryState async_state_ = AsyncQueryState::kNone;
   bool async_query_logged_ = false;
 #ifdef MRSD_CLIENT_MARIADB
-  // mrsd: libmariadb's mysql_*_start()/_cont() API. The MYSQL_WAIT_* mask the
+  // restd: libmariadb's mysql_*_start()/_cont() API. The MYSQL_WAIT_* mask the
   // suspended operation of async_state_ waits for (0: nothing suspended).
   int async_wait_status_{0};
   bool async_nonblock_set_{false};

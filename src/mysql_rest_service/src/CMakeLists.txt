@@ -285,7 +285,7 @@ ADD_STATIC_LIBRARY(mysql_rest_service_impl
 SET(mysql_rest_service_reqs
   io_component
   router_lib
-  # mrsd: upstream got router_mysql (MySQLSession) through the routing plugin
+  # restd: upstream got router_mysql (MySQLSession) through the routing plugin
   router_mysql
   http_server
   mysql_rest_service_impl

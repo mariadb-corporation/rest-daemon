@@ -88,7 +88,7 @@ static std::string appedn_unsigned(const MYSQL_FIELD *field) {
 static std::string append_length(const MYSQL_FIELD *field) {
   using namespace std::string_literals;
   auto l = field->length;
-  const auto mbmaxlen = mrsd::charset_mbmaxlen(field->charsetnr);
+  const auto mbmaxlen = restd::charset_mbmaxlen(field->charsetnr);
   if (mbmaxlen > 0) {
     l = l / mbmaxlen;
   }

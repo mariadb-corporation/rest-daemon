@@ -143,7 +143,7 @@ FUNCTION(ROUTER_COPY_CUSTOM_DLL library_full_filename OUTPUT_LIBRARY_NAME OUTPUT
     OUTPUT "${COPIED_LIBRARY_NAME}"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "${SOURCE_DLL_NAME}" "${COPIED_LIBRARY_NAME}"
-    # mrsd: refresh the copy when the source DLL is rebuilt
+    # restd: refresh the copy when the source DLL is rebuilt
     DEPENDS "${SOURCE_DLL_NAME}"
     )
   MY_ADD_CUSTOM_TARGET(${COPY_TARGET_NAME} ALL

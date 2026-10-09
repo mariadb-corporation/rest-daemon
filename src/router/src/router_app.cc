@@ -776,7 +776,7 @@ void MySQLRouter::prepare_command_options() noexcept {
       CmdOptionValueReq::required, "path", [this](const std::string &value) {
         check_and_add_conf(extra_config_files_, value);
       });
-  // mrsd: --setup is handled in main.cc when it is the first argument
+  // restd: --setup is handled in main.cc when it is the first argument
   arg_handler_.add_option(
       OptionNames({"--setup"}),
       "Prepare a deployment directory for a MySQL server and exit; must be "

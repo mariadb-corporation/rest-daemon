@@ -25,7 +25,7 @@
 */
 
 #include "mrs/database/helper/sp_function_query.h"
-#include "helper/server_flavor.h"  // mrsd: MariaDB-specific SQL
+#include "helper/server_flavor.h"  // restd: MariaDB-specific SQL
 
 #include <stdexcept>
 
@@ -160,7 +160,7 @@ static mysqlrouter::sqlstring to_sqlstring(const std::string &value,
     case ColumnType::GEOMETRY: {
       auto position = value.find_first_not_of(" \t");
       if (std::string::npos != position && '{' == value[position]) {
-        // mrsd: MariaDB's ST_GeomFromGeoJSON has no SRID argument (and no
+        // restd: MariaDB's ST_GeomFromGeoJSON has no SRID argument (and no
         // SRID attribute on columns to match)
         if (helper::is_mariadb_server())
           return mysqlrouter::sqlstring("ST_GeomFromGeoJSON(?)") << value;

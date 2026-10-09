@@ -25,7 +25,7 @@
 */
 
 #include "mrs/database/json_mapper/select.h"
-#include "helper/server_flavor.h"  // mrsd: MariaDB-specific SQL
+#include "helper/server_flavor.h"  // restd: MariaDB-specific SQL
 #include <algorithm>
 #include <iostream>
 #include <memory>
@@ -250,7 +250,7 @@ static mysqlrouter::sqlstring get_field_format(entry::ColumnType type,
   else if (type == entry::ColumnType::BINARY)
     return {value_only ? "TO_BASE64(!.!)" : "?, TO_BASE64(!.!)"};
   else if (type == entry::ColumnType::GEOMETRY) {
-    // mrsd: on MariaDB the GeoJSON text must be re-typed as JSON to nest
+    // restd: on MariaDB the GeoJSON text must be re-typed as JSON to nest
     if (helper::is_mariadb_server())
       return {value_only ? "JSON_EXTRACT(ST_AsGeoJSON(!.!),'$')"
                          : "?, JSON_EXTRACT(ST_AsGeoJSON(!.!),'$')"};

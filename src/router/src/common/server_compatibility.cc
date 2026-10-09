@@ -33,7 +33,7 @@
 void check_version_compatibility(mysqlrouter::MySQLSession *session) {
   bool ok = true;
   if (session->is_mariadb()) {
-    // mrsd: MariaDB 10.11 (the oldest supported LTS) or later
+    // restd: MariaDB 10.11 (the oldest supported LTS) or later
     const unsigned long version = session->server_version();  // e.g. 101106
     if (version < 101100) {
       std::cout << "Unsupported MariaDB server version: "

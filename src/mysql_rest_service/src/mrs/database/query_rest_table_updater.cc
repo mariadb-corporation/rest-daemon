@@ -24,7 +24,7 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "mrsd/compat_client.h"  // mrsd: MySQL-only ER_* codes
+#include "mrsd/compat_client.h"  // restd: MySQL-only ER_* codes
 #include "mrs/database/query_rest_table_updater.h"
 
 #include <set>

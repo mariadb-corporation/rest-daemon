@@ -27,7 +27,7 @@
 #ifndef MRSD_TESTS_HELPERS_CLUSTER_METADATA_TYPES_H
 #define MRSD_TESTS_HELPERS_CLUSTER_METADATA_TYPES_H
 
-// mrsd: the two types the component-test helpers use from upstream's
+// restd: the two types the component-test helpers use from upstream's
 // mysqlrouter/cluster_metadata.h (router_cluster isn't part of mrsd). The
 // helpers use them to generate mock-server metadata.
 

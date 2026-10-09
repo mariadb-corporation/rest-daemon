@@ -24,7 +24,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "mrsd/compat_client.h"  // mrsd: is_client_error
+#include "mrsd/compat_client.h"  // restd: is_client_error
 #include "collector/mysql_fixed_pool_manager.h"
 
 #include <vector>
@@ -54,7 +54,7 @@ void MysqlFixedPoolManager::MysqlCacheCallbacks::object_remove(Object obj) {
 bool MysqlFixedPoolManager::MysqlCacheCallbacks::object_before_cache(
     Object obj, [[maybe_unused]] bool dirty) {
   const auto last_error = obj->last_errno();
-  if (mrsd::is_client_error(last_error)) return false;
+  if (restd::is_client_error(last_error)) return false;
 
   return true;
 }
@@ -119,7 +119,7 @@ void MysqlFixedPoolManager::init(DestinationProvider *destination,
     mrs::Counter<kEntityCounterMySQLConnectionsCreated>::increment();
 
     // enable all roles, in case necessary ones are not enabled by default.
-    // mrsd: MariaDB activates one role at a time and has no ROLE ALL; the
+    // restd: MariaDB activates one role at a time and has no ROLE ALL; the
     // account's default role applies there.
     if (!obj->is_mariadb()) obj->execute("SET ROLE ALL");
 

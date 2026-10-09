@@ -27,7 +27,7 @@
 #include <mysql.h>
 #include <mysqld_error.h>
 
-// mrsd: MariaDB Connector/C (MRSD_CLIENT_MARIADB) vs. MySQL's libmysqlclient.
+// restd: MariaDB Connector/C (MRSD_CLIENT_MARIADB) vs. MySQL's libmysqlclient.
 // The few public-API differences the code depends on are evened out here; see
 // docs/milestone2-inventory.md, section 2.
 #ifdef MRSD_CLIENT_MARIADB

@@ -200,7 +200,7 @@ mysql_harness::Plugin HTTP_AUTH_BACKEND_EXPORT
         nullptr,
         init,     // init
         deinit,   // deinit
-        nullptr,  // start (mrsd: only used by the metadata_cache backend)
+        nullptr,  // start (restd: only used by the metadata_cache backend)
         nullptr,  // stop
         false,    // declares_readiness
         http_backend_supported_options.size(),

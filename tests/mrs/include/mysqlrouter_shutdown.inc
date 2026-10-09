@@ -13,7 +13,7 @@ if (!$pid_file)
 }
 --let MYSQLROUTER_PIDFILE = $pid_file
 
-# mrsd: stop the router through the pytest harness (upstream: a perl block
+# restd: stop the router through the pytest harness (upstream: a perl block
 # killing the PID from $MYSQLROUTER_PIDFILE; Win32::Process isn't available
 # everywhere)
 --mrsd_stop

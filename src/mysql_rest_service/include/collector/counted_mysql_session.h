@@ -74,7 +74,7 @@ class CountedMySQLSession : public mysqlrouter::MySQLSession {
   virtual Sqls get_initial_sqls() const;
   virtual void connect_and_set_opts(
       const ConnectionParameters &connection_params, const Sqls &initial_sqls);
-  // mrsd: track the GTIDs of the connection's own transactions (initial SQL
+  // restd: track the GTIDs of the connection's own transactions (initial SQL
   // after every (re)connect). Not available on MariaDB, where the SET is
   // skipped (Milestone 3 brings its own tracking).
   void set_track_own_gtids(bool track) { track_own_gtids_ = track; }

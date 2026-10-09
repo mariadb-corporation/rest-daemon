@@ -25,7 +25,7 @@
 */
 
 #include <algorithm>  // max
-#include "helper/server_flavor.h"  // mrsd: MariaDB-specific SQL
+#include "helper/server_flavor.h"  // restd: MariaDB-specific SQL
 #include <array>
 #include <map>
 #include <memory>  // unique_ptr
@@ -37,7 +37,7 @@
 
 #include <mysql.h>  // mysql_library_init
 
-#include "mrsd/compat_client.h"  // mrsd: MySQL-only ER_* codes
+#include "mrsd/compat_client.h"  // restd: MySQL-only ER_* codes
 #include "my_thread.h"     // NOLINT(build/include_subdir)
 #include "mysqld_error.h"  // NOLINT(build/include_subdir)
 #include "socket_operations.h"
@@ -359,7 +359,7 @@ static void run(mysql_harness::PluginFuncEnv *env) {
   log_debug("run");
   using namespace std::chrono_literals;
   try {
-    // mrsd: upstream waited here for the routing plugins that provided the
+    // restd: upstream waited here for the routing plugins that provided the
     // destinations; they are now configured directly in this section.
     if (g_mrs_configuration->init_runtime_configuration()) {
       if (getenv("_MRS_CONTROL_START")) {

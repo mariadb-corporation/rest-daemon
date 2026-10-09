@@ -138,7 +138,7 @@ constexpr int kNumClientErrors =
 namespace mrsd {
 
 const char *client_error_message(unsigned int code) {
-  // mrsd: libmariadb's errmsg.h declares its tables (ER()), but its shared
+  // restd: libmariadb's errmsg.h declares its tables (ER()), but its shared
   // library doesn't export them everywhere (not on Linux), so the MySQL table
   // serves both: the 2000-2061 codes and texts are common to both libraries.
   // The callers only need the texts of a few CR_* codes anyway.

@@ -24,7 +24,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "mrsd/compat_client.h"  // mrsd: is_client_error
+#include "mrsd/compat_client.h"  // restd: is_client_error
 #include "collector/mysql_cache_manager.h"
 
 #include <vector>
@@ -120,7 +120,7 @@ Object MysqlCacheManager::MysqlCacheCallbacks::object_allocate(bool wait) {
     sqls.push_back("SET ROLE "s + role_);
   }
 
-  // mrsd: appended by execute_initial_sqls(), on MySQL only
+  // restd: appended by execute_initial_sqls(), on MySQL only
   obj->set_track_own_gtids(connection_configuration_.is_rw());
 
   obj->connect_and_set_opts(new_connection_params(wait), sqls);
@@ -137,7 +137,7 @@ void MysqlCacheManager::MysqlCacheCallbacks::object_remove(Object obj) {
 bool MysqlCacheManager::MysqlCacheCallbacks::object_before_cache(Object obj,
                                                                  bool dirty) {
   auto last_error = obj->last_errno();
-  if (mrsd::is_client_error(last_error)) return false;
+  if (restd::is_client_error(last_error)) return false;
   // If we are at other server, then just drop such connection,
   // we only need to cache the connections to default server.
   if (!is_default_server(obj)) return false;

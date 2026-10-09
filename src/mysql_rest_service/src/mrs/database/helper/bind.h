@@ -40,7 +40,7 @@
 #include "mrs/database/entry/field.h"
 #include "mysql.h"
 
-#include "mrsd/compat_client.h"  // mrsd: bind_bool_t
+#include "mrsd/compat_client.h"  // restd: bind_bool_t
 
 namespace mrs {
 namespace database {
@@ -89,7 +89,7 @@ class MysqlBind {
 
   std::vector<std::unique_ptr<char[]>> buffers_;
   std::vector<std::unique_ptr<unsigned long>> lengths_;
-  std::vector<std::unique_ptr<mrsd::bind_bool_t>> nulls_;
+  std::vector<std::unique_ptr<restd::bind_bool_t>> nulls_;
 };
 
 }  // namespace database

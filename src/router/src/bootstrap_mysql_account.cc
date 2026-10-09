@@ -24,7 +24,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "mrsd/compat_client.h"  // mrsd: MySQL-only ER_* codes
+#include "mrsd/compat_client.h"  // restd: MySQL-only ER_* codes
 #include "bootstrap_mysql_account.h"
 
 #include <iomanip>
@@ -392,7 +392,7 @@ void BootstrapMySQLAccount::create_users(const std::string &username,
   // build string containing account/auth list
   std::string accounts_with_auth;
   {
-    // mrsd: MariaDB has no caching_sha2_password by default; its default
+    // restd: MariaDB has no caching_sha2_password by default; its default
     // authentication plugin is used there
     const std::string auth_part =
         (mysql_->is_mariadb() ? " IDENTIFIED BY "s
@@ -458,7 +458,7 @@ void BootstrapMySQLAccount::give_grants_to_users(
     // default
     if (user_options.grant_role.size() > 0) {
       if (mysql_->is_mariadb()) {
-        // mrsd: one default role per account on MariaDB; the connection
+        // restd: one default role per account on MariaDB; the connection
         // pools SET ROLE explicitly, the default only matters for ad-hoc
         // connections
         statements.push_back("SET DEFAULT ROLE "s +

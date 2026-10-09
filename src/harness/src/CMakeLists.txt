@@ -26,10 +26,10 @@ INCLUDE(GenerateExportHeader)
 INCLUDE(Plugin)
 
 
-# mrsd: no generated JSON schemas (dynamic_state and configuration_update
+# restd: no generated JSON schemas (dynamic_state and configuration_update
 # were used by the router's cluster metadata code only)
 
-# mrsd: upstream builds a private libmysqlrouter_mysqlclient here, merging
+# restd: upstream builds a private libmysqlrouter_mysqlclient here, merging
 # clientlib, vio and mysys and re-exporting internal symbols. mrsd links the
 # stock libmysqlclient from MYSQL_PACKAGE_DIR instead; the few internal symbols
 # that are needed come from mrsd_compat (see docs/phase0-inventory.md).

@@ -125,7 +125,7 @@ FUNCTION(_ADD_TEST_FILE FILE)
 
   ADD_DEPENDENCIES(mysqlrouter_all ${test_target})
 
-  # mrsd: shared test helpers (e.g. helpers/benchmark/benchmark.h)
+  # restd: shared test helpers (e.g. helpers/benchmark/benchmark.h)
   TARGET_INCLUDE_DIRECTORIES(${test_target} PRIVATE ${CMAKE_SOURCE_DIR}/tests)
   IF(WIN32)
     # tests use the header-only net_ts socket code directly

@@ -27,7 +27,7 @@ IF(WITH_UNIT_TESTS)
   ADD_SUBDIRECTORY(tests/)
 ENDIF()
 
-# mrsd: the documentation is installed by the top-level CMakeLists.txt
+# restd: the documentation is installed by the top-level CMakeLists.txt
 
 
 # Install logging, runtime, config and data folders

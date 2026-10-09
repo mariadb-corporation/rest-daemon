@@ -157,7 +157,7 @@ int real_main(int argc, char **argv, bool use_os_logger_initially) {
   std::ostream filtered_err_stream(&filtered_err_streambuf);
   int result = 0;
 
-  // mrsd: --setup prepares a deployment instead of running the daemon
+  // restd: --setup prepares a deployment instead of running the daemon
   if (argc > 1 && std::string(argv[1]) == "--setup") {
     try {
       MrsdSetup setup(filtered_out_stream, filtered_err_stream);
