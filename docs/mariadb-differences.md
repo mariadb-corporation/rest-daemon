@@ -18,7 +18,8 @@ entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
   there is no `{taskId}` status endpoint. The `mysqlTask` options in existing
   metadata are ignored.
 - **MySQL servers**: `mariadb-restd` refuses to start against anything but a
-  MariaDB server, 10.11 or later.
+  MariaDB server, 10.11 or later. The 4.1.6 metadata schema itself needs 11.1
+  (`JSON_SCHEMA_VALID`), `VECTOR` columns need 11.7.
 
 ## Server behaviour
 
@@ -48,9 +49,10 @@ entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
   latitude-longitude for SRID 4326). Equality filters use the column's SRID.
 - **VECTOR** columns have a fixed dimension on MariaDB (`VECTOR(n)`); MySQL's
   accept up to a maximum.
-- **Statement timeouts** (`sqlQuery.timeout`, `MAX_EXECUTION_TIME`) do not
-  interrupt a statement waiting for a table lock (`LOCK TABLES`); such a
-  request runs into the read timeout instead.
+- **Statement timeouts** (`sqlQuery.timeout`) are applied with
+  `SET STATEMENT max_statement_time=... FOR ...` (MRS uses the
+  `MAX_EXECUTION_TIME` optimizer hint, which MariaDB only knows from 12.0 and
+  ignores as a comment before that).
 - **Invalid date/time literals** in filters compare as NULL (no match) instead
   of failing with 400.
 - **Floats** are rendered with the server's precision (`-1000` where MRS

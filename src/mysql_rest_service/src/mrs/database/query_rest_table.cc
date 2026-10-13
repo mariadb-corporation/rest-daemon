@@ -400,11 +400,14 @@ void QueryRestTable::build_query(const ObjectFieldFilter &field_filter,
   qb.process_view(object_);
 
   if (max_execution_time_ms_ > 0) {
+    // restd: SET STATEMENT instead of the MAX_EXECUTION_TIME hint, which
+    // MariaDB only knows from 12.0 (ignored as a comment before, so the
+    // timeout did nothing); max_statement_time is in seconds
     query_ = sqlstring(
-        "SELECT /*+ MAX_EXECUTION_TIME(?) */ JSON_OBJECT(?) as doc FROM ? ? "
-        "LIMIT ?,?");
+        "SET STATEMENT max_statement_time=? FOR SELECT JSON_OBJECT(?) as doc "
+        "FROM ? ? LIMIT ?,?");
 
-    query_ << max_execution_time_ms_;
+    query_ << max_execution_time_ms_ / 1000.0;
   } else {
     query_ = sqlstring("SELECT JSON_OBJECT(?) as doc FROM ? ? LIMIT ?,?");
   }
@@ -480,9 +483,9 @@ void QueryRestTableMedia::build_query(const Column &column,
   sqlstring from{"!.! as !"};
   from << object_->schema << object_->table << object_->table_alias;
 
-  if (max_execution_time_ms_ > 0) {
-    query_ = "SELECT /*+ MAX_EXECUTION_TIME(?) */ ? FROM ? ? LIMIT ?,?";
-    query_ << max_execution_time_ms_;
+  if (max_execution_time_ms_ > 0) {  // restd: SET STATEMENT, see build_query
+    query_ = "SET STATEMENT max_statement_time=? FOR SELECT ? FROM ? ? LIMIT ?,?";
+    query_ << max_execution_time_ms_ / 1000.0;
   } else {
     query_ = "SELECT ? FROM ? ? LIMIT ?,?";
   }
@@ -510,9 +513,9 @@ void QueryRestTableMedia::build_query(const Column &column,
   sqlstring from{"!.! as !"};
   from << object_->schema << object_->table << object_->table_alias;
 
-  if (max_execution_time_ms_ > 0) {
-    query_ = "SELECT /*+ MAX_EXECUTION_TIME(?) */ ? FROM ? ?";
-    query_ << max_execution_time_ms_;
+  if (max_execution_time_ms_ > 0) {  // restd: SET STATEMENT, see build_query
+    query_ = "SET STATEMENT max_statement_time=? FOR SELECT ? FROM ? ?";
+    query_ << max_execution_time_ms_ / 1000.0;
   } else {
     query_ = "SELECT ? FROM ? ?";
   }

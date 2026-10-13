@@ -127,10 +127,12 @@ void QueryRestTableSingleRow::build_query(
   }
 
   if (max_execution_time_ms_ > 0) {
+    // restd: SET STATEMENT instead of the MAX_EXECUTION_TIME hint (MariaDB
+    // 12.0+ only; a comment before); max_statement_time is in seconds
     query_ =
-        "SELECT /*+ MAX_EXECUTION_TIME(?) */ JSON_OBJECT(?), ? as is_owned "
-        "FROM ? ?";
-    query_ << max_execution_time_ms_;
+        "SET STATEMENT max_statement_time=? FOR SELECT JSON_OBJECT(?), ? as "
+        "is_owned FROM ? ?";
+    query_ << max_execution_time_ms_ / 1000.0;
   } else {
     query_ = "SELECT JSON_OBJECT(?), ? as is_owned FROM ? ?";
   }

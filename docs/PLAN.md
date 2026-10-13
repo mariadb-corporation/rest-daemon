@@ -193,7 +193,7 @@ Scope decisions (2026-10-08, see the decision log):
 |---|---|
 | MySQL build | Kept during the port as the safety net; **dropped on 2026-10-13** (M2.4) together with MySQL server support, once the MariaDB suites were at parity on the three platforms |
 | Client library | **MariaDB Connector/C package** (release build with OpenSSL), found through `-DMARIADB_CONNECTOR_DIR` / `mariadb_config`; public API only, as in Milestone 1 |
-| Minimum MariaDB server | **10.11 (oldest supported LTS)**; develop and test on `main` (13.2). Caveat: the MRS metadata schema 4.1.6 uses `JSON_SCHEMA_VALID` (11.1+) and `JSON_OVERLAPS` (10.9+); deploying on 10.11 needs a schema change on the plugin side. Features needing newer servers degrade: `MAX_EXECUTION_TIME` hint → `SET STATEMENT max_statement_time`, `VECTOR` only where the server has it (11.7+) |
+| Minimum MariaDB server | **10.11 (oldest supported LTS)**; develop and test on `main` (13.2). Caveat: the MRS metadata schema 4.1.6 uses `JSON_SCHEMA_VALID` (11.1+) and `JSON_OVERLAPS` (10.9+); deploying on 10.11 needs a schema change on the plugin side. `sqlQuery.timeout` uses `SET STATEMENT max_statement_time` (done 2026-10-13: the `MAX_EXECUTION_TIME` hint only exists from 12.0 and was silently ignored on 11.8), `VECTOR` only where the server has it (11.7+) |
 | REST async tasks (`mysql_tasks`) | **Removed** (2026-10-12, a product decision: MariaDB REST routines are always called directly, as in the MariaDB shell plugins); code removed in M2.4 (2026-10-13) |
 | GTID / "asof" | **Out of Milestone 2**: `asof` is refused with a clear error; the MySQL implementation stays parked in the tree for **Milestone 4** (see the open point below) |
 | `--setup` accounts | MariaDB's **default auth plugin** (`CREATE USER ... IDENTIFIED BY`) |
@@ -246,10 +246,12 @@ document generation, GTID tracking, `mysql_tasks`, account setup, tests.
   `MRSD_CLIENT_MARIADB` ifdefs gone), a MariaDB server 10.11+ the only one accepted, the
   `is_mariadb()` runtime branches collapsed to the MariaDB code, the MySQL modes of the
   functional suite, the live-DB tests and the smoke test gone; README/docs for MariaDB.
-- Remaining: the `restd:` markers pass; follow-ups from the inventory: VECTOR coverage in
-  the suite (upstream's fixtures declare `VECTOR` without a dimension, 7 tests disabled),
-  the fixed pool's `SET ROLE` (relies on the default role), the stated minimum version
-  (10.11 vs what the 4.1.6 schema and VECTOR need).
+- ✅ 2026-10-13 follow-ups: the pass-through pool activates an account's single role
+  (`passthrough_db_user` passes); `sqlQuery.timeout` through `SET STATEMENT` (`timeout`
+  passes; the hint was inert below 12.0); the minimum stays 10.11 for the daemon, with the
+  schema's 11.1 and VECTOR's 11.7 stated in the README.
+- Remaining: the `restd:` markers pass; VECTOR coverage in the suite (upstream's fixtures
+  declare `VECTOR` without a dimension, 7 tests disabled).
 
 ## Open point: GTID read-your-writes on MariaDB (Milestone 4)
 

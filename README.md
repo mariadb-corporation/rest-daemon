@@ -10,7 +10,8 @@ It is a fork of the MySQL REST Service (MRS) plugin of MySQL Router (`router/`
 in mysql-server), without the router's connection routing, InnoDB
 Cluster/ClusterSet support, bootstrap and X protocol, ported to MariaDB: it is
 built against MariaDB Connector/C and runs against a MariaDB server (10.11 or
-later). What it does differently from the MySQL REST Service is listed in
+later; the metadata schema the MariaDB shell deploys needs 11.1, `VECTOR`
+columns 11.7). What it does differently from the MySQL REST Service is listed in
 [docs/mariadb-differences.md](docs/mariadb-differences.md).
 
 > **Status:** work in progress. restd builds and passes its tests on Linux,
