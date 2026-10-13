@@ -507,8 +507,6 @@ class ROUTER_MYSQL_EXPORT MySQLSession {
   }
 
   virtual int ping();
-  virtual bool execute_nb(
-      const std::string &query);  // throws Error, std::logic_error
 
   virtual uint64_t last_insert_id() noexcept;
   virtual uint64_t affected_rows() noexcept;
@@ -567,23 +565,9 @@ class ROUTER_MYSQL_EXPORT MySQLSession {
 
   using mysql_result_type = std::unique_ptr<MYSQL_RES, MYSQL_RES_Deleter>;
 
-  enum class AsyncQueryState {
-    kNone,             // no async query active
-    kQuery,            // waiting query to finish
-    kStoreResult,      // waiting store_result to finish
-    kNextResult,       // waiting next_result to finish
-    kStoreNextResult,  // waiting store_result after next_result to finish
-  };
-  AsyncQueryState async_state_ = AsyncQueryState::kNone;
-  bool async_query_logged_ = false;
 #ifdef MRSD_CLIENT_MARIADB
-  // restd: libmariadb's mysql_*_start()/_cont() API. The MYSQL_WAIT_* mask the
-  // suspended operation of async_state_ waits for (0: nothing suspended).
-  int async_wait_status_{0};
-  bool async_nonblock_set_{false};
-  bool async_socket_ready(int *ready_events);
-  stdx::expected<mysql_result_type, MysqlError> store_result_nb();
-  // libmariadb can't report the ssl mode back; the one set_ssl_options() set
+  // restd: libmariadb can't report the ssl mode back; the one
+  // set_ssl_options() set
   mysql_ssl_mode ssl_mode_{SSL_MODE_PREFERRED};
 #endif
 
@@ -603,18 +587,10 @@ class ROUTER_MYSQL_EXPORT MySQLSession {
   stdx::expected<mysql_result_type, MysqlError> real_query(
       const std::string &q);
 
-  stdx::expected<mysql_result_type, MysqlError> real_query_nb(
-      const std::string &q);
-
-  stdx::expected<mysql_result_type, MysqlError> next_result_nb();
-
   /**
    * log query after running it.
    */
   stdx::expected<mysql_result_type, MysqlError> logged_real_query(
-      const std::string &q);
-
-  stdx::expected<mysql_result_type, MysqlError> logged_real_query_nb(
       const std::string &q);
 
   void throw_mysqlerror(MYSQL_STMT *stmt, uint64_t ps_id);
