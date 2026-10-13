@@ -55,11 +55,6 @@ constexpr enum_field_types MYSQL_TYPE_VECTOR =
     static_cast<enum_field_types>(242);
 #endif
 
-// no offline mode on MariaDB; the code is never returned
-#ifndef ER_SERVER_OFFLINE_MODE
-#define ER_SERVER_OFFLINE_MODE 3032
-#endif
-#define ER_SERVER_OFFLINE_MODE_REASON ER_SERVER_OFFLINE_MODE
 
 namespace mrsd {
 

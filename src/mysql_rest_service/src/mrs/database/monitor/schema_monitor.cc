@@ -443,19 +443,10 @@ SchemaMonitor::MetadataSourceDestination::get_rw_session() {
   }
 
   collector::MysqlCacheManager::CachedObject result_session;
-  try {
-    result_session =
-        cache_->get_instance(collector::kMySQLConnectionMetadataRW, true);
-    if (current_destination_state_ == DestinationState::k_offline) {
-      current_destination_state_ = DestinationState::k_ok;
-    }
-  } catch (const mysqlrouter::MySQLSession::Error &exc) {
-    if (exc.code() == ER_SERVER_OFFLINE_MODE ||
-        exc.code() == ER_SERVER_OFFLINE_MODE_REASON) {
-      current_destination_state_ = DestinationState::k_offline;
-    } else
-      throw;
-  }
+  // restd: upstream also caught ER_SERVER_OFFLINE_MODE here (k_offline);
+  // MariaDB has no offline mode
+  result_session =
+      cache_->get_instance(collector::kMySQLConnectionMetadataRW, true);
 
   if (current_destination_state_ == DestinationState::k_read_only) {
     if (!query_is_node_read_only(result_session.get())) {
@@ -467,8 +458,6 @@ SchemaMonitor::MetadataSourceDestination::get_rw_session() {
     if (current_destination_state_ == DestinationState::k_read_only) {
       log_warning("Destination %s is read-only, stopping the REST service",
                   result_session.get()->get_address().c_str());
-    } else if (current_destination_state_ == DestinationState::k_offline) {
-      log_warning("Destination is offline, stopping the REST service");
     } else {
       log_info("Destination %s is available again",
                result_session.get()->get_address().c_str());
@@ -498,12 +487,6 @@ bool SchemaMonitor::MetadataSourceDestination::handle_error() {
     if (!is_dynamic_) {
       if (exc.code() == ER_OPTION_PREVENTS_STATEMENT) {
         current_destination_state_ = DestinationState::k_read_only;
-        force_clear = true;
-      }
-
-      if (exc.code() == ER_SERVER_OFFLINE_MODE ||
-          exc.code() == ER_SERVER_OFFLINE_MODE_REASON) {
-        current_destination_state_ = DestinationState::k_offline;
         force_clear = true;
       }
     }

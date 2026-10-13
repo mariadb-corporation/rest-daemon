@@ -82,7 +82,7 @@ class SchemaMonitor {
     bool handle_error();
 
    private:
-    enum DestinationState { k_ok, k_read_only, k_offline };
+    enum DestinationState { k_ok, k_read_only };  // restd: no k_offline
 
     DestinationState current_destination_state_{
         DestinationState::k_read_only};  // initialize with read-only to force
