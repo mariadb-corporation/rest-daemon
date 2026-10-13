@@ -440,13 +440,22 @@ GET /svc/basic/t3?f=vec
 {
     "items": [
         {
-            "vec": "AAAAAA=="
+            "vec": [
+                0,
+                0
+            ]
         },
         {
-            "vec": "AACAPwAAAEA="
+            "vec": [
+                1,
+                2
+            ]
         },
         {
-            "vec": "AACAPwAAAAA="
+            "vec": [
+                1,
+                0
+            ]
         }
     ]
 }

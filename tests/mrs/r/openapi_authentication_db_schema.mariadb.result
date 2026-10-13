@@ -969,10 +969,14 @@ GET /svc/open-api-catalog/
                         "description": "geometry"
                     },
                     "vec": {
-                        "type": "string",
-                        "format": "binary",
-                        "maxLength": 65535,
-                        "description": "blob"
+                        "type": "array",
+                        "items": {
+                            "type": "number",
+                            "format": "float"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "vector(2)"
                     }
                 }
             },
@@ -1967,10 +1971,14 @@ GET /svc/open-api-catalog/
                         "description": "geometry"
                     },
                     "vec": {
-                        "type": "string",
-                        "format": "binary",
-                        "maxLength": 65535,
-                        "description": "blob"
+                        "type": "array",
+                        "items": {
+                            "type": "number",
+                            "format": "float"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "vector(2)"
                     }
                 }
             },
@@ -4834,10 +4842,14 @@ GET /svc/open-api-catalog/
                         "description": "geometry"
                     },
                     "vec": {
-                        "type": "string",
-                        "format": "binary",
-                        "maxLength": 65535,
-                        "description": "blob"
+                        "type": "array",
+                        "items": {
+                            "type": "number",
+                            "format": "float"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "vector(2)"
                     }
                 }
             },
@@ -9348,10 +9360,14 @@ GET /svc/open-api-catalog/
                         "description": "geometry"
                     },
                     "vec": {
-                        "type": "string",
-                        "format": "binary",
-                        "maxLength": 65535,
-                        "description": "blob"
+                        "type": "array",
+                        "items": {
+                            "type": "number",
+                            "format": "float"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "vector(2)"
                     }
                 }
             },
