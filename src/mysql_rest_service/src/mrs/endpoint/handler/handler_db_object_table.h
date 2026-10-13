@@ -59,8 +59,6 @@ class HandlerDbObjectTable : public mrs::rest::Handler {
   using EndpointResponseCachePtr =
       std::shared_ptr<mrs::ItemEndpointResponseCache>;
   using CachedSession = collector::MysqlCacheManager::CachedObject;
-  using PoolManager = collector::MysqlFixedPoolManager;
-  using PoolManagerRef = std::shared_ptr<PoolManager>;
 
  public:
   HandlerDbObjectTable(std::weak_ptr<DbObjectEndpoint> endpoint,
@@ -92,8 +90,7 @@ class HandlerDbObjectTable : public mrs::rest::Handler {
   CachedSession get_session(
       rest::RequestContext *ctxt,
       collector::MySQLConnection type =
-          collector::MySQLConnection::kMySQLConnectionUserdataRO,
-      PoolManagerRef *out_pool = nullptr);
+          collector::MySQLConnection::kMySQLConnectionUserdataRO);
 
   uint64_t get_items_on_page() const;
   mrs::database::ObjectRowOwnership row_ownership_info(

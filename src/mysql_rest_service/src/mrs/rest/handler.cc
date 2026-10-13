@@ -127,26 +127,6 @@ class ParseOptions
       result_.result.include_links = to_bool(vt);
     } else if (key == "result.cacheTimeToLive") {
       result_.result.cache_ttl_ms = to_double(vt) * 1000;
-    } else if (key == "mysqlTask.name") {
-      result_.mysql_task.name = cvt::to_string(vt);
-    } else if (key == "mysqlTask.eventSchema") {
-      result_.mysql_task.event_schema = cvt::to_string(vt);
-    } else if (key == "mysqlTask.driver") {
-      auto driver = mysql_harness::make_lower(cvt::to_string(vt));
-      if (driver == "database") {
-        result_.mysql_task.driver =
-            mrs::interface::Options::MysqlTask::DriverType::kDatabase;
-      } else if (driver == "router") {
-        result_.mysql_task.driver =
-            mrs::interface::Options::MysqlTask::DriverType::kRouter;
-      } else {
-        log_warning("Invalid driver type '%s' for option '%s'", driver.c_str(),
-                    key.c_str());
-        result_.mysql_task.driver =
-            mrs::interface::Options::MysqlTask::DriverType::kNone;
-      }
-    } else if (key == "mysqlTask.monitoringSql") {
-      result_.mysql_task.monitoring_sql.push_back(cvt::to_string(vt));
     }
   }
 
@@ -156,8 +136,6 @@ class ParseOptions
     if (key == "http.allowedOrigin") {
       result_.allowed_origins.type = Result::AllowedOrigins::AllowSpecified;
       result_.allowed_origins.allowed_origins.push_back(cvt::to_string(vt));
-    } else if (key == "mysqlTask.monitoringSql.monitoringSql") {
-      result_.mysql_task.monitoring_sql.push_back(cvt::to_string(vt));
     }
   }
 
@@ -165,10 +143,7 @@ class ParseOptions
   void handle_value(const ValueType &vt) {
     const auto &key = get_current_key();
     if (is_object_path()) {
-      if (key == "mysqlTask.statusDataJsonSchema")
-        result_.mysql_task.status_data_json_schema = cvt::to_string(vt);
-      else
-        handle_object_value(key, vt);
+      handle_object_value(key, vt);
     } else if (is_array_value()) {
       handle_array_value(key, vt);
     }

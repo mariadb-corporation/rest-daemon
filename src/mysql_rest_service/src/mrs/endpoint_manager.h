@@ -39,7 +39,6 @@
 #include "mrs/database/entry/db_object.h"
 #include "mrs/database/entry/db_schema.h"
 #include "mrs/database/entry/db_service.h"
-#include "mrs/database/mysql_task_monitor.h"
 #include "mrs/database/slow_query_monitor.h"
 #include "mrs/endpoint/db_service_endpoint.h"
 #include "mrs/endpoint/endpoint_factory.h"
@@ -64,7 +63,6 @@ class EndpointManager : public mrs::interface::EndpointManager {
   using EndpointFactoryPtr = std::shared_ptr<EndpointFactory>;
   using ResponseCache = mrs::ResponseCache;
   using SlowQueryMonitor = mrs::database::SlowQueryMonitor;
-  using MysqlTaskMonitor = mrs::database::MysqlTaskMonitor;
 
   class EndpointId {
    public:
@@ -112,8 +110,7 @@ class EndpointManager : public mrs::interface::EndpointManager {
                   EndpointFactoryPtr endpoint_factory = {},
                   ResponseCache *response_cache = {},
                   ResponseCache *file_cache = {},
-                  SlowQueryMonitor *slow_query_monitor = {},
-                  MysqlTaskMonitor *task_monitor = {});
+                  SlowQueryMonitor *slow_query_monitor = {});
 
   void configure(const std::optional<std::string> &options) override;
 

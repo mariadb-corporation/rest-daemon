@@ -202,7 +202,6 @@ class MrsModule {
 
   virtual void start() {
     init();
-    task_monitor.start();
     slow_monitor.start();
     metadata_logger.start(&configuration, &mysql_connection_cache);
     // must be called last
@@ -211,7 +210,6 @@ class MrsModule {
 
   virtual void stop() {
     slow_monitor.stop();
-    task_monitor.stop();
     mrs_monitor.stop();
     // metadata_logger has to be stopped after mrs_monitor
     metadata_logger.stop();
@@ -219,7 +217,6 @@ class MrsModule {
 
   void reset() {
     slow_monitor.reset();
-    task_monitor.reset();
     mrs_monitor.reset();
   }
 
@@ -243,7 +240,6 @@ class MrsModule {
   mrs::ResponseCache file_cache{"fileCache"};
   mrs::database::SlowQueryMonitor slow_monitor{configuration,
                                                &mysql_connection_cache};
-  mrs::database::MysqlTaskMonitor task_monitor;
   mrs::database::MetadataLogger &metadata_logger{
       mrs::database::MetadataLogger::instance()};
 
@@ -254,8 +250,7 @@ class MrsModule {
                                            nullptr,
                                            &response_cache,
                                            &file_cache,
-                                           &slow_monitor,
-                                           &task_monitor};
+                                           &slow_monitor};
   mrs::observability::EntitiesManager entities_manager;
 
   /**

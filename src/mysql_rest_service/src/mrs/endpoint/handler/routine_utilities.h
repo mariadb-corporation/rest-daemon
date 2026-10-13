@@ -49,24 +49,6 @@ inline std::string get_endpoint_url(
   return locked->get_url().join();
 }
 
-inline std::string get_path_after_object_name(
-    const ::http::base::Uri &base_uri, const ::http::base::Uri &requests_uri) {
-  const auto &elements_path = requests_uri.get_path_elements();
-  const auto &elements_base = base_uri.get_path_elements();
-
-  if (elements_path.size() > elements_base.size())
-    return elements_path[elements_base.size()];
-
-  return {};
-}
-
-inline std::string get_path_after_object_name(
-    std::weak_ptr<mrs::endpoint::DbObjectEndpoint> &wp,
-    const ::http::base::Uri &requests_uri) {
-  auto endpoint = lock_or_throw_unavail(wp);
-  return get_path_after_object_name(endpoint->get_url(), requests_uri);
-}
-
 inline HttpResult handler_mysqlerror(const mysqlrouter::MySQLSession::Error &e,
                                      const char *sql_state) {
   static const std::string k_state_with_user_defined_error = "45000";
@@ -109,16 +91,6 @@ inline mysqlrouter::sqlstring get_user_id(rest::RequestContext *ctxt,
   sql << to_string(ctxt->user.user_id);
 
   return sql;
-}
-
-inline std::string get_user_name(rest::RequestContext *ctxt) {
-  // this will not be set if the endpoint does not require auth, even if the
-  // request IS authenticated
-  if (!ctxt->user.has_user_id) {
-    throw http::Error(HttpStatusCode::Forbidden);
-  }
-
-  return ctxt->user.name;
 }
 
 inline void check_input_parameters(

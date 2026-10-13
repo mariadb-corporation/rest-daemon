@@ -32,7 +32,6 @@
 #include <utility>
 #include <vector>
 #include "helper/http/url.h"
-#include "mrs/database/mysql_task_monitor.h"
 #include "mrs/endpoint/handler/handler_db_object_table.h"
 
 namespace mrs {
@@ -46,8 +45,7 @@ class HandlerDbObjectSP : public HandlerDbObjectTable {
                     mrs::GtidManager *gtid_manager = nullptr,
                     collector::MysqlCacheManager *cache = nullptr,
                     mrs::ResponseCache *response_cache = nullptr,
-                    mrs::database::SlowQueryMonitor *slow_monitor = nullptr,
-                    mrs::database::MysqlTaskMonitor *task_monitor = nullptr);
+                    mrs::database::SlowQueryMonitor *slow_monitor = nullptr);
 
   HttpResult handle_get(rest::RequestContext *ctxt) override;
   HttpResult handle_delete(rest::RequestContext *ctxt) override;
@@ -59,13 +57,10 @@ class HandlerDbObjectSP : public HandlerDbObjectTable {
 
  private:
   bool always_nest_result_sets_{false};
-  mrs::database::MysqlTaskMonitor *task_monitor_{nullptr};
 
   HttpResult call(rest::RequestContext *ctxt, rapidjson::Document doc);
   HttpResult call(rest::RequestContext *ctxt,
                   const helper::http::Url::Parameters &query_kv);
-
-  HttpResult call_async(rest::RequestContext *ctxt, rapidjson::Document doc);
 };
 
 }  // namespace handler

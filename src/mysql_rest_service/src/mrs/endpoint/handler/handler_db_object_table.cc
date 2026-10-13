@@ -826,8 +826,7 @@ mrs::database::ObjectRowOwnership HandlerDbObjectTable::row_ownership_info(
 }
 
 HandlerDbObjectTable::CachedSession HandlerDbObjectTable::get_session(
-    rest::RequestContext *ctxt, collector::MySQLConnection type,
-    PoolManagerRef *out_pool) {
+    rest::RequestContext *ctxt, collector::MySQLConnection type) {
   if (get_options().query.passthrough_db_user &&
       (type == collector::kMySQLConnectionUserdataRW ||
        type == collector::kMySQLConnectionUserdataRO)) {
@@ -843,8 +842,6 @@ HandlerDbObjectTable::CachedSession HandlerDbObjectTable::get_session(
     }
 
     try {
-      if (out_pool) *out_pool = ctxt->session->db_session_pool;
-
       return ctxt->session->db_session_pool->get_instance();
     } catch (const collector::db_pool_exhausted &) {
       throw http::Error(HttpStatusCode::TooManyRequests);

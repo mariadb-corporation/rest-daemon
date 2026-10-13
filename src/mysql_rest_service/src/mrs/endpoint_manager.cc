@@ -81,7 +81,7 @@ EndpointManager::EndpointManager(
     mrs::interface::AuthorizeManager *auth_manager,
     mrs::GtidManager *gtid_manager, EndpointFactoryPtr endpoint_factory,
     ResponseCache *response_cache, ResponseCache *file_cache,
-    SlowQueryMonitor *slow_query_monitor, MysqlTaskMonitor *task_monitor)
+    SlowQueryMonitor *slow_query_monitor)
     : cache_{cache},
       auth_manager_{auth_manager},
       gtid_manager_{gtid_manager},
@@ -89,7 +89,7 @@ EndpointManager::EndpointManager(
   if (!endpoint_factory_) {
     auto handler_factory = std::make_shared<mrs::endpoint::HandlerFactory>(
         auth_manager_, gtid_manager_, cache_, response_cache, file_cache,
-        slow_query_monitor, task_monitor, configuration);
+        slow_query_monitor, configuration);
     endpoint_factory_ =
         std::make_shared<EndpointFactory>(handler_factory, configuration);
   }

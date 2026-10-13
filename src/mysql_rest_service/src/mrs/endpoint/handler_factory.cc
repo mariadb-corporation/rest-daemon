@@ -158,7 +158,6 @@ HandlerFactory::HandlerFactory(AuthorizeManager *auth_manager,
                                ResponseCache *response_cache,
                                ResponseCache *file_cache,
                                SlowQueryMonitor *slow_query_monitor,
-                               MysqlTaskMonitor *task_monitor,
                                const EndpointConfigurationPtr &configuration)
     : auth_manager_{auth_manager},
       gtid_manager_{gtid_manager},
@@ -166,7 +165,6 @@ HandlerFactory::HandlerFactory(AuthorizeManager *auth_manager,
       response_cache_{response_cache},
       file_cache_{file_cache},
       slow_query_monitor_(slow_query_monitor),
-      task_monitor_(task_monitor),
       configuration_{configuration} {}
 
 HandlerPtr HandlerFactory::create_db_schema_metadata_catalog_handler(
@@ -234,12 +232,12 @@ HandlerPtr HandlerFactory::create_db_object_handler(EndpointBasePtr endpoint) {
     case DbObjectLite::k_objectTypeProcedure:
       result = std::make_shared<HandlerDbObjectSP>(
           db_object_endpoint, auth_manager_, gtid_manager_, cache_manager_,
-          response_cache_, slow_query_monitor_, task_monitor_);
+          response_cache_, slow_query_monitor_);
       break;
     case DbObjectLite::k_objectTypeFunction:
       result = std::make_shared<HandlerDbObjectFunction>(
           db_object_endpoint, auth_manager_, gtid_manager_, cache_manager_,
-          response_cache_, slow_query_monitor_, task_monitor_);
+          response_cache_, slow_query_monitor_);
       break;
     case DbObjectLite::k_objectTypeScript:
       result = std::make_shared<HandlerDbObjectScript>(
