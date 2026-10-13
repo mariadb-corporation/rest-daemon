@@ -27,6 +27,9 @@ Options (or environment variables):
   --mariadb-build    MARIADB_BUILD_DIR  a MariaDB server build tree instead
                                         (sql/mariadbd, scripts/mariadb-install-db)
   --mariadb-source   MARIADB_SOURCE_DIR its source tree (mariadb-install-db)
+  --mariadb-package  MARIADB_PACKAGE_DIR or a MariaDB server package
+                                        (bin/mariadbd, bin/mariadb-install-db.exe
+                                        on Windows, scripts/mariadb-install-db)
   --record                              write the output as the new .result
 
 MariaDB mode (Milestone 2): the metadata schema is the MariaDB shell plugins'
@@ -62,6 +65,7 @@ def pytest_addoption(parser):
     parser.addoption("--mysql-package", default=os.environ.get("MYSQL_PACKAGE_DIR"))
     parser.addoption("--mariadb-build", default=os.environ.get("MARIADB_BUILD_DIR"))
     parser.addoption("--mariadb-source", default=os.environ.get("MARIADB_SOURCE_DIR"))
+    parser.addoption("--mariadb-package", default=os.environ.get("MARIADB_PACKAGE_DIR"))
     parser.addoption("--record", action="store_true",
                      help="write the test output as the new .result file")
     parser.addoption("--record-mariadb", action="store_true",
@@ -92,19 +96,24 @@ class Paths:
         build = config.getoption("--mrsd-build")
         pkg = config.getoption("--mysql-package")
         mariadb = config.getoption("--mariadb-build")
-        if not build or not (pkg or mariadb):
-            pytest.exit("need --mrsd-build and --mysql-package or --mariadb-build "
-                        "(or MRSD_BUILD / MYSQL_PACKAGE_DIR / MARIADB_BUILD_DIR)",
-                        returncode=4)
+        mariadb_pkg = config.getoption("--mariadb-package")
+        if not build or not (pkg or mariadb or mariadb_pkg):
+            pytest.exit("need --mrsd-build and --mysql-package, --mariadb-build or "
+                        "--mariadb-package (or MRSD_BUILD / MYSQL_PACKAGE_DIR / "
+                        "MARIADB_BUILD_DIR / MARIADB_PACKAGE_DIR)", returncode=4)
         self.build = Path(build).resolve()
-        self.is_mariadb = bool(mariadb)
-        if self.is_mariadb:
+        self.is_mariadb = bool(mariadb or mariadb_pkg)
+        # a MariaDB server package rather than a build tree
+        self.mariadb_package = bool(mariadb_pkg) and not mariadb
+        if mariadb:
             source = config.getoption("--mariadb-source")
             if not source:
                 pytest.exit("need --mariadb-source (or MARIADB_SOURCE_DIR) with "
                             "--mariadb-build", returncode=4)
             self.package = Path(mariadb).resolve()
             self.mariadb_source = Path(source).resolve()
+        elif mariadb_pkg:
+            self.package = Path(mariadb_pkg).resolve()
         else:
             self.package = Path(pkg).resolve()
         self.bin = self.build / "runtime_output_directory"
@@ -116,7 +125,13 @@ class Paths:
         self.mrsd = self.bin / f"{self.program}{EXE}"
         self.keyring = self.bin / f"{self.program}-keyring{EXE}"
         self.mrs_client = self.bin / f"mysqlrouter_mrs_client{EXE}"
-        if self.is_mariadb:
+        if self.mariadb_package:
+            self.mysqld = self.package / "bin" / f"mariadbd{EXE}"
+            # Windows' installer is a program; Unix packages have the script
+            self.install_db = (self.package / "bin" / "mariadb-install-db.exe"
+                               if IS_WINDOWS else
+                               self.package / "scripts" / "mariadb-install-db")
+        elif self.is_mariadb:
             self.mysqld = self.package / "sql" / f"mariadbd{EXE}"
             self.install_db = self.package / "scripts" / "mariadb-install-db"
         else:
@@ -159,7 +174,17 @@ class Mysqld:
         mariadb = self.paths.is_mariadb
         first_start = not self.datadir.exists()
         if first_start:
-            if mariadb:
+            if mariadb and self.paths.mariadb_package and IS_WINDOWS:
+                # root reachable over TCP (-R), no anonymous accounts
+                subprocess.run([str(self.paths.install_db), "-d", str(self.datadir), "-R"],
+                               check=True, capture_output=True)
+            elif mariadb and self.paths.mariadb_package:
+                subprocess.run([str(self.paths.install_db), "--no-defaults",
+                                f"--basedir={self.paths.package}",
+                                f"--datadir={self.datadir}",
+                                "--auth-root-authentication-method=normal"],
+                               check=True, capture_output=True)
+            elif mariadb:
                 subprocess.run([str(self.paths.install_db), "--no-defaults",
                                 f"--srcdir={self.paths.mariadb_source}",
                                 f"--builddir={self.paths.package}",
@@ -179,7 +204,9 @@ class Mysqld:
                 "--socket=m.sock",
                 f"--log-error={self.base / 'mysqld.err'}",
                 "--secure-file-priv="]
-        if mariadb:
+        if mariadb and self.paths.mariadb_package:
+            args += [f"--basedir={self.paths.package}"]
+        elif mariadb:
             args += [f"--lc-messages-dir={self.paths.package / 'sql' / 'share'}"]
         else:
             args += [f"--basedir={self.paths.package}", "--mysqlx=OFF",

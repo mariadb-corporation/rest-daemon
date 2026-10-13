@@ -34,8 +34,9 @@
 # SHELL_PLUGINS can also be a MySQL Shell package's lib/mysqlsh/plugins
 # (it bundles mrs_plugin/db_schema).
 #
-# Windows: run from Git Bash with the DLL directories (MySQL lib/, OpenSSL and
-# ICU bin/) on PATH.
+# Windows: run from Git Bash with the DLL directories (MySQL lib/ or
+# Connector/C, OpenSSL and ICU bin/) on PATH; for a MariaDB package also the
+# OpenSSL DLLs it needs (the Windows sandbox package has none: the shell's bin/).
 #
 # Ubuntu 24.04+: the package's mysqld needs libaio.so.1, which is now
 # libaio.so.1t64. Point LD_LIBRARY_PATH at a directory with a
@@ -46,13 +47,23 @@ set -euo pipefail
 if [ -z "${MRSD_INSTALL:-}" ]; then
   MRSD_BUILD=${MRSD_BUILD:?set MRSD_BUILD or MRSD_INSTALL}
 fi
-# MariaDB mode (Milestone 2): MARIADB_BUILD_DIR is a MariaDB server build tree
-# (sql/mariadbd, client/mariadb, scripts/mariadb-install-db, which needs
-# MARIADB_SOURCE_DIR), MYSQLSH the mariadb-shell and SHELL_PLUGINS the
-# mariadb-shell-plugins checkout, linked into the shell's user plugins.
+# MariaDB mode (Milestone 2), one of:
+#   MARIADB_BUILD_DIR    a MariaDB server build tree (sql/mariadbd,
+#                        client/mariadb, scripts/mariadb-install-db, which
+#                        needs MARIADB_SOURCE_DIR)
+#   MARIADB_PACKAGE_DIR  a MariaDB server package (bin/mariadbd,
+#                        bin/mariadb-install-db[.exe] or
+#                        scripts/mariadb-install-db, share/); without a
+#                        bin/mariadb client (e.g. the Windows sandbox
+#                        package) the SQL goes through $MYSQLSH --sql
+# MYSQLSH is the mariadb-shell and SHELL_PLUGINS the mariadb-shell-plugins
+# checkout, linked into the shell's user plugins, or the shell package's own
+# lib/mariadb-shell/plugins (used as is).
 # Otherwise MYSQL_PACKAGE_DIR is a MySQL server package.
 if [ -n "${MARIADB_BUILD_DIR:-}" ]; then
   MARIADB_SOURCE_DIR=${MARIADB_SOURCE_DIR:?set MARIADB_SOURCE_DIR}
+elif [ -n "${MARIADB_PACKAGE_DIR:-}" ]; then
+  :
 else
   MYSQL_PACKAGE_DIR=${MYSQL_PACKAGE_DIR:?set MYSQL_PACKAGE_DIR}
 fi
@@ -69,7 +80,8 @@ if command -v cygpath >/dev/null 2>&1; then
   WORK=$(cygpath -m "$WORK")
   [ -n "${MRSD_BUILD:-}" ] && MRSD_BUILD=$(cygpath -m "$MRSD_BUILD")
   [ -n "${MRSD_INSTALL:-}" ] && MRSD_INSTALL=$(cygpath -m "$MRSD_INSTALL")
-  MYSQL_PACKAGE_DIR=$(cygpath -m "$MYSQL_PACKAGE_DIR")
+  [ -n "${MYSQL_PACKAGE_DIR:-}" ] && MYSQL_PACKAGE_DIR=$(cygpath -m "$MYSQL_PACKAGE_DIR")
+  [ -n "${MARIADB_PACKAGE_DIR:-}" ] && MARIADB_PACKAGE_DIR=$(cygpath -m "$MARIADB_PACKAGE_DIR")
   SHELL_PLUGINS=$(cygpath -m "$SHELL_PLUGINS")
   [ -n "${MRS_SCRIPTS_DIR:-}" ] && MRS_SCRIPTS_DIR=$(cygpath -m "$MRS_SCRIPTS_DIR")
 fi
@@ -82,15 +94,40 @@ MRS_SQL=$(ls "$SCHEMA_DIR"/mysql_rest_service_metadata.msm.project/releases/depl
 mkdir -p "$WORK"/{log,shellhome}
 echo "workdir: $WORK"
 
+# sql_file <file>, sql_exec <statements>, sql_value <query>: run SQL as root
+MARIADB_CLIENT=
 if [ -n "${MARIADB_BUILD_DIR:-}" ]; then
-  mysql_cli() { "$MARIADB_BUILD_DIR/client/mariadb" -uroot -h127.0.0.1 -P"$PORT" "$@"; }
-  # the shell's own plugin directory: <MARIADB_SHELL_USER_CONFIG_HOME>/plugins
-  mkdir -p "$WORK/shellhome/plugins"
-  ln -sfn "$SHELL_PLUGINS/mrs_plugin" "$WORK/shellhome/plugins/mrs_plugin"
-  ln -sfn "$SHELL_PLUGINS/msm_plugin" "$WORK/shellhome/plugins/msm_plugin"  # used by mrs
+  MARIADB_CLIENT=$MARIADB_BUILD_DIR/client/mariadb
+elif [ -n "${MARIADB_PACKAGE_DIR:-}" ]; then
+  for c in "$MARIADB_PACKAGE_DIR/bin/mariadb" "$MARIADB_PACKAGE_DIR/bin/mariadb.exe"; do
+    [ -x "$c" ] && MARIADB_CLIENT=$c && break
+  done
+fi
+if [ -n "${MARIADB_BUILD_DIR:-}${MARIADB_PACKAGE_DIR:-}" ]; then
+  if [[ "$SHELL_PLUGINS" != */lib/mariadb-shell/plugins ]]; then
+    # a plugins checkout: the shell's own plugin directory is
+    # <MARIADB_SHELL_USER_CONFIG_HOME>/plugins
+    mkdir -p "$WORK/shellhome/plugins"
+    ln -sfn "$SHELL_PLUGINS/mrs_plugin" "$WORK/shellhome/plugins/mrs_plugin"
+    ln -sfn "$SHELL_PLUGINS/msm_plugin" "$WORK/shellhome/plugins/msm_plugin"  # used by mrs
+  fi
   export MARIADB_SHELL_USER_CONFIG_HOME="$WORK/shellhome"
+fi
+if [ -n "${MARIADB_BUILD_DIR:-}${MARIADB_PACKAGE_DIR:-}" ] && [ -z "$MARIADB_CLIENT" ]; then
+  shell_sql() { "$MYSQLSH" --no-wizard --sql -uroot -h127.0.0.1 -P"$PORT" "$@"; }
+  sql_file() { shell_sql --file "$1"; }
+  sql_exec() { shell_sql -e "$1"; }
+  # tab-separated output with a header line
+  sql_value() { shell_sql --result-format=tabbed -e "$1" | tail -1 | tr -d '\r'; }
 else
-  mysql_cli() { "$MYSQL_PACKAGE_DIR/bin/mysql" -uroot -h127.0.0.1 -P"$PORT" "$@"; }
+  if [ -n "$MARIADB_CLIENT" ]; then
+    mysql_cli() { "$MARIADB_CLIENT" -uroot -h127.0.0.1 -P"$PORT" "$@"; }
+  else
+    mysql_cli() { "$MYSQL_PACKAGE_DIR/bin/mysql" -uroot -h127.0.0.1 -P"$PORT" "$@"; }
+  fi
+  sql_file() { mysql_cli < "$1"; }
+  sql_exec() { mysql_cli -e "$1"; }
+  sql_value() { mysql_cli -N -e "$1" | tr -d '\r'; }
 fi
 cleanup() {
   [ -n "${MRSD_PID:-}" ] && kill "$MRSD_PID" 2>/dev/null || true
@@ -121,6 +158,32 @@ if [ -n "${MARIADB_BUILD_DIR:-}" ]; then
   "$MARIADB_BUILD_DIR/client/mariadb" -uroot -S "$SOCK" -e "
     CREATE USER IF NOT EXISTS root@'127.0.0.1'; GRANT ALL ON *.* TO root@'127.0.0.1' WITH GRANT OPTION;
     DELETE FROM mysql.global_priv WHERE user=''; FLUSH PRIVILEGES;"
+elif [ -n "${MARIADB_PACKAGE_DIR:-}" ]; then
+  P=$MARIADB_PACKAGE_DIR
+  if [ -e "$P/bin/mariadb-install-db.exe" ]; then
+    # Windows' installer: root reachable over TCP (-R), no anonymous accounts
+    "$P/bin/mariadb-install-db.exe" -d "$WORK/mysqld" -R > "$WORK/log/init.log" 2>&1
+  else
+    "$P/scripts/mariadb-install-db" --no-defaults --basedir="$P" \
+      --datadir="$WORK/mysqld" --auth-root-authentication-method=normal \
+      > "$WORK/log/init.log" 2>&1
+  fi
+  SOCK_OPT=()
+  if ! command -v cygpath >/dev/null 2>&1; then
+    SOCK_OPT=(--socket=/tmp/mrsd-smoke-$PORT.sock)  # no unix sockets on Windows
+  fi
+  # the error log explicitly: on Windows it would go to <datadir>/<host>.err
+  "$P/bin/mariadbd" --no-defaults --basedir="$P" --datadir="$WORK/mysqld" \
+    --port="$PORT" --bind-address=127.0.0.1 ${SOCK_OPT[@]+"${SOCK_OPT[@]}"} \
+    --log-error="$WORK/log/mysqld.log" > "$WORK/log/mysqld.out" 2>&1 &
+  MYSQLD_PID=$!
+  for _ in $(seq 1 120); do
+    grep -q 'ready for connections' "$WORK/log/mysqld.log" 2>/dev/null && break
+    sleep 0.5
+  done
+  # Unix' mariadb-install-db: root@localhost only, plus anonymous accounts
+  # that shadow every '%' account for local connections
+  sql_exec "CREATE USER IF NOT EXISTS root@'127.0.0.1'; GRANT ALL ON *.* TO root@'127.0.0.1' WITH GRANT OPTION; DELETE FROM mysql.global_priv WHERE user=''; FLUSH PRIVILEGES;"
 else
   "$MYSQL_PACKAGE_DIR/bin/mysqld" --no-defaults --initialize-insecure \
     --datadir="$WORK/mysqld" --basedir="$MYSQL_PACKAGE_DIR" > "$WORK/log/init.log" 2>&1
@@ -136,9 +199,9 @@ else
 
 fi
 
-[ -n "$TASKS_SQL" ] && mysql_cli < "$TASKS_SQL"
-mysql_cli < "$MRS_SQL"
-mysql_cli -e "
+[ -n "$TASKS_SQL" ] && sql_file "$TASKS_SQL"
+sql_file "$MRS_SQL"
+sql_exec "
   CREATE SCHEMA smoke;
   CREATE TABLE smoke.city (id INT PRIMARY KEY, name VARCHAR(64));
   INSERT INTO smoke.city VALUES (1,'Lisbon'),(2,'Helsinki');"
@@ -207,7 +270,7 @@ done
 [ -n "$ok" ] || fail "REST view, last response: $body"
 
 # the running instance uses the registration of --setup: still one row
-routers=$(mysql_cli -N -e "SELECT COUNT(*) FROM mysql_rest_service_metadata.router")
+routers=$(sql_value "SELECT COUNT(*) FROM mysql_rest_service_metadata.router")
 [ "$routers" = 1 ] || fail "expected 1 registered instance, found $routers"
 echo "OK (one registered instance)"
 

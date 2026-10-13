@@ -72,9 +72,10 @@ def _rewrite_cast_as_json(sql: str) -> str:
 _SRS_ID = re.compile(r"\bSRS_ID\b")
 
 
-# JSON path operators (MySQL only)
-_ARROW2 = re.compile(r"([A-Za-z_][A-Za-z_0-9]*(?:\.[A-Za-z_][A-Za-z_0-9]*)*|\))->>('\$[^']*')")
-_ARROW1 = re.compile(r"([A-Za-z_][A-Za-z_0-9]*(?:\.[A-Za-z_][A-Za-z_0-9]*)*|\))->('\$[^']*')")
+# JSON path operators (MySQL only; MariaDB 13 has them, 11.8 not), with a
+# single- or double-quoted path
+_ARROW2 = re.compile(r"""([A-Za-z_][A-Za-z_0-9]*(?:\.[A-Za-z_][A-Za-z_0-9]*)*|\))->>('\$[^']*'|"\$[^"]*")""")
+_ARROW1 = re.compile(r"""([A-Za-z_][A-Za-z_0-9]*(?:\.[A-Za-z_][A-Za-z_0-9]*)*|\))->('\$[^']*'|"\$[^"]*")""")
 # statements of the GTID machinery and MySQL-only variables
 _RESET_GTIDS = re.compile(r"^\s*RESET\s+BINARY\s+LOGS\s+AND\s+GTIDS\s*$", re.I)
 _SUPER_READ_ONLY = re.compile(r"\bsuper_read_only\b", re.I)
