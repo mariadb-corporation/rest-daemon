@@ -87,8 +87,6 @@ if command -v cygpath >/dev/null 2>&1; then
 fi
 
 SCHEMA_DIR=$SHELL_PLUGINS/mrs_plugin/db_schema
-# mysql_tasks (REST async tasks) only on MySQL; the MariaDB plugins don't ship it
-TASKS_SQL=$( (ls "$SCHEMA_DIR"/mysql_tasks.msm.project/releases/deployment/*.sql 2>/dev/null || true) | sort -V | tail -1)
 MRS_SQL=$(ls "$SCHEMA_DIR"/mysql_rest_service_metadata.msm.project/releases/deployment/*.sql | sort -V | tail -1)
 
 mkdir -p "$WORK"/{log,shellhome}
@@ -199,7 +197,6 @@ else
 
 fi
 
-[ -n "$TASKS_SQL" ] && sql_file "$TASKS_SQL"
 sql_file "$MRS_SQL"
 sql_exec "
   CREATE SCHEMA smoke;

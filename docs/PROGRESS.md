@@ -21,7 +21,7 @@ Plan: [PLAN.md](PLAN.md). Current state and next steps: `.claude/PROJECT_CONTEXT
 | M2.1: build against MariaDB Connector/C | ✅ done 2026-10-09: build + ctest 113/113 on macOS (3.4.11), Linux (3.4.9) and Windows (3.4.8, vcpkg); the MySQL build still passes |
 | M2.2: run against a MariaDB server | ✅ done 2026-10-12: smoke test incl. MRS scripts passes on macOS (MariaDB 13.2), Windows and Ubuntu (11.8.9 LTS) |
 | M2.3: test suites on MariaDB | ✅ done 2026-10-13: MRS suite on macOS (13.2) and Windows (11.8.9) 100 passed, 0 failed, 14 skipped, 7 xfailed (known differences), 1 xpassed; Ubuntu (11.8.9) 101 passed, 0 failed (2026-10-12); unit + component 113/113 on all three; MySQL mode unchanged (116/5/1). Live-DB unit tests: MySQL 104/104 (macOS); MariaDB 102/104 on macOS, Ubuntu and Windows (the JSON-columns open point). M2.3 exit criteria met |
-| M2.4: cleanup | ⬜ |
+| M2.4: cleanup | 🟡 2026-10-13: REST async tasks removed (6 files, handlers, options, OpenAPI, metadata flag, `MySQLSession` nonblocking path); verified on the three platforms: ctest 113/113, MRS suite in both modes and the live-DB unit tests unchanged. Open: README/CLAUDE.md pass for MariaDB, the MySQL-build decision, `restd:` marker check |
 
 ## How to build and test (macOS)
 
@@ -575,8 +575,8 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   connect, since libmariadb silently drops TLS when verification is off and the server has
   none; libmariadb 3.4 defaults to TLS + verification, so the constructor applies
   PREFERRED); nonblocking API on `mysql_*_start()/_cont()` with `MYSQL_OPT_NONBLOCK` set
-  lazily and a zero-timeout poll between calls (untested until Milestone 3 enables async
-  tasks); TLS session cache, `mysql_real_escape_string_quote`, query attributes
+  lazily and a zero-timeout poll between calls (removed with the async tasks on
+  2026-10-13); TLS session cache, `mysql_real_escape_string_quote`, query attributes
   (`mysql_bind_param`), `CR_NO_RESULT_SET`, `CLIENT_LONG_PASSWORD` and the missing option
   aliases behind `#ifdef`.
 - Tests: `tests/helpers/mysql_client.h` and `test_mysql_session.cc` adapted (options
@@ -673,3 +673,22 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   workers' `mariadb-install-db` stopped half-way on Ubuntu once).
 - Results: macOS MariaDB mode 100 passed, 0 failed, 7 xfailed; Ubuntu 101 passed, 0 failed,
   7 xfailed; MySQL mode 116/5/1; ctest 113/113 on both builds.
+
+### 2026-10-13: session 7 (M2.3 closed, M2.4 started)
+- Windows against 11.8.9 rerun at the latest commit: MRS suite 100 passed, 0 failed, 14
+  skipped, 7 xfailed, 1 xpassed (same as macOS); ctest 113/113.
+- Live-DB unit tests on Ubuntu and Windows: 102/104 like macOS (the 2 `special_types`
+  failures are the JSON-columns open point). Windows needs the build's output dirs on PATH
+  (`<win-home>\mrsd-live-mariadb.cmd`).
+- Running them on Ubuntu (GCC 15) exposed an upstream bug: `ObjectRowOwnership` kept its
+  row groups and user groups as references to the constructors' default temporaries;
+  `build_where()` then read garbage and grew the WHERE clause until the OOM killer hit.
+  Both members are values now. The `fetch_any_owner` path builds such an object in
+  production too.
+- M2.3 closed: every suite passes on the three platforms against MariaDB.
+- M2.4: REST async tasks removed (`mysql_task_monitor`, `query_rest_task*`, the handlers'
+  202/`{taskId}` paths, `mysqlTask.*` options, the async OpenAPI variant, the
+  `mysqlTask.userVariables` field flag, `MySQLSession::execute_nb()` and the `*_nb`
+  functions in both client variants); the smoke test no longer loads `mysql_tasks`.
+- Open point recorded: JSON columns on MariaDB (metadata says `longtext`; JSON-string
+  writes fail), to review after Milestone 3.

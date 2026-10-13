@@ -10,8 +10,9 @@ with MySQL. Found while porting the MRS functional suite (Milestone 2, see
 - **GTID based `asof` requests** (read-your-writes; an open point): MariaDB has no
   `session_track_gtids`, `gtid_executed` or `WAIT_FOR_EXECUTED_GTID_SET`. Such
   requests fail with a clear error; responses carry no `_metadata.gtid`.
-- **REST async tasks** (`mysql_tasks`) are not part of the MariaDB REST Service;
-  routines are always called directly.
+- **REST async tasks** (`mysql_tasks`) are not part of `mariadb-restd` on either
+  server: routines are always called directly, `POST` answers with the result,
+  and there is no `{taskId}` status endpoint.
 
 ## Server behaviour
 

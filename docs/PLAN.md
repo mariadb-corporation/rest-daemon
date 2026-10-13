@@ -189,7 +189,7 @@ Scope decisions (2026-10-08, see the decision log):
 | MySQL build | **Kept** during the port, behind a client/server abstraction; the MySQL test suites stay the safety net until the MariaDB suites reach parity |
 | Client library | **MariaDB Connector/C package** (release build with OpenSSL), found through `-DMARIADB_CONNECTOR_DIR` / `mariadb_config`; public API only, as in Milestone 1 |
 | Minimum MariaDB server | **10.11 (oldest supported LTS)**; develop and test on `main` (13.2). Caveat: the MRS metadata schema 4.1.6 uses `JSON_SCHEMA_VALID` (11.1+) and `JSON_OVERLAPS` (10.9+); deploying on 10.11 needs a schema change on the plugin side. Features needing newer servers degrade: `MAX_EXECUTION_TIME` hint → `SET STATEMENT max_statement_time`, `VECTOR` only where the server has it (11.7+) |
-| REST async tasks (`mysql_tasks`) | **Removed** (2026-10-12, a product decision: MariaDB REST routines are always called directly, as in the MariaDB shell plugins); disabled on MariaDB, the code goes in M2.4 |
+| REST async tasks (`mysql_tasks`) | **Removed** (2026-10-12, a product decision: MariaDB REST routines are always called directly, as in the MariaDB shell plugins); code removed in M2.4 (2026-10-13) |
 | GTID / "asof" | **Out of Milestone 2**, disabled on MariaDB (the RW pool `session_track_gtids` SET is removed); an **open point**, see below |
 | `--setup` accounts | MariaDB's **default auth plugin** (`CREATE USER ... IDENTIFIED BY`) |
 | MRS scripts (JIT) | **In scope**: the smoke test's script step (example scripts deployed with `LOAD SCRIPTS` through the MariaDB Shell plugins) must pass on MariaDB; plugin-side problems go to the plugin team |
@@ -202,7 +202,8 @@ document generation, GTID tracking, `mysql_tasks`, account setup, tests.
 - CMake: `-DMARIADB_CONNECTOR_DIR` (or `mariadb_config`) finder replacing
   `cmake/compat/mysql_package.cmake`; `MySQL::client` → `MariaDB::client`; bundling of
   `libmariadb` and its dynamic client auth plugins (`MYSQL_PLUGIN_DIR`).
-- Client-API gaps (inventory §2): nonblocking API → `_start/_cont`; project `SslMode`
+- Client-API gaps (inventory §2): nonblocking API → `_start/_cont` (since removed with
+  the async tasks); project `SslMode`
   enum emulated with `SSL_ENFORCE`/`SSL_VERIFY_SERVER_CERT`; drop the TLS session cache,
   query attributes, missing option aliases and type enums; `MYSQL_BIND::is_null` as
   `my_bool`; `CR_*`/`ER_*` constants; headers; `compat/` client errors and charset table.
@@ -231,9 +232,10 @@ document generation, GTID tracking, `mysql_tasks`, account setup, tests.
   recorded list of disabled tests and why.
 
 ### Phase M2.4: cleanup
-- Remove REST async tasks: `mysql_tasks` calls, the task monitor, the task-status
-  endpoints, the `mysqlTask` options, and the nonblocking query path of `MySQLSession`
-  (only the task monitor used it).
+- ✅ 2026-10-13: REST async tasks removed: `mysql_tasks` calls, the task monitor, the
+  task-status endpoints, the `mysqlTask` options (still tolerated in metadata), the async
+  OpenAPI variant, and the nonblocking query path of `MySQLSession` (only the task
+  monitor used it). `DELETE` on a routine keeps answering 403.
 - Remove MySQL-only code paths that are no longer reachable (or keep the dual build, per
   decision), README/docs for MariaDB, `restd:` markers.
 
@@ -382,3 +384,5 @@ mrsd/
   Packaging and CI are Milestone 4 again.
 - 2026-10-12: JSON-string writes to MariaDB JSON columns (datatype `longtext` in the
   metadata) are an open point, reviewed after Milestone 3 (schema 5.0.0).
+- 2026-10-13: the REST async-task code is removed from both builds (M2.4); the
+  `mysqlTask` options in existing metadata are ignored, not rejected.
