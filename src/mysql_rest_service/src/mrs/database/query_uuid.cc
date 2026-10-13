@@ -28,6 +28,7 @@
 #include <stdexcept>
 
 #include "mrs/database/query_uuid.h"
+#include "mrs/database/metadata_schema.h"
 
 namespace mrs {
 namespace database {
@@ -35,7 +36,7 @@ namespace database {
 using UserId = QueryUuid::UserId;
 
 QueryUuid::QueryUuid() {
-  query_ = "SELECT `mysql_rest_service_metadata`.`get_sequence_id`();";
+  query_ = metadata_query("SELECT `mysql_rest_service_metadata`.`get_sequence_id`();");
 }
 
 void QueryUuid::generate_uuid(MySQLSession *session) { execute(session); }
@@ -49,11 +50,8 @@ UserId QueryUuid::get_result() {
 void QueryUuid::on_metadata(unsigned number, MYSQL_FIELD *fields) {
   if (1 != number)
     throw std::runtime_error(
-        "Function `mysql_rest_service_metadata`.`get_sequence_id`, returned "
-        "invalid data.");
-
-  if (fields[0].length != uuid_.size())
-    throw std::runtime_error("Generated UUID has invalid size.");
+        metadata_sql("Function `mysql_rest_service_metadata`.`get_sequence_id`, returned "
+        "invalid data."));
 }
 
 void QueryUuid::on_row(const ResultRow &r) {

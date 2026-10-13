@@ -30,6 +30,7 @@
 #include <set>
 
 #include "mrs/database/entry/universal_id.h"
+#include "mrs/database/metadata_schema.h"
 #include "mrs/database/query_entries_audit_log.h"
 #include "mrs/database/query_entries_auth_app.h"
 
@@ -106,9 +107,9 @@ class QueryChangesAuthApp : public QueryEntriesAuthAppImpl {
                           const entry::UniversalId &id) {
     if ("service_has_auth_app" == table_name) {
       mysqlrouter::sqlstring where{
-          " WHERE subtable.auth_app_id in (SELECT shaa.`auth_app_id`  FROM "
+          metadata_query(" WHERE subtable.auth_app_id in (SELECT shaa.`auth_app_id`  FROM "
           "`mysql_rest_service_metadata`.`service_has_auth_app` as shaa "
-          " WHERE `shaa`.`service_id`=? ) "};
+          " WHERE `shaa`.`service_id`=? ) ")};
       where << id;
       return Parent::query_.str() + where.str();
     }

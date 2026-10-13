@@ -25,6 +25,7 @@
  */
 
 #include "mrs/database/query_entries_content_set.h"
+#include "mrs/database/metadata_schema.h"
 
 #include "helper/mysql_row.h"
 #include "mrs/database/helper/query_audit_log_maxid.h"
@@ -36,10 +37,10 @@ const mysqlrouter::sqlstring k_field_internal{",s.internal"};
 
 QueryEntriesContentSet::QueryEntriesContentSet() {
   query_ =
-      "SELECT * FROM (SELECT s.id as content_set_id, s.service_id as "
+      metadata_query("SELECT * FROM (SELECT s.id as content_set_id, s.service_id as "
       "service_id, s.request_path, "
       "   s.requires_auth, s.enabled, s.options !"
-      " FROM mysql_rest_service_metadata.content_set as s) as cs";
+      " FROM mysql_rest_service_metadata.content_set as s) as cs");
   query_ << k_field_internal;
 }
 

@@ -25,6 +25,7 @@
  */
 
 #include "mrs/database/query_entries_auth_role.h"
+#include "mrs/database/metadata_schema.h"
 #include "helper/mysql_row.h"
 
 #include <stdexcept>
@@ -35,10 +36,10 @@ namespace database {
 void QueryEntriesAuthRole::query_role(MySQLSession *session,
                                       const entry::AuthUser::UserId user_id) {
   query_ = {
-      "SELECT id, caption, derived_from_role_id, specific_to_service_id "
+      metadata_query("SELECT id, caption, derived_from_role_id, specific_to_service_id "
       " FROM mysql_rest_service_metadata.mrs_user_has_role as h "
       " JOIN mysql_rest_service_metadata.mrs_role as r ON r.id=h.role_id "
-      " WHERE h.user_id = ?"};
+      " WHERE h.user_id = ?")};
 
   query_ << to_sqlstring(user_id);
   Query::execute(session);

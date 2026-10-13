@@ -28,6 +28,7 @@
 #include <stdexcept>
 
 #include "mrs/database/query_version.h"
+#include "mrs/database/metadata_schema.h"
 
 #include "mysqld_error.h"
 
@@ -36,16 +37,16 @@ namespace database {
 
 static void throw_invalid_function_result() {
   throw std::runtime_error(
-      "View `mysql_rest_service_metadata`.`msm_schema_version` returned "
-      "invalid data.");
+      metadata_sql("View `mysql_rest_service_metadata`.`msm_schema_version` returned "
+      "invalid data."));
 }
 
 MrsSchemaVersion QueryVersion::query_version(MySQLSession *session) {
   // restd: only the msm view (upstream tried `schema_version`, the name of
   // versions before 4.0, first)
   query(session,
-        "SELECT `major`,`minor`,`patch` FROM "
-        "mysql_rest_service_metadata.msm_schema_version;");
+        metadata_sql("SELECT `major`,`minor`,`patch` FROM "
+        "mysql_rest_service_metadata.msm_schema_version;"));
   return v_;
 }
 

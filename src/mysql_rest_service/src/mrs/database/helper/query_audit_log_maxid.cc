@@ -25,12 +25,13 @@
  */
 
 #include "mrs/database/helper/query_audit_log_maxid.h"
+#include "mrs/database/metadata_schema.h"
 
 namespace mrs {
 namespace database {
 
 QueryAuditLogMaxId::QueryAuditLogMaxId() {
-  query_ = "SELECT max(id) FROM mysql_rest_service_metadata.audit_log";
+  query_ = metadata_query("SELECT max(id) FROM mysql_rest_service_metadata.audit_log");
 }
 
 uint64_t QueryAuditLogMaxId::query_max_id(MySQLSession *session) {

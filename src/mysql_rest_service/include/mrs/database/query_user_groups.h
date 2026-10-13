@@ -31,6 +31,7 @@
 #include <utility>
 
 #include "mrs/database/entry/auth_user.h"
+#include "mrs/database/metadata_schema.h"
 #include "mrs/database/helper/query.h"
 
 namespace mrs {
@@ -47,9 +48,9 @@ class QueryUserGroups : private Query {
     out_group_ids->clear();
     set_ = out_group_ids;
     query_.reset(
-        "SELECT user_group_id FROM "
+        metadata_sql("SELECT user_group_id FROM "
         "mysql_rest_service_metadata.mrs_user_has_group "
-        "WHERE user_id=?;");
+        "WHERE user_id=?;").c_str());
     query_ << to_sqlstring(user_id);
     execute(session);
   }

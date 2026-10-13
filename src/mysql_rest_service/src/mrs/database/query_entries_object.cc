@@ -25,6 +25,7 @@
 */
 
 #include "mrs/database/query_entry_object.h"
+#include "mrs/database/metadata_schema.h"
 
 #include <algorithm>
 #include <string>
@@ -125,7 +126,7 @@ void QueryEntryObjectImpl::query_entries(MySQLSession *session,
 
   m_loading_references = false;
   query_ =
-      "SELECT object_field.id,"
+      metadata_query("SELECT object_field.id,"
       " object_field.parent_reference_id,"
       " object_field.represents_reference_id,"
       " object_field.name,"
@@ -147,7 +148,7 @@ void QueryEntryObjectImpl::query_entries(MySQLSession *session,
       " object_field.no_update"
       " FROM mysql_rest_service_metadata.object_field"
       " WHERE object_field.object_id = ?"
-      " ORDER BY object_field.represents_reference_id, object_field.position";
+      " ORDER BY object_field.represents_reference_id, object_field.position");
   query_ << object_id;
 
   execute(session);
@@ -317,7 +318,7 @@ QueryEntryObjectImpl::UniversalId QueryEntryObjectImpl::query_object(
   entry::UniversalId object_id;
 
   mysqlrouter::sqlstring q{
-      "SELECT object.id, object.kind,"
+      metadata_query("SELECT object.id, object.kind,"
       " row_ownership_field_id,"
       " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(object.options,'$.dataMappingViewInsert')),"
       " JSON_UNQUOTE(JSON_EXTRACT(object.options,'$.duality_view_insert'))) = 'true',"
@@ -330,7 +331,7 @@ QueryEntryObjectImpl::UniversalId QueryEntryObjectImpl::query_object(
       "  FROM mysql_rest_service_metadata.object"
       "  JOIN mysql_rest_service_metadata.db_object"
       "    ON object.db_object_id = db_object.id"
-      "  WHERE object.db_object_id=? ORDER by kind DESC"};
+      "  WHERE object.db_object_id=? ORDER by kind DESC")};
   q << db_object_id;
 
   auto res = query_one(session, q.str());
@@ -363,7 +364,7 @@ QueryEntryObjectImpl::UniversalId QueryEntryObjectImpl::query_object(
 void QueryEntryObjectImpl::set_query_object_reference(
     const entry::UniversalId &object_id) {
   query_ =
-      "SELECT"
+      metadata_query("SELECT"
       " object_reference.id,"
       " JSON_UNQUOTE(JSON_EXTRACT(object_reference.reference_mapping,'$.referenced_schema')),"
       " JSON_UNQUOTE(JSON_EXTRACT(object_reference.reference_mapping,'$.referenced_table')),"
@@ -383,7 +384,7 @@ void QueryEntryObjectImpl::set_query_object_reference(
       " FROM mysql_rest_service_metadata.object_field"
       " JOIN mysql_rest_service_metadata.object_reference"
       "  ON object_field.represents_reference_id = object_reference.id"
-      " WHERE object_field.object_id = ?";
+      " WHERE object_field.object_id = ?");
   query_ << object_id;
 }
 

@@ -39,6 +39,7 @@
 #include "my_thread.h"     // NOLINT(build/include_subdir)
 #include "mysqld_error.h"  // NOLINT(build/include_subdir)
 #include "socket_operations.h"
+#include "mrs/database/metadata_schema.h"
 
 #include "keyring/keyring_manager.h"
 #include "mysql/harness/loader.h"
@@ -143,8 +144,8 @@ class MrsModule {
            e.code() == ER_ACCESS_DENIED_NO_PASSWORD_ERROR)) {
         return false;
       }
-      trace_error("mysql_user", "metadata", "mysql_rest_service_meta_provider",
-                  e);
+      trace_error("mysql_user", "metadata",
+                  mrs::database::metadata_role("meta_provider").c_str(), e);
       throw std::runtime_error(
           "Can't start MySQL REST Service, because connection to MySQL server "
           "failed. For more informations look at previous error messages.");
@@ -163,7 +164,7 @@ class MrsModule {
         return false;
       }
       trace_error("mysql_user_data_access", "user-data",
-                  "mysql_rest_service_data_provider", e);
+                  mrs::database::metadata_role("data_provider").c_str(), e);
       throw std::runtime_error(
           "Can't start MySQL REST Service, because connection to MySQL server "
           "failed. For more informations look at previous error messages.");

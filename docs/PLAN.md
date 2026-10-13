@@ -284,7 +284,7 @@ Decisions (2026-10-13, see the decision log):
   (`mrstest/mariadb_sql.py`'s rules), results re-recorded on MariaDB, the rewrite and
   most of the normaliser retired. A clean baseline for the 5.0.0 diff.
 
-### Phase M3.2: central schema and role names (still on 4.1.6)
+### Phase M3.2: central schema and role names (still on 4.1.6) ✅ done (2026-10-13)
 - The options, the validation, one accessor used by every statement; default still the
   old name.
 

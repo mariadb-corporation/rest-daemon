@@ -45,6 +45,8 @@ static constexpr std::array mysql_rest_service_supported_options{
     "mysql_ssl_cipher",
     "mysql_tls_version",
     "router_id",
+    // restd: the REST metadata schema (<prefix>mysql_rest_service_metadata<postfix>)
+    "metadata_schema",
     "metadata_refresh_interval",
     "developer",
     "developer_debug_port",

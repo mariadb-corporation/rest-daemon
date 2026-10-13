@@ -25,6 +25,7 @@
  */
 
 #include "mrs/database/query_state.h"
+#include "mrs/database/metadata_schema.h"
 
 #include "mrs/database/helper/query_audit_log_maxid.h"
 
@@ -63,7 +64,7 @@ const DbState &QueryState::get_state() const { return state_; }
 void QueryState::query_state_impl(MySQLSession *session,
                                   MySQLSession::Transaction *) {
   query_ =
-      "SELECT service_enabled, data FROM mysql_rest_service_metadata.config;";
+      metadata_query("SELECT service_enabled, data FROM mysql_rest_service_metadata.config;");
   has_rows_ = false;
   execute(session);
   if (!has_rows_) {

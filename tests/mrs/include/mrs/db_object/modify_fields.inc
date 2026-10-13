@@ -42,7 +42,7 @@ while($_columns)
 
   eval UPDATE mysql_rest_service_metadata.object_field
      SET name="$_fileds_element"
-     WHERE db_column->>"\$.name"="$_column_element";
+     WHERE JSON_UNQUOTE(JSON_EXTRACT(db_column,"\$.name"))="$_column_element";
 }
 
 if ($mrs_modify_use_transaction) {

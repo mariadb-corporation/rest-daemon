@@ -721,3 +721,9 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   36 files, statement-aware), `mariadb_sql.py` and the output normaliser gone, all results
   recorded on MariaDB (36 of 118 differ from upstream's: float rendering, etags, gtid
   placeholders), the 22 `.mariadb.result` overlays gone.
+- M3.2: the metadata schema name is configured (`metadata_schema` option, `--metadata-schema`
+  in `--setup`; `<prefix>mysql_rest_service_metadata<postfix>`, validated) and the role
+  names derive from it (`mrs/database/metadata_schema.{h,cc}`: `metadata_schema()`,
+  `metadata_role()`, `metadata_sql()`/`metadata_query()`); the 54 statement literals go
+  through `metadata_sql()`. Default unchanged (4.1.6). End-to-end with a prefixed name
+  comes with the 5.0.0 script (M3.4), which supports it.

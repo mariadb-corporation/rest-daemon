@@ -25,6 +25,7 @@
 */
 
 #include "mrs/database/query_statistics.h"
+#include "mrs/database/metadata_schema.h"
 
 #include <vector>
 
@@ -40,13 +41,13 @@ void QueryStatistics::update_statistics(MySQLSession *session,
                                         uint64_t router_id, uint64_t timespan,
                                         const Snapshot &snap) {
   query_.reset(
-      "INSERT INTO "
+      metadata_sql("INSERT INTO "
       "mysql_rest_service_metadata.router_status("
       "router_id, timespan, mysql_connections, mysql_queries, "
       "http_requests_get, "
       "http_requests_post, "
       "http_requests_put, http_requests_delete, active_mysql_connections, "
-      "details) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+      "details) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").c_str());
 
   std::vector<uint32_t> direct_ids{
       kEntityCounterMySQLConnectionsCreated, kEntityCounterMySQLQueries,

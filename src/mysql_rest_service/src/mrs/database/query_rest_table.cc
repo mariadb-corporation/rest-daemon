@@ -25,6 +25,7 @@
 */
 
 #include "mrs/database/query_rest_table.h"
+#include "mrs/database/metadata_schema.h"
 
 #include <algorithm>
 #include <map>
@@ -142,14 +143,14 @@ const sqlstring &QueryRestTable::build_where(
     }
 
     where_.reset(
-        "WHERE (! IN (WITH RECURSIVE cte As ("
+        metadata_sql("WHERE (! IN (WITH RECURSIVE cte As ("
         "SELECT a.id as id FROM mysql_rest_service_metadata.mrs_user a WHERE "
         "a.id = ? "
         "UNION ALL "
         "SELECT h.user_id as id FROM "
         "mysql_rest_service_metadata.mrs_user_hierarchy as h "
         "JOIN cte c ON c.id=h.reporting_to_user_id"
-        ") SELECT * FROM cte) OR ! is NULL)");
+        ") SELECT * FROM cte) OR ! is NULL)").c_str());
 
     where_ << user_ownership_column << row_ownership.owner_user_id()
            << user_ownership_column;
@@ -161,7 +162,7 @@ const sqlstring &QueryRestTable::build_where(
     std::string query{"WHERE ("};
     for (size_t i = 0; i < row_ownership.row_groups().size(); ++i) {
       query +=
-          " ! in (WITH RECURSIVE cte AS("
+          metadata_sql(" ! in (WITH RECURSIVE cte AS("
           "SELECT user_group_id, parent_group_id, level FROM "
           "mysql_rest_service_metadata.mrs_user_group_hierarchy WHERE "
           "user_group_id in (?) AND group_hierarchy_type_id=? "
@@ -170,7 +171,7 @@ const sqlstring &QueryRestTable::build_where(
           "FROM mysql_rest_service_metadata.mrs_user_group_hierarchy as p JOIN "
           "cte on p.user_group_id = cte.parent_group_id AND "
           "group_hierarchy_type_id=? ) "
-          "SELECT parent_group_id FROM cte  WHERE level ! ? ) OR ";
+          "SELECT parent_group_id FROM cte  WHERE level ! ? ) OR ");
     }
 
     query += "(";
@@ -195,18 +196,18 @@ const sqlstring &QueryRestTable::build_where(
   }
 
   std::string query{
-      "WHERE (! IN (WITH RECURSIVE cte As ("
+      metadata_sql("WHERE (! IN (WITH RECURSIVE cte As ("
       "SELECT a.id as id FROM mysql_rest_service_metadata.mrs_user a WHERE "
       "a.id = ? "
       "UNION ALL "
       "SELECT h.user_id as id FROM "
       "mysql_rest_service_metadata.mrs_user_hierarchy as h "
       "JOIN cte c ON c.id=h.reporting_to_user_id"
-      ") SELECT * FROM cte) OR "};
+      ") SELECT * FROM cte) OR ")};
 
   for (size_t i = 0; i < row_ownership.row_groups().size(); ++i) {
     query +=
-        " ! in (WITH RECURSIVE cte AS("
+        metadata_sql(" ! in (WITH RECURSIVE cte AS("
         "SELECT user_group_id, parent_group_id, level FROM "
         "mysql_rest_service_metadata.mrs_user_group_hierarchy WHERE "
         "user_group_id in (?) AND group_hierarchy_type_id=? "
@@ -215,7 +216,7 @@ const sqlstring &QueryRestTable::build_where(
         "FROM mysql_rest_service_metadata.mrs_user_group_hierarchy as p JOIN "
         "cte on p.user_group_id = cte.parent_group_id AND "
         "group_hierarchy_type_id=? ) "
-        "SELECT parent_group_id FROM cte  WHERE level ! ? ) OR ";
+        "SELECT parent_group_id FROM cte  WHERE level ! ? ) OR ");
   }
 
   query += "( ! is NULL ";
@@ -269,14 +270,14 @@ const sqlstring &QueryRestTable::build_where(
     }
 
     where_.reset(
-        "WHERE (! IN (WITH RECURSIVE cte As ("
+        metadata_sql("WHERE (! IN (WITH RECURSIVE cte As ("
         "SELECT a.id as id FROM mysql_rest_service_metadata.mrs_user a WHERE "
         "a.id = ? "
         "UNION ALL "
         "SELECT h.user_id as id FROM "
         "mysql_rest_service_metadata.mrs_user_hierarchy as h "
         "JOIN cte c ON c.id=h.reporting_to_user_id"
-        ") SELECT * FROM cte) OR ! is NULL)");
+        ") SELECT * FROM cte) OR ! is NULL)").c_str());
 
     where_ << user_ownership_column << to_sqlstring(*user_id)
            << user_ownership_column;
@@ -288,7 +289,7 @@ const sqlstring &QueryRestTable::build_where(
     std::string query{"WHERE ("};
     for (size_t i = 0; i < row_groups.size(); ++i) {
       query +=
-          " ! in (WITH RECURSIVE cte AS("
+          metadata_sql(" ! in (WITH RECURSIVE cte AS("
           "SELECT user_group_id, parent_group_id, level FROM "
           "mysql_rest_service_metadata.mrs_user_group_hierarchy WHERE "
           "user_group_id in (?) AND group_hierarchy_type_id=? "
@@ -297,7 +298,7 @@ const sqlstring &QueryRestTable::build_where(
           "FROM mysql_rest_service_metadata.mrs_user_group_hierarchy as p JOIN "
           "cte on p.user_group_id = cte.parent_group_id AND "
           "group_hierarchy_type_id=? ) "
-          "SELECT parent_group_id FROM cte  WHERE level ! ? ) OR ";
+          "SELECT parent_group_id FROM cte  WHERE level ! ? ) OR ");
     }
 
     query += "(";
@@ -322,18 +323,18 @@ const sqlstring &QueryRestTable::build_where(
   }
 
   std::string query{
-      "WHERE (! IN (WITH RECURSIVE cte As ("
+      metadata_sql("WHERE (! IN (WITH RECURSIVE cte As ("
       "SELECT a.id as id FROM mysql_rest_service_metadata.mrs_user a WHERE "
       "a.id = ? "
       "UNION ALL "
       "SELECT h.user_id as id FROM "
       "mysql_rest_service_metadata.mrs_user_hierarchy as h "
       "JOIN cte c ON c.id=h.reporting_to_user_id"
-      ") SELECT * FROM cte) OR "};
+      ") SELECT * FROM cte) OR ")};
 
   for (size_t i = 0; i < row_groups.size(); ++i) {
     query +=
-        " ! in (WITH RECURSIVE cte AS("
+        metadata_sql(" ! in (WITH RECURSIVE cte AS("
         "SELECT user_group_id, parent_group_id, level FROM "
         "mysql_rest_service_metadata.mrs_user_group_hierarchy WHERE "
         "user_group_id in (?) AND group_hierarchy_type_id=? "
@@ -342,7 +343,7 @@ const sqlstring &QueryRestTable::build_where(
         "FROM mysql_rest_service_metadata.mrs_user_group_hierarchy as p JOIN "
         "cte on p.user_group_id = cte.parent_group_id AND "
         "group_hierarchy_type_id=? ) "
-        "SELECT parent_group_id FROM cte  WHERE level ! ? ) OR ";
+        "SELECT parent_group_id FROM cte  WHERE level ! ? ) OR ");
   }
 
   query += "( ! is NULL ";

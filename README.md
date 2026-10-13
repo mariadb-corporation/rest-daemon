@@ -145,6 +145,7 @@ anything fails, what was created is removed again.
 | `-u`, `--user` | the system account that runs restd, owner of the created files (needed when running as root without `-d`) |
 | `--name` | name of the instance in the REST metadata (default: `<hostname>:<HTTP port>`) |
 | `--report-host` | host name stored in the REST metadata (default: the local host name) |
+| `--metadata-schema` | the REST metadata schema to serve, `<prefix>mysql_rest_service_metadata<postfix>` (default: the base name); the roles follow it |
 | `--metadata-account`, `--data-account` | use these server accounts (passwords prompted for) instead of a generated one |
 | `--jwt-secret` | secret for signing JSON Web Tokens; the same for all instances of the same MRS metadata |
 | `--developer`, `--developer-debug-port` | also serve the services in development by this developer |
@@ -216,6 +217,7 @@ configured in `[mysql_rest_service]` directly:
 |---|---|
 | `mysql_read_write_destinations` | **required**, comma-separated `host[:port]`, `[ipv6]:port` or `local:/path/to/mysql.sock`; port 3306 if omitted |
 | `mysql_read_only_destinations` | same format; defaults to the read-write destinations |
+| `metadata_schema` | the REST metadata schema this instance serves, `<prefix>mysql_rest_service_metadata<postfix>` (default: the base name); the role names (`<prefix>mysql_rest_service_meta_provider<postfix>`, ...) follow it |
 | `mysql_ssl_mode` | TLS to the servers: `DISABLED`, `PREFERRED` (default), `REQUIRED`, `VERIFY_CA`, `VERIFY_IDENTITY` |
 | `mysql_ssl_ca`, `mysql_ssl_capath`, `mysql_ssl_crl`, `mysql_ssl_crlpath` | CA and CRL files/directories for verifying the servers |
 | `mysql_ssl_cipher`, `mysql_ssl_curves`, `mysql_tls_version` | TLS ciphers, curves and versions |

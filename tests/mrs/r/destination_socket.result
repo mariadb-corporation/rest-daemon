@@ -1,4 +1,4 @@
-CREATE USER account_with_auth_socket@localhost IDENTIFIED WITH auth_socket AS '$USER';
+CREATE USER account_with_auth_socket@localhost IDENTIFIED VIA unix_socket AS '$USER';
 # MySQL Rest Service schema created.
 # MySQL Rest Service, server accounts configured.
 CREATE SCHEMA `mrs`;

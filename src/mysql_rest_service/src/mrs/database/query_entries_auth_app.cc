@@ -25,6 +25,7 @@
  */
 
 #include "mrs/database/query_entries_auth_app.h"
+#include "mrs/database/metadata_schema.h"
 
 #include "helper/mysql_row.h"
 #include "helper/string/hex.h"
@@ -93,15 +94,15 @@ const Entries &QueryEntriesAuthAppImpl::get_entries() { return entries_; }
 
 QueryEntriesAuthAppImpl::QueryEntriesAuthAppImpl() {
   mysqlrouter::sqlstring select_services{
-      "(SELECT GROUP_CONCAT(DISTINCT HEX(`shaa`.`service_id`) ORDER BY "
+      metadata_query("(SELECT GROUP_CONCAT(DISTINCT HEX(`shaa`.`service_id`) ORDER BY "
       "auth_app_id ASC "
       "SEPARATOR ',')  FROM "
       "`mysql_rest_service_metadata`.`service_has_auth_app` as `shaa` "
       " WHERE `shaa`.`auth_app_id`=a.id "
-      " GROUP BY `shaa`.`auth_app_id`)"};
+      " GROUP BY `shaa`.`auth_app_id`)")};
 
   query_ =
-      "SELECT * FROM (SELECT a.id,  ! ,"
+      metadata_query("SELECT * FROM (SELECT a.id,  ! ,"
       "v.name, "
       "a.name as app_name,  "
       "  a.enabled and "
@@ -112,7 +113,7 @@ QueryEntriesAuthAppImpl::QueryEntriesAuthAppImpl() {
       " FROM mysql_rest_service_metadata.auth_app as a "
       "JOIN mysql_rest_service_metadata.`auth_vendor` as v on a.auth_vendor_id "
       "= v.id "
-      ") as subtable ";
+      ") as subtable ");
 
   query_ << select_services;
 }

@@ -25,6 +25,7 @@
 */
 
 #include "mrs/database/query_changes_db_object.h"
+#include "mrs/database/metadata_schema.h"
 
 #include <utility>
 
@@ -127,26 +128,26 @@ std::string QueryChangesDbObject::build_query(const std::string &table_name,
 
   if (kObjTableName == table_name) {
     mysqlrouter::sqlstring where =
-        " WHERE db_object_id in (select db_object_id from "
+        metadata_query(" WHERE db_object_id in (select db_object_id from "
         "mysql_rest_service_metadata.object as f where f.id=? GROUP BY "
-        "db_object_id)";
+        "db_object_id)");
     where << id;
     return query.str() + where.str();
   } else if (kObjRefTableName == table_name) {
     mysqlrouter::sqlstring where =
-        " WHERE db_object_id in (SELECT o.db_object_id FROM "
+        metadata_query(" WHERE db_object_id in (SELECT o.db_object_id FROM "
         "mysql_rest_service_metadata.object_field AS f JOIN "
         "mysql_rest_service_metadata.object AS o ON o.id=f.object_id WHERE "
         "(f.parent_reference_id=? or f.represents_reference_id=?) GROUP BY "
-        "db_object_id)";
+        "db_object_id)");
     where << id << id;
     return query.str() + where.str();
   } else if (kObjFieldTableName == table_name) {
     mysqlrouter::sqlstring where =
-        " WHERE db_object_id in (SELECT o.db_object_id FROM "
+        metadata_query(" WHERE db_object_id in (SELECT o.db_object_id FROM "
         "mysql_rest_service_metadata.object_field AS f  JOIN "
         "mysql_rest_service_metadata.object AS o ON o.id=f.object_id WHERE "
-        "f.id=? GROUP BY db_object_id)";
+        "f.id=? GROUP BY db_object_id)");
     where << id;
     return query.str() + where.str();
   }

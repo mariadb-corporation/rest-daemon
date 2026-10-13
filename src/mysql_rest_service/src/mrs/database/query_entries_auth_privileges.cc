@@ -25,6 +25,7 @@
 */
 
 #include "mrs/database/query_entries_auth_privileges.h"
+#include "mrs/database/metadata_schema.h"
 #include "helper/mysql_row.h"
 
 namespace mrs {
@@ -38,7 +39,7 @@ void QueryEntriesAuthPrivilegesImpl::query_user(
   privileges_ = out_privileges;
   privileges_->clear();
   query_ =
-      "SELECT p.service_path, p.schema_path, p.object_path, "
+      metadata_query("SELECT p.service_path, p.schema_path, p.object_path, "
       "BIT_OR(p.crud_operations) as crud FROM "
       "mysql_rest_service_metadata.mrs_privilege as p "
       "  WHERE p.role_id in ( "
@@ -54,7 +55,7 @@ void QueryEntriesAuthPrivilegesImpl::query_user(
       "        JOIN cte c ON c.derived_from_role_id=h.id "
       "        ) "
       "        SELECT id FROM cte) "
-      "GROUP BY p.service_path, p.schema_path, p.object_path";
+      "GROUP BY p.service_path, p.schema_path, p.object_path");
 
   query_ << to_sqlstring(user_id);
 

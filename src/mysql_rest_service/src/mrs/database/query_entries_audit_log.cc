@@ -25,6 +25,7 @@
  */
 
 #include "mysql/harness/utility/string.h"
+#include "mrs/database/metadata_schema.h"
 
 #include "helper/mysql_row.h"
 #include "mrs/database/query_entries_audit_log.h"
@@ -60,9 +61,9 @@ void QueryAuditLogEntries::build_query(
       !count_entries ? "id,dml_type,table_name,old_row_id, new_row_id"
                      : "count(*)"};
   query_ = {
-      "SELECT ! FROM "
+      metadata_query("SELECT ! FROM "
       "mysql_rest_service_metadata.audit_log WHERE ID > ? AND table_name in "
-      "(?) ORDER BY id"};
+      "(?) ORDER BY id")};
 
   query_ << columns;
   query_ << audit_log_id;

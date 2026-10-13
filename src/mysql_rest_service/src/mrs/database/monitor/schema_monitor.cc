@@ -27,6 +27,7 @@
 
 #include <cstring>
 #include "mrs/database/schema_monitor.h"
+#include "mrs/database/metadata_schema.h"
 
 #include <chrono>
 
@@ -108,7 +109,7 @@ void update_router_attributes_on_start(mysqlrouter::MySQLSession *session,
                                        const std::string &developer) {
   if (!router_id_) return;
 
-  std::string sql = "UPDATE mysql_rest_service_metadata.router SET attributes=";
+  std::string sql = metadata_sql("UPDATE mysql_rest_service_metadata.router SET attributes=");
   if (developer.empty()) {
     sql += "JSON_REMOVE(attributes, '$.developer')";
   } else {
@@ -327,11 +328,11 @@ void SchemaMonitor::run() {
 
         if (fetcher.get_state().service_enabled) {
           mysqlrouter::sqlstring update{
-              "INSERT INTO mysql_rest_service_metadata.router"
+              metadata_query("INSERT INTO mysql_rest_service_metadata.router"
               " (id, router_name, address, product_name, version, attributes, "
               "options)"
               " VALUES (?,?,?,?,?,?,'{}') ON DUPLICATE KEY UPDATE "
-              "version=?, router_name=?, last_check_in=NOW()"};
+              "version=?, router_name=?, last_check_in=NOW()")};
 
           const auto [name, address] = get_router_name_and_address();
           update << configuration_.router_id_ << name << address

@@ -30,6 +30,7 @@
 #include <cassert>
 
 #include "collector/cache_manager.h"
+#include "mrs/database/metadata_schema.h"  // restd: the roles follow the schema name
 #include "mrs/configuration.h"
 
 #include "collector/counted_mysql_session.h"
@@ -127,20 +128,20 @@ class MysqlCacheManager {
                                            .default_mysql_cache_instances_},
         callbacks_metadata_ro_{
             {collector::kMySQLConnectionMetadataRO, configuration},
-            "mysql_rest_service_meta_provider"},
+            mrs::database::metadata_role("meta_provider")},
         callbacks_userdata_ro_{{
                                    collector::kMySQLConnectionUserdataRO,
                                    configuration,
                                },
-                               "mysql_rest_service_data_provider"},
+                               mrs::database::metadata_role("data_provider")},
         callbacks_metadata_rw_{
             {collector::kMySQLConnectionMetadataRW, configuration},
-            "mysql_rest_service_meta_provider"},
+            mrs::database::metadata_role("meta_provider")},
         callbacks_userdata_rw_{{
                                    collector::kMySQLConnectionUserdataRW,
                                    configuration,
                                },
-                               "mysql_rest_service_data_provider"} {}
+                               mrs::database::metadata_role("data_provider")} {}
   MysqlCacheManager(Callbacks *callbacks_meta, Callbacks *callbacks_user)
       : default_mysql_cache_instances_{10},
         cache_manager_metadata_ro_{callbacks_meta},

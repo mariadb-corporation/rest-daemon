@@ -25,6 +25,7 @@
 */
 
 #include "mrs/database/query_entries_url_host.h"
+#include "mrs/database/metadata_schema.h"
 
 #include <string>
 
@@ -38,12 +39,12 @@ namespace database {
 QueryEntriesUrlHost::QueryEntriesUrlHost() {
   // Alias `url_host_id` used by QueryChangesUrlHost
   query_ =
-      "SELECT * FROM (SELECT h.id as url_host_id, h.name, GROUP_CONCAT(a.alias "
+      metadata_query("SELECT * FROM (SELECT h.id as url_host_id, h.name, GROUP_CONCAT(a.alias "
       "SEPARATOR ',')"
       "    FROM mysql_rest_service_metadata.`url_host` as h LEFT JOIN"
       "    mysql_rest_service_metadata.`url_host_alias` as a"
       "    on h.id = a.url_host_id"
-      "    GROUP BY h.id) as parent ";
+      "    GROUP BY h.id) as parent ");
 }
 
 uint64_t QueryEntriesUrlHost::get_last_update() { return audit_log_id_; }

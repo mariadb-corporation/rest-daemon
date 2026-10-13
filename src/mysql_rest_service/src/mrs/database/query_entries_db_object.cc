@@ -25,6 +25,7 @@
 */
 
 #include "mrs/database/query_entries_db_object.h"
+#include "mrs/database/metadata_schema.h"
 
 #include <map>
 #include <string>
@@ -59,7 +60,7 @@ QueryEntriesDbObject::QueryEntriesDbObject(
     interface::QueryFactory *query_factory)
     : query_factory_{query_factory} {
   query_ =
-      "SELECT * FROM (SELECT "
+      metadata_query("SELECT * FROM (SELECT "
       "  o.id as db_object_id, db.id as db_schema_id, o.requires_auth,"
       "  o.auth_stored_procedure, o.enabled, o.request_path,"
       "  COALESCE(o.items_per_page, db.items_per_page) as `on_page`, "
@@ -68,7 +69,7 @@ QueryEntriesDbObject::QueryEntriesDbObject(
       " FROM mysql_rest_service_metadata.`db_object` as o"
       "  JOIN mysql_rest_service_metadata.`db_schema` as db on"
       "   o.db_schema_id = db.id !"
-      ") as parent ";
+      ") as parent ");
 
   query_ << mysqlrouter::sqlstring{
       ", o.metadata, cso.content_set_id, cso.priority, cso.language, "
@@ -76,9 +77,9 @@ QueryEntriesDbObject::QueryEntriesDbObject(
       "cso.name as method_name, cso.options as cset_options"};
 
   query_ << mysqlrouter::sqlstring{
-      " LEFT JOIN mysql_rest_service_metadata.`content_set_has_obj_def` as "
+      metadata_query(" LEFT JOIN mysql_rest_service_metadata.`content_set_has_obj_def` as "
       "cso "
-      "ON o.id = cso.db_object_id"};
+      "ON o.id = cso.db_object_id")};
 }
 
 uint64_t QueryEntriesDbObject::get_last_update() { return audit_log_id_; }

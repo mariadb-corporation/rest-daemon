@@ -27,6 +27,7 @@
 #include <stdexcept>
 
 #include "mrs/database/query_router_info.h"
+#include "mrs/database/metadata_schema.h"
 
 #include "mysqld_error.h"
 
@@ -38,8 +39,8 @@ std::optional<uint64_t> QueryRouterInfo::find_existing_router_instances(
     const std::string &address) {
   try {
     mysqlrouter::sqlstring sql_query{
-        "SELECT `id` FROM mysql_rest_service_metadata.router WHERE"
-        " router_name = ? AND address = ?"};
+        metadata_query("SELECT `id` FROM mysql_rest_service_metadata.router WHERE"
+        " router_name = ? AND address = ?")};
     sql_query << router_name << address;
     query(session, sql_query);
   } catch (const mysqlrouter::MySQLSession::Error &error) {
@@ -54,8 +55,8 @@ std::optional<uint64_t> QueryRouterInfo::find_existing_router_instances(
 void QueryRouterInfo::on_row(const ResultRow &r) {
   if (r.size() != 1) {
     throw std::runtime_error(
-        "Could not fetch router information from "
-        "`mysql_rest_service_metadata`.`router`");
+        metadata_sql("Could not fetch router information from "
+        "`mysql_rest_service_metadata`.`router`"));
   }
 
   try {

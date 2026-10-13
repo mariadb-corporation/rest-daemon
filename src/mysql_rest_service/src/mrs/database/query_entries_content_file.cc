@@ -25,6 +25,7 @@
  */
 
 #include "mrs/database/query_entries_content_file.h"
+#include "mrs/database/metadata_schema.h"
 
 #include "helper/mysql_row.h"
 #include "mrs/database/helper/query_audit_log_maxid.h"
@@ -35,14 +36,14 @@ const mysqlrouter::sqlstring k_option_field{",f.options "};
 
 QueryEntriesContentFile::QueryEntriesContentFile() {
   query_ =
-      "SELECT * FROM (SELECT "
+      metadata_query("SELECT * FROM (SELECT "
       "    f.id as content_file_id,"
       "    f.content_set_id as content_set_id,"
       "    f.request_path,"
       "    f.requires_auth,"
       "    f.enabled,"
       "    f.size !"
-      " FROM mysql_rest_service_metadata.content_file as f) as cf";
+      " FROM mysql_rest_service_metadata.content_file as f) as cf");
   query_ << k_option_field;
 }
 

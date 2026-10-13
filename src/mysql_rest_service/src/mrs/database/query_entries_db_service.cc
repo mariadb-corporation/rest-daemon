@@ -25,6 +25,7 @@
 */
 
 #include "mrs/database/query_entries_db_service.h"
+#include "mrs/database/metadata_schema.h"
 
 #include <string>
 
@@ -44,25 +45,25 @@ QueryEntriesDbService::QueryEntriesDbService(
     std::optional<uint64_t> router_id) {
   // Alias `service_id`, used by QueryChangesDbService
   query_ =
-      "SELECT * FROM (SELECT"
+      metadata_query("SELECT * FROM (SELECT"
       "  s.id as service_id, s.url_host_id as url_host_id, s.url_context_root "
       "as url_context_root, s.url_protocol,"
       "  !, s.comments, s.options,"
       "  s.auth_path, s.auth_completed_url, s.auth_completed_url_validation,"
       "  s.auth_completed_page_content, s.enable_sql_endpoint,"
       "  s.custom_metadata_schema !"
-      " FROM mysql_rest_service_metadata.`service` as s ) as parent ";
+      " FROM mysql_rest_service_metadata.`service` as s ) as parent ");
 
   if (!router_id) {
     query_ << k_s_enabled_and_published;
   } else {
     mysqlrouter::sqlstring service_is_enabled{
-        "IF(s.id in (select rs.service_id "
+        metadata_query("IF(s.id in (select rs.service_id "
         " from mysql_rest_service_metadata.router_services rs"
         " WHERE rs.router_id = ?),true, (s.published = 1 AND s.enabled = 1 "
         "AND"
         " (SELECT 0=COUNT(r.id) from mysql_rest_service_metadata.router r"
-        " WHERE r.id=?))) "};
+        " WHERE r.id=?))) ")};
     service_is_enabled << router_id.value() << router_id.value();
 
     query_ << service_is_enabled;

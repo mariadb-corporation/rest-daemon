@@ -25,6 +25,7 @@
  */
 
 #include "mrs/database/query_entry_content_file.h"
+#include "mrs/database/metadata_schema.h"
 
 #include <stdexcept>
 
@@ -39,8 +40,8 @@ void QueryEntryContentFile::query_file(MySQLSession *session,
                                        const entry::UniversalId &file_id) {
   file_id_ = file_id;
   query_ = {
-      "SELECT size,content FROM mysql_rest_service_metadata.content_file WHERE "
-      "id=?"};
+      metadata_query("SELECT size,content FROM mysql_rest_service_metadata.content_file WHERE "
+      "id=?")};
 
   query_ << file_id;
   received_ = false;

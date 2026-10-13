@@ -25,6 +25,7 @@
 */
 
 #include "mrs/database/query_entries_db_schema.h"
+#include "mrs/database/metadata_schema.h"
 
 #include <string>
 
@@ -37,11 +38,11 @@ namespace database {
 QueryEntriesDbSchema::QueryEntriesDbSchema() {
   // Alias `db_schema_id`, used in QueryChangesDbSchema.
   query_ =
-      "SELECT * FROM (SELECT"
+      metadata_query("SELECT * FROM (SELECT"
       "  s.id as db_schema_id, s.service_id, s.name, s.request_path, "
       "s.requires_auth,"
       "  s.enabled, s.items_per_page,s.options !"
-      " FROM mysql_rest_service_metadata.`db_schema` as s ) as parent ";
+      " FROM mysql_rest_service_metadata.`db_schema` as s ) as parent ");
 
   query_ << mysqlrouter::sqlstring{", s.metadata"};
 }

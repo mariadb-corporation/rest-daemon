@@ -25,6 +25,7 @@
  */
 
 #include "mrs/database/query_entry_auth_user.h"
+#include "mrs/database/metadata_schema.h"
 
 #include <cassert>
 #include <optional>
@@ -59,9 +60,9 @@ bool QueryEntryAuthUser::query_user(MySQLSession *session,
                                     const AuthUser *user_data) {
   loaded_ = 0;
   query_ = {
-      "SELECT id, auth_app_id, name, email, vendor_user_id, login_permitted, "
+      metadata_query("SELECT id, auth_app_id, name, email, vendor_user_id, login_permitted, "
       "app_options, auth_string FROM mysql_rest_service_metadata.mrs_user "
-      "WHERE !=? ?"};
+      "WHERE !=? ?")};
 
   query_ << (user_data->has_user_id ? "id" : "auth_app_id");
   if (user_data->has_user_id)
@@ -116,9 +117,9 @@ AuthUser::UserId QueryEntryAuthUser::insert_user(
   query_uuid.generate_uuid(session);
   auto uuid = query_uuid.get_result();
   query_ = {
-      "INSERT INTO mysql_rest_service_metadata.mrs_user(id, auth_app_id, "
+      metadata_query("INSERT INTO mysql_rest_service_metadata.mrs_user(id, auth_app_id, "
       "name, "
-      "email, vendor_user_id, login_permitted) VALUES(?, ?, ?, ?, ?, ?)"};
+      "email, vendor_user_id, login_permitted) VALUES(?, ?, ?, ?, ?, ?)")};
 
   query_ << to_sqlstring(uuid) << user->app_id
          << value_or_empty_is_null(user->name)
@@ -130,8 +131,8 @@ AuthUser::UserId QueryEntryAuthUser::insert_user(
 
   if (default_role_id) {
     query_ = {
-        "INSERT INTO mysql_rest_service_metadata.mrs_user_has_role(user_id, "
-        "role_id, comments) VALUES(?, ?, \"Default role.\")"};
+        metadata_query("INSERT INTO mysql_rest_service_metadata.mrs_user_has_role(user_id, "
+        "role_id, comments) VALUES(?, ?, \"Default role.\")")};
     query_ << to_sqlstring(uuid) << default_role_id.value();
     execute(session);
   }
@@ -144,8 +145,8 @@ bool QueryEntryAuthUser::update_email(MySQLSession *session,
                                       const std::optional<std::string> &email) {
   const static mysqlrouter::sqlstring k_null{"NULL"};
   query_ = {
-      "UPDATE mysql_rest_service_metadata.mrs_user SET "
-      "email=? WHERE id=?"};
+      metadata_query("UPDATE mysql_rest_service_metadata.mrs_user SET "
+      "email=? WHERE id=?")};
 
   query_ << (email.has_value() ? email.value() : k_null)
          << to_sqlstring(user_id);
@@ -159,8 +160,8 @@ bool QueryEntryAuthUser::update_user(MySQLSession *session,
   assert(user->has_user_id);
 
   query_ = {
-      "UPDATE mysql_rest_service_metadata.mrs_user SET auth_app_id=?,name=?, "
-      "email=?, vendor_user_id=? WHERE id=?"};
+      metadata_query("UPDATE mysql_rest_service_metadata.mrs_user SET auth_app_id=?,name=?, "
+      "email=?, vendor_user_id=? WHERE id=?")};
 
   query_ << user->app_id << value_or_empty_is_null(user->name)
          << value_or_empty_is_null(user->email)

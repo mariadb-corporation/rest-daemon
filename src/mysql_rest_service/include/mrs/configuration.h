@@ -61,6 +61,8 @@ class Configuration {
   std::string destinations_ro_;
   std::string destinations_rw_;
   uint64_t router_id_;
+  // restd: the REST metadata schema this instance serves
+  std::string metadata_schema_;
   std::optional<std::string> router_name_;
   uint32_t default_mysql_cache_instances_;
   uint32_t http_port_;

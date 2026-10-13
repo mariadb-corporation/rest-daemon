@@ -25,6 +25,7 @@
 */
 
 #include "mrs/database/query_entry_fields.h"
+#include "mrs/database/metadata_schema.h"
 
 #include <map>
 #include <optional>
@@ -63,21 +64,21 @@ bool QueryEntryFields::query_parameters(MySQLSession *session,
   output_result_ = &result_.parameters;
 
   query_ = {
-      "SELECT o.id, o.name FROM mysql_rest_service_metadata.object as o "
-      "        WHERE o.kind='PARAMETERS' and o.db_object_id=?"};
+      metadata_query("SELECT o.id, o.name FROM mysql_rest_service_metadata.object as o "
+      "        WHERE o.kind='PARAMETERS' and o.db_object_id=?")};
 
   query_ << db_object_id;
   execute(session);
 
   processing_ = OnRow::k_fields;
   query_ = {
-      "SELECT ofx.id, ofx.represents_reference_id, ofx.name,"
+      metadata_query("SELECT ofx.id, ofx.represents_reference_id, ofx.name,"
       "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.in')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.out')),"
       "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.name')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.datatype'))"
       "   FROM mysql_rest_service_metadata.object_field as ofx"
       "   JOIN mysql_rest_service_metadata.object as o on ofx.object_id=o.id"
       "        WHERE o.kind='PARAMETERS' and o.db_object_id=? ORDER BY "
-      "ofx.position"};
+      "ofx.position")};
 
   query_ << db_object_id;
 
@@ -85,8 +86,8 @@ bool QueryEntryFields::query_parameters(MySQLSession *session,
 
   processing_ = OnRow::k_output_name;
   query_ = {
-      "SELECT o.id, o.name FROM mysql_rest_service_metadata.object as o "
-      "        WHERE o.kind='RESULT' and o.db_object_id=?"};
+      metadata_query("SELECT o.id, o.name FROM mysql_rest_service_metadata.object as o "
+      "        WHERE o.kind='RESULT' and o.db_object_id=?")};
 
   query_ << db_object_id;
   execute(session);
@@ -95,12 +96,12 @@ bool QueryEntryFields::query_parameters(MySQLSession *session,
   for (auto &item : result_.results) {
     output_result_ = &item;
     query_ = {
-        "SELECT ofx.id, ofx.represents_reference_id, ofx.name,"
+        metadata_query("SELECT ofx.id, ofx.represents_reference_id, ofx.name,"
         "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.in')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.out')),"
         "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.name')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.datatype'))"
         "   FROM mysql_rest_service_metadata.object_field as ofx"
         "   JOIN mysql_rest_service_metadata.object as o on ofx.object_id=o.id"
-        "        WHERE o.kind='RESULT' and o.id=? ORDER BY ofx.position"};
+        "        WHERE o.kind='RESULT' and o.id=? ORDER BY ofx.position")};
 
     query_ << item.id;
     execute(session);

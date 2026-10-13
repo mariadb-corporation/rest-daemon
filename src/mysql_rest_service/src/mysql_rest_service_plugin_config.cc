@@ -29,6 +29,7 @@
 #include <stdexcept>
 
 #include "helper/plugin_monitor.h"
+#include "mrs/database/metadata_schema.h"
 #include "mysql_rest_service_plugin_config.h"
 
 #include "mysql/harness/destination.h"
@@ -149,6 +150,8 @@ std::shared_ptr<collector::DestinationProvider> create_destination(
 
 namespace mrs {
 
+using namespace std::string_literals;
+
 class UserConfigurationInfo {
  public:
   void operator()(const char *variable) {
@@ -192,6 +195,14 @@ PluginConfig::PluginConfig(const ConfigSection *section,
   destination_ssl_.tls_version_ =
       get_option(section, "mysql_tls_version", StringOption{});
   router_id_ = get_option(section, "router_id", IntOption<uint64_t>{});
+  // restd: the metadata schema name, for every statement on the metadata and
+  // the role names derived from it
+  metadata_schema_ = get_option(section, "metadata_schema", StringOption{});
+  try {
+    mrs::database::set_metadata_schema(metadata_schema_);
+  } catch (const std::invalid_argument &e) {
+    throw std::invalid_argument("option `metadata_schema`: "s + e.what());
+  }
   metadata_refresh_interval_ =
       get_option(section, k_option_metadata_refresh, MilliSecondsOption{});
   router_name_ = router_name;
@@ -251,6 +262,8 @@ bool PluginConfig::is_required(std::string_view option) const {
 std::string PluginConfig::get_default(std::string_view option) const {
   if (option == k_option_metadata_refresh) return "5";
   if (option == "wait_for_metadata_schema_access") return "0";
+  if (option == "metadata_schema")
+    return std::string(mrs::database::kMetadataSchemaBaseName);
 
   return {};
 }
