@@ -45,12 +45,6 @@ namespace database {
 
 using jit_executor::db::IResult;
 
-#ifndef MRSD_CLIENT_MARIADB
-namespace {
-constexpr size_t K_MAX_QUERY_ATTRIBUTES = 32;
-}  // namespace
-#endif
-
 //-------------------------- Session Implementation ----------------------------
 
 Session::Session(MYSQL *mysql) : _mysql{mysql} {}
@@ -179,35 +173,8 @@ std::shared_ptr<IResult> Session::run_sql(
     return err;
   };
 
-#ifdef MRSD_CLIENT_MARIADB
   // restd: no query attributes in the MariaDB protocol; they are ignored
   (void)query_attributes;
-#else
-  // Attribute references need to be alive while the query is executed
-  const char *attribute_names[K_MAX_QUERY_ATTRIBUTES];
-  MYSQL_BIND attribute_values[K_MAX_QUERY_ATTRIBUTES];
-
-  if (!query_attributes.empty()) {
-    memset(attribute_values, 0, sizeof(attribute_values));
-    size_t attribute_count = 0;
-    for (const auto &att : query_attributes) {
-      attribute_names[attribute_count] = att.name.data();
-      const auto &value =
-          dynamic_cast<Classic_query_attribute *>(att.value.get());
-
-      attribute_values[attribute_count].buffer_type = value->type;
-      attribute_values[attribute_count].buffer = value->data_ptr;
-      attribute_values[attribute_count].length = &value->size;
-      attribute_values[attribute_count].is_null = &value->is_null;
-      attribute_values[attribute_count].is_unsigned =
-          (value->flags & UNSIGNED_FLAG) ? true : false;
-      attribute_count++;
-    }
-
-    mysql_bind_param(_mysql, attribute_count, attribute_values,
-                     attribute_names);
-  }
-#endif
 
   if (mysql_real_query(_mysql, sql, len) != 0) {
     throw process_error({sql, len});

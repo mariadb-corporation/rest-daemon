@@ -63,74 +63,6 @@ using namespace std::string_literals;
 
 namespace {
 
-#ifndef MRSD_CLIENT_MARIADB
-// restd: libmariadb has no TLS session resumption API; the cache is dropped
-// there (a performance feature only)
-class SSLSessionsCache {
- public:
-  using EndpointId = std::string;
-  using CachedType = std::string;
-
-  static SSLSessionsCache &instance() {
-    static SSLSessionsCache i;
-    return i;
-  }
-
-  bool was_session_reused(MYSQL *con) {
-    return mysql_get_ssl_session_reused(con);
-  }
-
-  void store_ssl_session(MYSQL *con, const EndpointId &endpoint_id) {
-    unsigned int len = 0;
-    std::lock_guard lk(mtx_);
-
-    static_assert(kMaxEntriesPerEndpoint > 0);
-
-    void *data = mysql_get_ssl_session_data(con, 0, &len);
-    if (len == 0) {
-      // we failed to get the ssl session data, nothing to store
-      return;
-    }
-
-    if (cache_.count(endpoint_id) > 0 &&
-        cache_[endpoint_id].size() >= kMaxEntriesPerEndpoint) {
-      // cache is full, remove the oldest entry to make room for the new one
-      cache_[endpoint_id].pop();
-    }
-
-    cache_[endpoint_id].emplace(reinterpret_cast<char *>(data), len);
-
-    mysql_free_ssl_session_data(con, data);
-  }
-
-  void try_reuse_session(MYSQL *con, const EndpointId &endpoint_id) {
-    std::lock_guard lk(mtx_);
-
-    if (cache_.count(endpoint_id) == 0 || cache_[endpoint_id].empty()) {
-      return;
-    }
-
-    const auto &sess_data = cache_[endpoint_id].front();
-    mysql_options(con, MYSQL_OPT_SSL_SESSION_DATA, sess_data.c_str());
-
-    // once the session data was reused remove it from the cache
-    cache_[endpoint_id].pop();
-  }
-
- private:
-  SSLSessionsCache() = default;
-
-  // disable copying
-  SSLSessionsCache(SSLSessionsCache &) = delete;
-  SSLSessionsCache *operator=(SSLSessionsCache &) = delete;
-
-  std::map<EndpointId, std::queue<CachedType>> cache_;
-  std::mutex mtx_;
-
-  static constexpr size_t kMaxEntriesPerEndpoint{2};
-};
-#endif
-
 using MysqlSessionTrackGet = int (*)(MYSQL *mysql,
                                      enum enum_session_state_type type,
                                      const char **data, size_t *length);
@@ -147,9 +79,8 @@ MySQLSession::MySQLSession() {
     throw std::logic_error("Error initializing MySQL connection structure");
   }
 
-#ifdef MRSD_CLIENT_MARIADB
   // restd: libmariadb 3.4 defaults to TLS with certificate verification, which
-  // refuses servers without TLS. libmysqlclient's default is PREFERRED.
+  // refuses servers without TLS; the daemon's default is PREFERRED.
   set_ssl_options(SSL_MODE_PREFERRED, "", "", "", "", "", "");
 
   // libmariadb's auth plugins (caching_sha2_password, ...) are dynamic. Its
@@ -159,7 +90,6 @@ MySQLSession::MySQLSession() {
   if (MRSD_CLIENT_PLUGIN_DIR[0] != '\0' && !getenv("MARIADB_PLUGIN_DIR")) {
     set_option(PluginDir(MRSD_CLIENT_PLUGIN_DIR));
   }
-#endif
 }
 
 MySQLSession::~MySQLSession() {
@@ -248,7 +178,6 @@ void MySQLSession::set_ssl_options(mysql_ssl_mode ssl_mode,
                 mysql_errno(connection_));
   }
 
-#ifdef MRSD_CLIENT_MARIADB
   // restd: libmariadb has no MYSQL_OPT_SSL_MODE. TLS is used iff
   // MYSQL_OPT_SSL_ENFORCE is set (setting a CA, CRL, cert or key sets it
   // too, hence last), and the server certificate is verified unless
@@ -268,17 +197,6 @@ void MySQLSession::set_ssl_options(mysql_ssl_mode ssl_mode,
     throw Error(msg, mysql_errno(connection_));
   }
   ssl_mode_ = ssl_mode;
-#else
-  // this has to be the last option that gets set due to what appears to be a
-  // bug in libmysql causing ssl_mode downgrade from REQUIRED if other options
-  // (like tls_version) are also specified
-  if (!set_option(SslMode(ssl_mode))) {
-    const char *text = ssl_mode_to_string(ssl_mode);
-    std::string msg = std::string("Setting SSL mode to '") + text +
-                      "' on connection failed: " + mysql_error(connection_);
-    throw Error(msg, mysql_errno(connection_));
-  }
-#endif
 }
 
 uint64_t MySQLSession::connection_id() {
@@ -293,18 +211,7 @@ uint64_t MySQLSession::connection_id() {
   return connection_id_;
 }
 
-mysql_ssl_mode MySQLSession::ssl_mode() const {
-#ifdef MRSD_CLIENT_MARIADB
-  return ssl_mode_;
-#else
-  SslMode ssl_mode;
-  if (!get_option(ssl_mode)) {
-    assert(0 && "get_option<SslMode>() failed unexpectedly");
-  }
-
-  return mysql_ssl_mode(ssl_mode.value());
-#endif
-}
+mysql_ssl_mode MySQLSession::ssl_mode() const { return ssl_mode_; }
 
 std::string MySQLSession::tls_version() const {
   TlsVersion tls_version;
@@ -441,13 +348,11 @@ void MySQLSession::connect(const std::string &host, unsigned int port,
   }
   set_option(Protocol(protocol));
 
+  // restd: no CLIENT_LONG_PASSWORD: in libmariadb bit 0 is CLIENT_MYSQL, which
+  // it sets itself
   const unsigned long client_flags =
-      (
-#ifndef MRSD_CLIENT_MARIADB
-          CLIENT_LONG_PASSWORD |  // libmariadb: bit 0 is CLIENT_MYSQL, set by it
-#endif
-          CLIENT_LONG_FLAG | CLIENT_PROTOCOL_41 | CLIENT_MULTI_RESULTS |
-          extra_client_flags);
+      (CLIENT_LONG_FLAG | CLIENT_PROTOCOL_41 | CLIENT_MULTI_RESULTS |
+       extra_client_flags);
   std::string endpoint_str;
 
   if (!unix_socket.empty()) {
@@ -460,15 +365,6 @@ void MySQLSession::connect(const std::string &host, unsigned int port,
     }
     endpoint_str += ":" + std::to_string(port);
   }
-
-  const bool ssl_disabled = ssl_mode() == SSL_MODE_DISABLED;
-#ifndef MRSD_CLIENT_MARIADB
-  auto &ssl_sessions_cache = SSLSessionsCache::instance();
-
-  if (!ssl_disabled) {
-    ssl_sessions_cache.try_reuse_session(connection_, endpoint_str);
-  }
-#endif
 
   auto do_connect = [&]() {
     return mysql_real_connect(
@@ -485,7 +381,6 @@ void MySQLSession::connect(const std::string &host, unsigned int port,
     throw Error(ss.str(), mysql_errno(connection_));
   }
 
-#ifdef MRSD_CLIENT_MARIADB
   // restd: with certificate verification off, libmariadb connects without TLS
   // when the server has none; REQUIRED must not accept that
   if (ssl_mode() == SSL_MODE_REQUIRED &&
@@ -496,15 +391,6 @@ void MySQLSession::connect(const std::string &host, unsigned int port,
                     ": SSL is required, but the server does not support it",
                 CR_SSL_CONNECTION_ERROR);
   }
-#endif
-
-#ifndef MRSD_CLIENT_MARIADB
-  if (!ssl_disabled) {
-    ssl_sessions_cache.store_ssl_session(connection_, endpoint_str);
-  }
-#else
-  (void)ssl_disabled;
-#endif
 
   connected_ = true;
   connection_address_ = endpoint_str;
@@ -778,9 +664,6 @@ void MySQLSession::prepare_execute_with_bind_parameters(
   if (status == MYSQL_NO_DATA) return;
   // restd: -1 from mysql_stmt_next_result() is "no more results"
   if (status == -1 && mysql_stmt_errno(stmt) == 0) return;
-#ifndef MRSD_CLIENT_MARIADB
-  if (status == CR_NO_RESULT_SET) return;
-#endif
 
   throw_mysqlerror(stmt, ps_id);
 }
@@ -968,16 +851,11 @@ std::string MySQLSession::quote(const std::string &s, char qchar) const {
   std::string r;
   r.resize(s.length() * 2 + 3);
   r[0] = qchar;
-#ifdef MRSD_CLIENT_MARIADB
   // restd: no mysql_real_escape_string_quote() in libmariadb;
   // mysql_real_escape_string() escapes ' and " (and handles
   // NO_BACKSLASH_ESCAPES), which covers the quote chars used here
   unsigned long len =
       mysql_real_escape_string(connection_, &r[1], s.c_str(), s.length());
-#else
-  unsigned long len = mysql_real_escape_string_quote(
-      connection_, &r[1], s.c_str(), s.length(), qchar);
-#endif
   r.resize(len + 2);
   r[len + 1] = qchar;
   return r;
@@ -999,11 +877,7 @@ const char *MySQLSession::ssl_cipher() {
 }
 
 bool MySQLSession::is_ssl_session_reused() {
-#ifdef MRSD_CLIENT_MARIADB
   return false;  // no TLS session resumption in libmariadb
-#else
-  return connection_ ? mysql_get_ssl_session_reused(connection_) : false;
-#endif
 }
 
 bool MySQLSession::is_mariadb() {

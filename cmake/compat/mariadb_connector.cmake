@@ -35,7 +35,6 @@
 #   MYSQL_CLIENT_LIBRARY      full path of the shared library
 #   MYSQL_CLIENT_LIBRARY_DIR  its directory
 # plus
-#   MRSD_CLIENT_MARIADB       TRUE (also a global compile definition)
 #   MARIADB_CLIENT_PLUGIN_DIR the client auth plugin directory
 
 SET(MARIADB_CONNECTOR_DIR "" CACHE PATH
@@ -137,7 +136,5 @@ IF(NOT MARIADB_CLIENT_PLUGIN_DIR)
     "${MARIADB_CONNECTOR_DIR}/lib; only the built-in auth plugins will work")
 ENDIF()
 
-SET(MRSD_CLIENT_MARIADB TRUE)
-ADD_COMPILE_DEFINITIONS(MRSD_CLIENT_MARIADB=1)
 
 MESSAGE(STATUS "MariaDB Connector/C ${MYSQL_CLIENT_VERSION}: ${MYSQL_CLIENT_LIBRARY}")

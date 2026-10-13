@@ -1,7 +1,7 @@
 /*
   Client error messages (CR_*), copied verbatim from the MySQL server's
-  libmysql/errmsg.cc. The symbol `client_errors` isn't exported by the
-  public libmysqlclient on Linux/Windows, so mrsd carries its own copy.
+  libmysql/errmsg.cc. libmariadb doesn't export its table everywhere, so mrsd
+  carries its own copy (the 2000-2061 codes and texts are common to both).
 */
 /* Copyright (c) 2000, 2026, Oracle and/or its affiliates.
    Copyright (c) 2026, MariaDB plc.
@@ -145,9 +145,7 @@ const char *client_error_message(unsigned int code) {
   const int ndx = static_cast<int>(code) - CR_MIN_ERROR;
   if (ndx >= 0 && ndx < kNumClientErrors) return kClientErrors[ndx];
 
-#ifdef MRSD_CLIENT_MARIADB
   if (IS_MARIADB_ERROR(code)) return "MariaDB client error";
-#endif
 
   return kClientErrors[CR_UNKNOWN_ERROR - CR_MIN_ERROR];
 }

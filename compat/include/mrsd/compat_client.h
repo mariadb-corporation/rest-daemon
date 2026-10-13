@@ -28,10 +28,9 @@
 #include <mysql.h>
 #include <mysqld_error.h>
 
-// restd: MariaDB Connector/C (MRSD_CLIENT_MARIADB) vs. MySQL's libmysqlclient.
-// The few public-API differences the code depends on are evened out here; see
+// restd: what the code forked from MySQL Router expects of the client library
+// and MariaDB Connector/C (libmariadb) doesn't have; see
 // docs/milestone2-inventory.md, section 2.
-#ifdef MRSD_CLIENT_MARIADB
 // libmariadb has no MYSQL_OPT_SSL_MODE; MySQLSession emulates the modes with
 // MYSQL_OPT_SSL_ENFORCE and MYSQL_OPT_SSL_VERIFY_SERVER_CERT. Same names and
 // values as MySQL's enum, so the rest of the code is unchanged.
@@ -74,12 +73,11 @@ constexpr enum_field_types MYSQL_TYPE_VECTOR =
 #define ER_SERVER_OFFLINE_MODE 3032
 #endif
 #define ER_SERVER_OFFLINE_MODE_REASON ER_SERVER_OFFLINE_MODE
-#endif
 
 namespace mrsd {
 
-// the type MYSQL_BIND::is_null points to: bool (libmysqlclient) or
-// my_bool, i.e. char (libmariadb)
+// the type MYSQL_BIND::is_null points to (my_bool, i.e. char, in libmariadb;
+// bool in the library the code was written for)
 using bind_bool_t = std::remove_pointer_t<decltype(MYSQL_BIND::is_null)>;
 
 /**
@@ -88,10 +86,9 @@ using bind_bool_t = std::remove_pointer_t<decltype(MYSQL_BIND::is_null)>;
  * A MariaDB server sends JSON columns and routine results as LONGTEXT and
  * VECTOR as VARBINARY, with the kind in the extended column metadata, which
  * Connector/C exposes as field attributes (format "json", data type
- * "vector"). On MySQL and for everything else it is MYSQL_FIELD::type.
+ * "vector"). For everything else it is MYSQL_FIELD::type.
  */
 inline enum_field_types effective_field_type(const MYSQL_FIELD *field) {
-#ifdef MRSD_CLIENT_MARIADB
   MARIADB_CONST_STRING attr;
   if (mariadb_field_attr(&attr, field, MARIADB_FIELD_ATTR_FORMAT_NAME) == 0 &&
       attr.length == 4 && memcmp(attr.str, "json", 4) == 0)
@@ -100,7 +97,6 @@ inline enum_field_types effective_field_type(const MYSQL_FIELD *field) {
           0 &&
       attr.length == 6 && memcmp(attr.str, "vector", 6) == 0)
     return MYSQL_TYPE_VECTOR;
-#endif
   return field->type;
 }
 
@@ -111,12 +107,8 @@ inline enum_field_types effective_field_type(const MYSQL_FIELD *field) {
  * libmariadb has a second client error range (5000-5999).
  */
 constexpr bool is_client_error(unsigned int code) {
-#ifdef MRSD_CLIENT_MARIADB
   return (code >= CR_MIN_ERROR && code <= CR_MAX_ERROR) ||
          (code >= CER_MIN_ERROR && code < CER_MIN_ERROR + 1000);
-#else
-  return code >= CR_ERROR_FIRST && code <= CR_ERROR_LAST;
-#endif
 }
 
 /**
