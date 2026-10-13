@@ -28,11 +28,12 @@
 - **M2.1 (build on Connector/C): done** on macOS (3.4.11 Homebrew), Ubuntu (3.4.9, `libmariadb-dev` unpacked), Windows (3.4.8 vcpkg): ctest 113/113 each; MySQL build 113/113.
 - **M2.2 (run against MariaDB): done.** Smoke test incl. MRS scripts passes on macOS (13.2 build tree), Windows and Ubuntu (11.8.9 LTS ARM64 sandbox packages); ad-hoc CRUD with JSON/GEOMETRY/VECTOR on macOS.
 - **M2.3 (suites on MariaDB):** MRS suite MariaDB mode on macOS: 97 passed, 0 failed, 14 skipped, 10 xfailed, 1 xpassed; MySQL mode unchanged (116/5/1). **Windows vs 11.8.9 LTS: 97 passed, 0 failed, 14 skipped, 10 xfailed, 1 xpassed**, the same as macOS vs 13.2. **Ubuntu vs 11.8.9 LTS: 98 passed, 0 failed, 13 skipped** (+ `destination_socket`, which macOS and Windows skip), 10 xfailed, 1 xpassed (2026-10-12). Live-DB unit tests on MariaDB not done.
-- Known failures to investigate (`tests/mrs/known_failures.mariadb.def`): `json_view`, `json_view_access` (join sub-object carries all table columns), `role_privileges` (first login gets the SCRAM challenge instead of 307).
+- macOS after the normaliser fix (2026-10-12): 99 passed, 0 failed, 14 skipped, 8 xfailed, 1 xpassed. `json_view` and `json_view_access` were no daemon issue: the tests' `replace_regex` placeholders (`"etag":ETAG`, eaten commas, `GTID`) made their output unparsable, so the key-order normalisation never ran.
+- Known failure to investigate (`tests/mrs/known_failures.mariadb.def`): `role_privileges` (first login with auth app `any_service_auth` gets the SCRAM challenge, 200, instead of a 307).
 
 ## Next steps
 
-1. The three "to investigate" known failures.
+1. The "to investigate" known failure `role_privileges`.
 2. Live-DB unit tests (`RUN_WITH_LIVE_MYSQLD`, `tests/helpers/shared_server.cc`) against MariaDB.
 3. Phase M2.4 cleanup: remove the async-task code (`query_rest_task*`, `mysql_task_monitor*`, task-status endpoints, `mysqlTask` options, the nonblocking path of `MySQLSession`); README/CLAUDE.md for MariaDB; decide on keeping the MySQL build.
 4. Then Milestone 3 (schema 5.0.0).

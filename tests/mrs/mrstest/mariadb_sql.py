@@ -170,14 +170,24 @@ _DROPPED_USERS_NOTE = re.compile(r"^Warnings:\nNote\t4227\tDropped users .*\n", 
 _ETAG = re.compile(r'("etag": ")[0-9A-F]{64}(")')
 # the GTID of a write (session_track_gtids), not available on MariaDB until
 # an open point, see PLAN.md; the tests print it as "GTID" (a replace_regex)
-_GTID_LINE = re.compile(r'^\s*"gtid": "[^"]*",?\n', re.M)
+_GTID_LINE = re.compile(r'^\s*"gtid":\s*(?:"[^"]*"|GTID),?\n', re.M)
+
+
+# placeholders the tests' replace_regex leave unquoted ("etag":ETAG)
+_BARE_PLACEHOLDER = re.compile(r'(":\s*)([A-Z][A-Z_0-9]*)(?=\s*[,}\]\n])')
 
 
 def _canonical_json(text: str):
     """re-dump a JSON document with sorted keys; integral floats as ints"""
+    text = _BARE_PLACEHOLDER.sub(r'\1"\2"', text)
+    # the same replace_regex often eat the comma after the value
+    text = re.sub(r'(": "[A-Z][A-Z_0-9]*"|":"[A-Z][A-Z_0-9]*")(\n\s*")', r'\1,\2', text)
     def fix(v):
         if isinstance(v, dict):
-            return {k: fix(x) for k, x in v.items()}
+            # an empty "_metadata" is what MySQL's response has left once the
+            # tests filtered out its gtid; MariaDB sends none
+            return {k: fix(x) for k, x in v.items()
+                    if not (k == "_metadata" and x == {})}
         if isinstance(v, list):
             return [fix(x) for x in v]
         if isinstance(v, float) and v.is_integer():

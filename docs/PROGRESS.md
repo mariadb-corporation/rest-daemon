@@ -640,3 +640,7 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   MRS scripts passes; MRS suite 98 passed, 0 failed, 13 skipped, 10 xfailed, 1 xpassed:
   `destination_socket` (skipped on macOS and Windows) runs with MySQL's `auth_socket`
   accounts mapped to MariaDB's built-in `unix_socket`. Phase M2.2 done.
+- `json_view`, `json_view_access` pass on MariaDB: same data as MySQL in another member order;
+  the normaliser now parses output with the tests' bare placeholders (`"etag":ETAG`,
+  `TIMESTAMP`, `GTID` lines, eaten commas) and drops the empty `_metadata` MySQL leaves once
+  its gtid is filtered. macOS: 99 passed, 0 failed, 14 skipped, 8 xfailed, 1 xpassed.
