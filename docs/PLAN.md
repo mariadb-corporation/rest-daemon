@@ -25,10 +25,7 @@ with an optional name prefix/postfix; tables renamed, e.g. `db_object` →
 lands on the main branches of the MariaDB shell and plugins. Milestone 2 stays
 on the schema of their main branches today (4.1.6).
 
-**Milestone 4:** MariaDB, second stage: GTID-based read-your-writes ("asof"),
-disabled on MariaDB in Milestone 2.
-
-**Milestone 5 (final):** packaging and CI (the former Phase 4, see below). The
+**Milestone 4 (final):** packaging and CI (the former Phase 4, see below). The
 packaging done so far (tar.gz, deb, rpm, Windows ZIP) stays in the tree; the
 remaining items (real deb/rpm installs, MSI, GitHub Actions) are finished last.
 
@@ -160,7 +157,7 @@ See [phase0-inventory.md](phase0-inventory.md). **Verdict: GO.** The kept code u
   (destination_status, metadata_cache/bootstrap paths, DynamicState, config exposure).
 - **Exit criteria:** a fresh install works via `mrsd --setup` alone on each OS.
 
-### Phase 4: packaging and CI (moved to Milestone 5)
+### Phase 4: packaging and CI (moved to Milestone 4)
 Decided 2026-10-05: CPack for all formats (not upstream's deb-in/rpm/WiX trees);
 formats deb + rpm, Linux tar.gz, Windows MSI + ZIP, macOS tar.gz; libmysqlclient and
 libjitexecutor always bundled, OpenSSL/ICU from the OS in deb/rpm and bundled in the
@@ -193,7 +190,7 @@ Scope decisions (2026-10-08, see the decision log):
 | Client library | **MariaDB Connector/C package** (release build with OpenSSL), found through `-DMARIADB_CONNECTOR_DIR` / `mariadb_config`; public API only, as in Milestone 1 |
 | Minimum MariaDB server | **10.11 (oldest supported LTS)**; develop and test on `main` (13.2). Caveat: the MRS metadata schema 4.1.6 uses `JSON_SCHEMA_VALID` (11.1+) and `JSON_OVERLAPS` (10.9+); deploying on 10.11 needs a schema change on the plugin side. Features needing newer servers degrade: `MAX_EXECUTION_TIME` hint → `SET STATEMENT max_statement_time`, `VECTOR` only where the server has it (11.7+) |
 | REST async tasks (`mysql_tasks`) | **Removed** (2026-10-12, a product decision: MariaDB REST routines are always called directly, as in the MariaDB shell plugins); disabled on MariaDB, the code goes in M2.4 |
-| GTID / "asof" | **Out of Milestone 2**, disabled on MariaDB (the RW pool `session_track_gtids` SET is removed); Milestone 4 |
+| GTID / "asof" | **Out of Milestone 2**, disabled on MariaDB (the RW pool `session_track_gtids` SET is removed); an **open point**, see below |
 | `--setup` accounts | MariaDB's **default auth plugin** (`CREATE USER ... IDENTIFIED BY`) |
 | MRS scripts (JIT) | **In scope**: the smoke test's script step (example scripts deployed with `LOAD SCRIPTS` through the MariaDB Shell plugins) must pass on MariaDB; plugin-side problems go to the plugin team |
 
@@ -219,7 +216,7 @@ document generation, GTID tracking, `mysql_tasks`, account setup, tests.
 - JSON document generation (`JSON_OBJECT`/`JSON_ARRAYAGG` nesting, `CAST AS JSON`,
   `ST_AsGeoJSON`) measured against MariaDB and fixed; JSON/VECTOR column detection through
   Connector/C extended metadata; `VEC_FromText`/`VEC_ToText`; GIS SRID handling.
-- GTID / "asof": disabled on MariaDB with a clear error (Milestone 4). REST async tasks: removed.
+- GTID / "asof": disabled on MariaDB with a clear error (open point, see below). REST async tasks: removed.
 - Smoke test variant for MariaDB (`mariadbd`, `mariadb-shell` + plugins, schema 4.1.6).
 - Behaviour differences for users: [mariadb-differences.md](mariadb-differences.md).
 - Exit: smoke test (REST view GET, and MRS scripts if in scope) passes on MariaDB on all
@@ -240,13 +237,14 @@ document generation, GTID tracking, `mysql_tasks`, account setup, tests.
 - Remove MySQL-only code paths that are no longer reachable (or keep the dual build, per
   decision), README/docs for MariaDB, `restd:` markers.
 
-## Milestone 4: MariaDB, second stage
+## Open point: GTID read-your-writes on MariaDB
 
-- REST async tasks: `mysql_tasks` on MariaDB (plugin-side schema plus the daemon's
-  `query_rest_task*`, `mysql_task_monitor` on the Connector/C nonblocking API).
-- GTID / "asof": `last_gtid` session tracking, `MASTER_GTID_WAIT`, MariaDB GTID format
-  (`domain-server-seq`) in `database/helper/gtid.h` and the `asof` filter.
-Phases to be defined when Milestone 2 is done.
+`readOwnWrites`, `_metadata.gtid` and the `$asof` filter are built on MySQL's GTIDs
+(`session_track_gtids`, `gtid_executed`, `WAIT_FOR_EXECUTED_GTID_SET`); MariaDB's differ
+(`domain-server-sequence`, `last_gtid`, `MASTER_GTID_WAIT`). On MariaDB the daemon refuses
+`asof` with a clear error. The MariaDB shell and plugins carry the same open point
+("unverified on MariaDB"); it is solved, if needed, in the three repositories together.
+It only matters for deployments with read-only replicas.
 
 ## Target repository layout
 
@@ -364,3 +362,6 @@ mrsd/
 - 2026-10-12: REST async tasks (`mysql_tasks`) are removed from the product, matching the
   MariaDB shell plugins (routines are always called directly); the code goes in Phase M2.4.
   Milestone 4 keeps GTID/"asof" only.
+- 2026-10-12: GTID/"asof" on MariaDB is an open point, not a milestone, like in the
+  MariaDB shell and plugins; solved in the three repositories together if needed.
+  Packaging and CI are Milestone 4 again.

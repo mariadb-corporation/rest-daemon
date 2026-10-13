@@ -7,7 +7,7 @@ with MySQL. Found while porting the MRS functional suite (Milestone 2, see
 
 ## Not available
 
-- **GTID based `asof` requests** (read-your-writes, planned for Milestone 4): MariaDB has no
+- **GTID based `asof` requests** (read-your-writes; an open point): MariaDB has no
   `session_track_gtids`, `gtid_executed` or `WAIT_FOR_EXECUTED_GTID_SET`. Such
   requests fail with a clear error; responses carry no `_metadata.gtid`.
 - **REST async tasks** (`mysql_tasks`) are not part of the MariaDB REST Service;
