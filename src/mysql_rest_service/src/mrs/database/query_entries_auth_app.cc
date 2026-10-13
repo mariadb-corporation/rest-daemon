@@ -69,7 +69,7 @@ void QueryEntriesAuthAppImpl::on_row(const ResultRow &row) {
     }
   };
 
-  mysql_row.unserialize_with_converter(&entry.id, entry::UniversalId::from_raw);
+  mysql_row.unserialize(&entry.id);
   mysql_row.unserialize_with_converter(&entry.service_ids, set_from_string);
   mysql_row.unserialize(&entry.vendor_name);
   mysql_row.unserialize(&entry.app_name);
@@ -80,12 +80,10 @@ void QueryEntriesAuthAppImpl::on_row(const ResultRow &row) {
   mysql_row.unserialize(&entry.app_id);
   mysql_row.unserialize(&entry.url_access_token);
   mysql_row.unserialize(&entry.limit_to_registered_users);
-  mysql_row.unserialize_with_converter(&entry.default_role_id,
-                                       entry::UniversalId::from_raw);
+  mysql_row.unserialize(&entry.default_role_id);
   // Field used for audit_log matching
   mysql_row.skip(/*a.id as auth_app_id*/);
-  mysql_row.unserialize_with_converter(&entry.vendor_id,
-                                       entry::UniversalId::from_raw);
+  mysql_row.unserialize(&entry.vendor_id);
 
   entry.deleted = false;
 }

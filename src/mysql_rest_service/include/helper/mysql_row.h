@@ -29,6 +29,7 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <cstring>
 #include <map>
 #include <optional>
 #include <set>
@@ -36,6 +37,7 @@
 #include <type_traits>
 
 #include "mysql/harness/string_utils.h"
+#include "mrs/database/entry/universal_id.h"
 #include "mysqlrouter/mysql_session.h"
 
 #include "helper/mysql_time.h"
@@ -215,6 +217,28 @@ class MySQLRow {
     }
 
     *out_value = atoi(in_value);
+  }
+
+  // restd: metadata ids are `BINARY(16)` in schema 4 and `UUID` in schema 5;
+  // MariaDB reports a `UUID` column as a 36-character string with a text
+  // charset (`BINARY_FLAG` is set, `charsetnr` is not binary), a `BINARY(16)`
+  // with the binary charset. Without field metadata (mocks) the value is raw.
+  void convert(unsigned field_index, mrs::database::entry::UniversalId *out_value,
+               const char *in_value) {
+    using mrs::database::entry::UniversalId;
+    if (!in_value) {
+      *out_value = {};
+      return;
+    }
+
+    constexpr unsigned kBinaryCharsetNr = 63;
+    if (fields_ && field_index < no_of_fields_ &&
+        fields_[field_index].charsetnr != kBinaryCharsetNr) {
+      *out_value = UniversalId::from_cstr(in_value, strlen(in_value));
+      return;
+    }
+
+    UniversalId::from_raw(out_value, in_value);
   }
 
   void convert([[maybe_unused]] unsigned field_index, std::string *out_value,

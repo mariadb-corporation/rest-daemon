@@ -59,8 +59,7 @@ void QueryEntryGroupRowSecurity::on_row(const ResultRow &row) {
 
   auto &entry = row_group_security_.emplace_back();
 
-  mysql_row.unserialize_with_converter(&entry.hierarhy_id,
-                                       entry::UniversalId::from_raw);
+  mysql_row.unserialize(&entry.hierarhy_id);
   mysql_row.unserialize(&entry.row_group_ownership_column);
   mysql_row.unserialize(&entry.level);
   mysql_row.unserialize_with_converter(&entry.match, converter);

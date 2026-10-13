@@ -288,12 +288,26 @@ Decisions (2026-10-13, see the decision log):
 - The options, the validation, one accessor used by every statement; default still the
   old name.
 
-### Phase M3.3: UUID spike, then type-driven id reading (still on 4.1.6)
-- Spike on a live server: `BINARY(16)` owner columns vs `UUID` user ids (byte order of a
-  16-byte literal), `HEX()`/`GROUP_CONCAT` on `UUID`, `get_sequence_id()`, binding as text.
-- `UniversalId` read from 16 bytes or 36-character text by field type (`UUID` columns
-  carry a type name in the extended metadata); metadata binding split from owner
-  rendering.
+### Phase M3.3: UUID spike, then type-driven id reading (still on 4.1.6) ✅ done (2026-10-13)
+- Spike on MariaDB 11.8.9 (Ubuntu and macOS packages) and 13.2 (macOS build):
+  - A `UUID` column arrives as 36-character text (`MYSQL_TYPE_STRING`, length 144, the
+    connection charset, `BINARY_FLAG` set); `BINARY(16)` is `MYSQL_TYPE_STRING`, length
+    16, charset 63. **The charset number tells them apart, not the flag.**
+  - `HEX(id)` and `CAST(id AS BINARY(16))` give the canonical byte order; a 16-byte
+    literal `X'…'` in canonical order matches a `UUID` column (the swapped order does
+    not), as do the dashed text, the undashed hex text and `UNHEX()`.
+  - `BINARY(16)` owner columns compare, join and `IN` against `UUID` ids in both
+    directions without a cast; `GROUP_CONCAT(HEX(id))` is unchanged; `UUID_v7()` works;
+    a `?` bound as text matches a `UUID` column.
+  - `LAST_INSERT_ID()` is 0 for a `UUID DEFAULT UUID_v7()` key (not relied on).
+- Decision: **binding stays `X'…'` everywhere** (metadata ids and owner columns alike), so
+  the planned split between metadata binding and owner rendering is not needed.
+- Reading: `UniversalId::from_cstr()` accepts 16 raw bytes, 36-character dashed text or
+  32 hex digits; `helper::MySQLRow` converts a `UniversalId` by the field's charset
+  (text charset → parsed text, charset 63 or no field metadata → raw bytes), so the 32
+  `unserialize_with_converter(…, from_raw)` sites became `unserialize(&id)`. The readers
+  without field metadata (`query_one` in the object loader, the user-group set, the
+  sequence id) go by the data size. Unit tests for both paths.
 
 ### Phase M3.4: switch to 5.0.0 (atomic)
 - Renames, audit dispatch, default name, gate, `rest_daemon_id`, status columns; the

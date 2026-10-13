@@ -49,12 +49,10 @@ void QueryEntriesAuthRole::on_row(const ResultRow &r) {
   auto &role = result.emplace_back();
   helper::MySQLRow mysql_row(r, metadata_, num_of_metadata_);
 
-  mysql_row.unserialize_with_converter(&role.id, entry::UniversalId::from_raw);
+  mysql_row.unserialize(&role.id);
   mysql_row.unserialize(&role.caption);
-  mysql_row.unserialize_with_converter(&role.derived_from_role_id,
-                                       entry::UniversalId::from_raw);
-  mysql_row.unserialize_with_converter(&role.specific_to_service_id,
-                                       entry::UniversalId::from_raw);
+  mysql_row.unserialize(&role.derived_from_role_id);
+  mysql_row.unserialize(&role.specific_to_service_id);
 }
 
 }  // namespace database

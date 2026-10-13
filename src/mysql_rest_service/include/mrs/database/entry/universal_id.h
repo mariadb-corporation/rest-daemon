@@ -84,11 +84,46 @@ struct UniversalId {
 
   bool operator==(const UniversalId &rhs) const = default;
 
+  // restd: an id is read from 16 raw bytes (`BINARY(16)`), from the 36-character
+  // text of a MariaDB `UUID` column or from 32 hex digits (`HEX()`); anything
+  // else is the zero id.
   static UniversalId from_cstr(const char *p, uint32_t length) {
-    if (length != k_size) return {};
     UniversalId result;
-    from_raw(&result, p);
-    return result;
+    if (length == k_size) {
+      from_raw(&result, p);
+      return result;
+    }
+    if (from_text(&result, p, length)) return result;
+    return {};
+  }
+
+  static bool from_text(UniversalId *uid, const char *p, size_t length) {
+    if (length != 32 && length != 36) return false;
+    size_t n = 0;
+    for (size_t i = 0; i < length; ++i) {
+      const char c = p[i];
+      if (c == '-') {
+        if (length != 36 || (i != 8 && i != 13 && i != 18 && i != 23))
+          return false;
+        continue;
+      }
+      int v;
+      if (c >= '0' && c <= '9')
+        v = c - '0';
+      else if (c >= 'a' && c <= 'f')
+        v = c - 'a' + 10;
+      else if (c >= 'A' && c <= 'F')
+        v = c - 'A' + 10;
+      else
+        return false;
+      if (n >= 2 * k_size) return false;
+      if (n % 2 == 0)
+        uid->raw[n / 2] = static_cast<uint8_t>(v << 4);
+      else
+        uid->raw[n / 2] |= static_cast<uint8_t>(v);
+      ++n;
+    }
+    return n == 2 * k_size;
   }
 
   const char *to_raw() const {

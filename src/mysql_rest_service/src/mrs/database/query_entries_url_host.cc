@@ -67,7 +67,7 @@ void QueryEntriesUrlHost::on_row(const ResultRow &row) {
   MySQLRow mysql_row(row, metadata_, num_of_metadata_);
   UrlHost &entry = entries.back();
 
-  mysql_row.unserialize_with_converter(&entry.id, entry::UniversalId::from_raw);
+  mysql_row.unserialize(&entry.id);
   mysql_row.unserialize(&entry.name);
   mysql_row.unserialize_with_converter(&entry.aliases,
                                        MySQLRow::set_from_string);

@@ -63,9 +63,8 @@ void QueryEntriesContentSet::on_row(const ResultRow &row) {
   helper::MySQLRow mysql_row(row, metadata_, num_of_metadata_);
   auto &entry = entries.back();
 
-  mysql_row.unserialize_with_converter(&entry.id, entry::UniversalId::from_raw);
-  mysql_row.unserialize_with_converter(&entry.service_id,
-                                       entry::UniversalId::from_raw);
+  mysql_row.unserialize(&entry.id);
+  mysql_row.unserialize(&entry.service_id);
   mysql_row.unserialize(&entry.request_path);
   mysql_row.unserialize(&entry.requires_authentication);
   mysql_row.unserialize(&entry.enabled);

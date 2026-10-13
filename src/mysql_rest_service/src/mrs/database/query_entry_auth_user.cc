@@ -178,10 +178,8 @@ void QueryEntryAuthUser::on_row(const ResultRow &row) {
   helper::MySQLRow mysql_row(row, metadata_, num_of_metadata_);
 
   user_data_.has_user_id = true;
-  mysql_row.unserialize_with_converter(&user_data_.user_id,
-                                       entry::UniversalId::from_raw);
-  mysql_row.unserialize_with_converter(&user_data_.app_id,
-                                       entry::UniversalId::from_raw);
+  mysql_row.unserialize(&user_data_.user_id);
+  mysql_row.unserialize(&user_data_.app_id);
   mysql_row.unserialize(&user_data_.name);
   mysql_row.unserialize(&user_data_.email);
   mysql_row.unserialize(&user_data_.vendor_user_id);

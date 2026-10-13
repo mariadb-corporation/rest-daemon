@@ -94,9 +94,8 @@ void QueryEntriesDbService::on_row(const ResultRow &row) {
   helper::MySQLRow mysql_row(row, metadata_, num_of_metadata_);
   DbService &entry = entries.back();
 
-  mysql_row.unserialize_with_converter(&entry.id, entry::UniversalId::from_raw);
-  mysql_row.unserialize_with_converter(&entry.url_host_id,
-                                       entry::UniversalId::from_raw);
+  mysql_row.unserialize(&entry.id);
+  mysql_row.unserialize(&entry.url_host_id);
   mysql_row.unserialize(&entry.url_context_root);
   mysql_row.unserialize_with_converter(&entry.url_protocols,
                                        MySQLRow::set_from_string);

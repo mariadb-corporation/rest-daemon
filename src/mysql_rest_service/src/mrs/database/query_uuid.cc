@@ -47,7 +47,7 @@ UserId QueryUuid::get_result() {
   return result;
 }
 
-void QueryUuid::on_metadata(unsigned number, MYSQL_FIELD *fields) {
+void QueryUuid::on_metadata(unsigned number, MYSQL_FIELD *) {
   if (1 != number)
     throw std::runtime_error(
         metadata_sql("Function `mysql_rest_service_metadata`.`get_sequence_id`, returned "
@@ -55,7 +55,10 @@ void QueryUuid::on_metadata(unsigned number, MYSQL_FIELD *fields) {
 }
 
 void QueryUuid::on_row(const ResultRow &r) {
-  memcpy(uuid_.data(), r[0], uuid_.size());
+  // restd: 16 raw bytes (schema 4) or the text of a `UUID` (schema 5)
+  const auto id = r[0] ? UserId::from_cstr(r[0], r.get_data_size(0)) : UserId{};
+  if (id.empty()) throw std::runtime_error("Generated UUID has invalid size.");
+  uuid_ = id.raw;
 }
 
 }  // namespace database

@@ -144,7 +144,7 @@ void QueryEntryFields::on_row_input_name(const ResultRow &row) {
   helper::MySQLRow mysql_row(row, metadata_, num_of_metadata_);
   ResultObject item;
 
-  mysql_row.unserialize_with_converter(&item.id, entry::UniversalId::from_raw);
+  mysql_row.unserialize(&item.id);
   mysql_row.unserialize(&item.name);
 
   result_.parameters = item;
@@ -154,7 +154,7 @@ void QueryEntryFields::on_row_output_name(const ResultRow &row) {
   helper::MySQLRow mysql_row(row, metadata_, num_of_metadata_);
   ResultObject item;
 
-  mysql_row.unserialize_with_converter(&item.id, entry::UniversalId::from_raw);
+  mysql_row.unserialize(&item.id);
   mysql_row.unserialize(&item.name);
   result_.results.push_back(item);
 }
@@ -176,9 +176,8 @@ void QueryEntryFields::on_row_params(const ResultRow &row) {
   // We fetch it to check if data_ttype value should be configured or not.
   std::optional<entry::UniversalId> represents_reference_id;
 
-  mysql_row.unserialize_with_converter(&entry.id, entry::UniversalId::from_raw);
-  mysql_row.unserialize_with_converter(&represents_reference_id,
-                                       entry::UniversalId::from_raw);
+  mysql_row.unserialize(&entry.id);
+  mysql_row.unserialize(&represents_reference_id);
   mysql_row.unserialize(&entry.name);
   mysql_row.unserialize(&param_in);
   mysql_row.unserialize(&param_out);

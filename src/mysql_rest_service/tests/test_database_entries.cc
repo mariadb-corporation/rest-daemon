@@ -28,6 +28,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 
+#include "helper/mysql_row.h"
 #include "helper/string/hex.h"
 #include "mrs/authentication/helper/universal_id_container.h"
 #include "mrs/database/entry/entry.h"
@@ -120,6 +121,54 @@ TEST(UniversalID, equal_to_string) {
       reinterpret_cast<const char *>(data.data()), data.size());
 
   ASSERT_EQ(k_id3, from_txt_id);
+}
+
+// restd: ids come as 16 raw bytes (schema 4) or as text (schema 5 `UUID`)
+TEST(UniversalID, from_text) {
+  const UniversalId expected{0x01, 0x99, 0xa1, 0xb2, 0x6c, 0x3e, 0x7d, 0x41,
+                             0x9a, 0x0f, 0x2b, 0x8c, 0x4d, 0x5e, 0x6f, 0x70};
+  const std::string dashed = "0199a1b2-6c3e-7d41-9a0f-2b8c4d5e6f70";
+  const std::string hex = "0199A1B26C3E7D419A0F2B8C4D5E6F70";
+
+  EXPECT_EQ(expected, UniversalId::from_cstr(dashed.c_str(), dashed.size()));
+  EXPECT_EQ(expected, UniversalId::from_cstr(hex.c_str(), hex.size()));
+  EXPECT_EQ(expected,
+            UniversalId::from_cstr(expected.to_raw(), UniversalId::k_size));
+  EXPECT_EQ("0199a1b26c3e7d419a0f2b8c4d5e6f70", expected.to_string());
+
+  // malformed text gives the zero id
+  EXPECT_TRUE(UniversalId::from_cstr("0199a1b2-6c3e-7d41-9a0f-2b8c4d5e6f7Z", 36)
+                  .empty());
+  EXPECT_TRUE(UniversalId::from_cstr("0199a1b26c3e-7d41-9a0f-2b8c4d5e6f70", 36)
+                  .empty());
+  EXPECT_TRUE(UniversalId::from_cstr("0199a1b2", 8).empty());
+}
+
+TEST(UniversalID, mysql_row_by_field_charset) {
+  const UniversalId expected{0x01, 0x99, 0xa1, 0xb2, 0x6c, 0x3e, 0x7d, 0x41,
+                             0x9a, 0x0f, 0x2b, 0x8c, 0x4d, 0x5e, 0x6f, 0x70};
+  const char *text = "0199a1b2-6c3e-7d41-9a0f-2b8c4d5e6f70";
+  MYSQL_FIELD fields[2]{};
+  fields[0].charsetnr = 224;  // a `UUID` column, utf8mb4
+  fields[1].charsetnr = 63;   // a `BINARY(16)` column
+  mysqlrouter::MySQLSession::ResultRow row{{text, expected.to_raw()}};
+
+  UniversalId from_uuid, from_binary;
+  helper::MySQLRow mysql_row(row, fields, 2);
+  mysql_row.unserialize(&from_uuid);
+  mysql_row.unserialize(&from_binary);
+  EXPECT_EQ(expected, from_uuid);
+  EXPECT_EQ(expected, from_binary);
+
+  // without field metadata the value is raw
+  mysqlrouter::MySQLSession::ResultRow raw_row{{expected.to_raw(), nullptr}};
+  UniversalId from_raw;
+  std::optional<UniversalId> from_null;
+  helper::MySQLRow raw_mysql_row(raw_row, nullptr, 2);
+  raw_mysql_row.unserialize(&from_raw);
+  raw_mysql_row.unserialize(&from_null);
+  EXPECT_EQ(expected, from_raw);
+  EXPECT_FALSE(from_null.has_value());
 }
 
 TEST(UniversalID, equal_uuid_converter) {

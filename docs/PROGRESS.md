@@ -727,3 +727,15 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   `metadata_role()`, `metadata_sql()`/`metadata_query()`); the 54 statement literals go
   through `metadata_sql()`. Default unchanged (4.1.6). End-to-end with a prefixed name
   comes with the 5.0.0 script (M3.4), which supports it.
+- M3.3: UUID spike on 11.8.9 (Ubuntu, macOS package) and 13.2 (findings in PLAN.md,
+  phase M3.3; `X'…'` literals keep working against `UUID` columns, so binding is
+  unchanged). Ids are now read by type: `UniversalId::from_cstr()` takes 16 raw bytes,
+  dashed text or 32 hex digits, `helper::MySQLRow::convert(UniversalId*)` picks by the
+  field's charset (63 = raw; no metadata = raw, which keeps the mocks), the 32 converter
+  sites are plain `unserialize(&id)`; `QueryUuid`, `QueryUserGroups` and the object
+  loader's `query_one` row go by the data size. 2 unit tests (`UniversalID.from_text`,
+  `UniversalID.mysql_row_by_field_charset`). Still on 4.1.6, so the suite exercises the
+  raw path only; the text path is covered by the unit tests until M3.4.
+- Verification after M3.3: macOS (13.2) unit 395/395, ctest 113/113, live 102/104, suite
+  108 passed / 0 failed / 4 skipped / 5 xfailed / 1 xpassed; Ubuntu (11.8.9) ctest
+  113/113, live 102/104, suite 109 / 0 / 3 / 5 / 1. Windows not run for M3.2/M3.3.

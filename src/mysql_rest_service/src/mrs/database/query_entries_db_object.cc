@@ -136,9 +136,8 @@ void QueryEntriesDbObject::on_row(const ResultRow &row) {
   auto format_type_converter =
       get_map_converter(&format_types, DbObject::formatFeed);
 
-  mysql_row.unserialize_with_converter(&entry.id, entry::UniversalId::from_raw);
-  mysql_row.unserialize_with_converter(&entry.schema_id,
-                                       entry::UniversalId::from_raw);
+  mysql_row.unserialize(&entry.id);
+  mysql_row.unserialize(&entry.schema_id);
   mysql_row.unserialize(&entry.requires_authentication);
   mysql_row.unserialize(&entry.auth_stored_procedure);
   mysql_row.unserialize(&entry.enabled);
@@ -155,8 +154,7 @@ void QueryEntriesDbObject::on_row(const ResultRow &row) {
 
   mysql_row.unserialize(&entry.metadata);
   helper::Optional<entry::UniversalId> cset_id;
-  mysql_row.unserialize_with_converter(&cset_id,
-                                       entry::UniversalId::from_raw);
+  mysql_row.unserialize(&cset_id);
 
   if (cset_id) {
     entry::ContentSetHasObjectDef cset_def;

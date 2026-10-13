@@ -86,20 +86,6 @@ using Table = entry::Table;
 using KindType = entry::KindType;
 using ModeType = entry::ModeType;
 
-namespace {
-
-void from_user_ownership_field_id(entry::OwnerUserField *out,
-                                  const char *value) {
-  if (!value) {
-    *out = {};
-    return;
-  }
-
-  entry::UniversalId::from_raw(&out->uid, value);
-}
-
-}  // namespace
-
 void QueryEntryObjectImpl::query_entries(MySQLSession *session,
                                      const std::string &schema_name,
                                      const std::string &object_name,
@@ -200,11 +186,9 @@ void QueryEntryObjectImpl::on_field_row(const ResultRow &r) {
   entry::UniversalId parent_reference_id;
   std::optional<entry::UniversalId> represents_reference_id;
 
-  row.unserialize_with_converter(&field_id, entry::UniversalId::from_raw);
-  row.unserialize_with_converter(&parent_reference_id,
-                                 entry::UniversalId::from_raw_zero_on_null);
-  row.unserialize_with_converter(&represents_reference_id,
-                                 entry::UniversalId::from_raw);
+  row.unserialize(&field_id);
+  row.unserialize(&parent_reference_id);
+  row.unserialize(&represents_reference_id);
 
   std::shared_ptr<ForeignKeyReference> parent_ref;
   std::shared_ptr<Table> table;
@@ -338,11 +322,19 @@ QueryEntryObjectImpl::UniversalId QueryEntryObjectImpl::query_object(
 
   if (nullptr == res.get()) return {};
 
+  // restd: `query_one` keeps no field metadata, the ids are read by their size
+  // (16 raw bytes or the text of a `UUID`)
   helper::MySQLRow row(*res, nullptr, res->size());
-  row.unserialize_with_converter(&object_id, entry::UniversalId::from_raw);
+  row.unserialize_with_converter(
+      &object_id, [&res](entry::UniversalId *out, const char *value) {
+        *out = entry::UniversalId::from_cstr(value, res->get_data_size(0));
+      });
   row.unserialize_with_converter(&obj->kind, KindTypeConverter());
-  row.unserialize_with_converter(&obj->user_ownership_field,
-                                 from_user_ownership_field_id);
+  row.unserialize_with_converter(
+      &obj->user_ownership_field,
+      [&res](entry::OwnerUserField *out, const char *value) {
+        out->uid = entry::UniversalId::from_cstr(value, res->get_data_size(2));
+      });
   bool with_insert = false, with_update = false, with_delete = false,
        with_no_check = false;
   row.unserialize(&with_insert);
@@ -396,7 +388,7 @@ void QueryEntryObjectImpl::on_reference_row(const ResultRow &r) {
   entry::UniversalId reference_id;
 
   helper::MySQLRow row(r, metadata_, num_of_metadata_);
-  row.unserialize_with_converter(&reference_id, entry::UniversalId::from_raw);
+  row.unserialize(&reference_id);
   row.unserialize(&reference->ref_table->schema);
   row.unserialize(&reference->ref_table->table);
   row.unserialize(&reference->to_many);
@@ -407,8 +399,7 @@ void QueryEntryObjectImpl::on_reference_row(const ResultRow &r) {
   // This values must be stored in ownership_field in each reference,
   // and used while building the SQL (needs separate fix).
   row.skip(1);
-  // row.unserialize_with_converter(&object->user_ownership_field,
-  //                                from_user_ownership_field_id);
+  // row.unserialize(&object->user_ownership_field);
   bool with_insert = false, with_update = false, with_delete = false,
        with_no_check = false;
   row.unserialize(&with_insert);
