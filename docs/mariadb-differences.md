@@ -48,7 +48,13 @@ entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
   axis order; coordinates are returned as stored (MRS swaps them to
   latitude-longitude for SRID 4326). Equality filters use the column's SRID.
 - **VECTOR** columns have a fixed dimension on MariaDB (`VECTOR(n)`); MySQL's
-  accept up to a maximum.
+  accept up to a maximum. A `VECTOR` value in a *routine's result set* is
+  indistinguishable from binary data to a client (MariaDB sends no type
+  attribute for it, unlike for JSON), so it renders as base64 unless the
+  REST object defines the result's fields with their types; OUT/INOUT
+  `VECTOR` parameters render as arrays.
+- **Malformed base64** for a BINARY field is stored as NULL, as in MRS
+  (MySQL's `FROM_BASE64` yields NULL; the service checks the value itself).
 - **Statement timeouts** (`sqlQuery.timeout`) are applied with
   `SET STATEMENT max_statement_time=... FOR ...` (MRS uses the
   `MAX_EXECUTION_TIME` optimizer hint, which MariaDB only knows from 12.0 and
@@ -58,7 +64,8 @@ entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
 - **Floats** are rendered with the server's precision (`-1000` where MRS
   prints the double `-999.9998779296876`).
 - **Integer display widths** (`int(11)`) appear in MariaDB's metadata; the
-  OpenAPI output strips them.
+  OpenAPI output strips them. Computed integer columns (`SELECT 1`,
+  `MIN(id)`) are typed `INTEGER` in result metadata where MySQL says `BIGINT`.
 - **JSON text** in JSON columns is returned and stored as given (MySQL
   normalizes to `{"a": 1}` with a space and sorts the keys), so document
   lengths differ. The objects the service builds itself (rows, nested
@@ -74,8 +81,10 @@ entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
 
 ## Test-suite only
 
-- The upstream test fixtures declare `VECTOR` columns without a dimension and
-  store vectors of different lengths; the suite maps them to `BLOB` and
-  disables the vector tests.
+- The upstream test fixtures declared `VECTOR` columns and routine parameters
+  without a dimension and stored vectors of different lengths; the suite's
+  copies declare `VECTOR(2)`/`VECTOR(3)` with consistent values (and
+  `set_vector` returns a different 3-element vector instead of appending),
+  with results recorded on MariaDB.
 - `mariadb-install-db` creates anonymous accounts that shadow every `'%'`
   account for local connections; the harness and the smoke test drop them.

@@ -250,8 +250,10 @@ document generation, GTID tracking, `mysql_tasks`, account setup, tests.
   (`passthrough_db_user` passes); `sqlQuery.timeout` through `SET STATEMENT` (`timeout`
   passes; the hint was inert below 12.0); the minimum stays 10.11 for the daemon, with the
   schema's 11.1 and VECTOR's 11.7 stated in the README.
-- Remaining: the `restd:` markers pass; VECTOR coverage in the suite (upstream's fixtures
-  declare `VECTOR` without a dimension, 7 tests disabled).
+- ✅ 2026-10-13: VECTOR coverage: the 7 vector tests ported to fixed dimensions and
+  re-enabled, which found two daemon bugs (INOUT `VECTOR` parameters failed with 1292,
+  OUT ones rendered as base64) and the malformed-base64 500.
+- Remaining: the `restd:` markers pass.
 
 ## Open point: GTID read-your-writes on MariaDB (Milestone 4)
 

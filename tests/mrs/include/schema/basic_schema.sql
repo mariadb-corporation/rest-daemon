@@ -61,14 +61,16 @@ CREATE TABLE IF NOT EXISTS `basic_schema`.`table3` (
   `cblob` BLOB,
   `geo0` GEOMETRY NOT NULL SRID 0,
   `geo4326` GEOMETRY NOT NULL SRID 4326,
-  `vec` VECTOR,
+  `vec` VECTOR(2),
   PRIMARY KEY (`id`));
+# restd: VECTOR(2) with 2-element values (upstream: VECTOR, values of 1 and 2
+# elements); MariaDB's VECTOR has a fixed dimension
 
 INSERT INTO `basic_schema`.`table3` 
   VALUES(1, "first row", "numeric zeros", "2020-12-01 12:01:50", "2020-12-01 12:01:50",
   "2020-12-01", "12:01:50", "2020",
   0, 0, 0, 0, 0, 0, "value1", "", b'0', b'0', b'0000000000',0,0, "", ST_GeomFromText('POINT(0 0)'), ST_GeomFromText('POINT(0 0)', 4326),
-  STRING_TO_VECTOR("[0]")),
+  STRING_TO_VECTOR("[0,0]")),
   (2, "second row", "numeric min", "2020-12-02 12:02:50", "2020-12-02 12:02:50",
   "2020-12-02", "12:02:50", "2021",
     -32768, -9223372036854775808, 0, -999.9999, -999.9999, -999.99, "value1", "value1",

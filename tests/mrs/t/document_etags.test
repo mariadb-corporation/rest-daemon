@@ -93,13 +93,16 @@ update basic_schema.table3 set cdouble = 12.12 where id = 1;
 --let $mrs_client_arg_request_type='PUT'
 --let $mrs_client_arg_display=body
 --let $mrs_client_arg_path='/svc/basic_schema/tab/1'
---let $mrs_client_arg_payload='{ "id": 1, "vec": [1.1, 2.2], "cbin": "AMMM", "cbit": true, "cset": "","geo0": {"type": "Point","coordinates": [1.0,3.0]}, "cbit1": false, "cblob": "", "cdate": "2020-12-01", "cenum": "value1", "ctext": "numeric zeros", "ctime": "12:01:50.000000", "cyear": 2020, "cbit10": "AAA=", "cfloat": 0.0, "cbigint": 0, "cdouble": 12.1, "geo4326": {"type": "Point", "coordinates": [0.0,0.0]}, "cdecimal": 0.0, "ctinyint": 0, "cvarchar": "new_value", "cdatetime": "2020-12-01 12:01:50.000000", "csmallint": 0, "cmediumint": 0, "ctimestamp": "2020-12-01 12:01:50.000000","_metadata": {"etag": "CA79107DEC51CFEC4907CBFBDE947FB6A5A254EA85FBCEB0ECF6F02E69A3D52B"}}'
+# restd: the etags are the ones MariaDB computes for row 1 of table3 (its vec
+# is a 2-element VECTOR(2) here; upstream's etags were MySQL's for the
+# 1-element value); the last one is deliberately wrong by one character
+--let $mrs_client_arg_payload='{ "id": 1, "vec": [1.1, 2.2], "cbin": "AMMM", "cbit": true, "cset": "","geo0": {"type": "Point","coordinates": [1.0,3.0]}, "cbit1": false, "cblob": "", "cdate": "2020-12-01", "cenum": "value1", "ctext": "numeric zeros", "ctime": "12:01:50.000000", "cyear": 2020, "cbit10": "AAA=", "cfloat": 0.0, "cbigint": 0, "cdouble": 12.1, "geo4326": {"type": "Point", "coordinates": [0.0,0.0]}, "cdecimal": 0.0, "ctinyint": 0, "cvarchar": "new_value", "cdatetime": "2020-12-01 12:01:50.000000", "csmallint": 0, "cmediumint": 0, "ctimestamp": "2020-12-01 12:01:50.000000","_metadata": {"etag": "D127D31581DB8E378DD997485990FE3A64059E8BFDB52E7E921997FCBE2FADAA"}}'
 --source ../include/mrs/mrs_client.inc
 
 --echo Try that again, should be rejected as the checksum has changed due to the update in the previous step
 --let $mrs_client_arg_request_type='PUT'
 --let $mrs_client_arg_path='/svc/basic_schema/tab/1'
---let $mrs_client_arg_payload='{ "id": 1, "vec": [2.3, 2.2], "cbin": "AMM", "cbit": false, "cset": "","geo0": {"type": "Point","coordinates": [1.0,3.0]}, "cbit1": false, "cblob": "", "cdate": "2020-12-01", "cenum": "value1", "ctext": "numeric zeros", "ctime": "12:01:50.000000", "cyear": 2020, "cbit10": "AAA=", "cfloat": 0.0, "cbigint": 0, "cdouble": 12.1, "geo4326": {"type": "Point", "coordinates": [0.0,0.0]}, "cdecimal": 0.0, "ctinyint": 0, "cvarchar": "new_value", "cdatetime": "2020-12-01 12:01:50.000000", "csmallint": 0, "cmediumint": 0, "ctimestamp": "2020-12-01 12:01:50.000000","_metadata": {"etag": "CA79107DEC51CFEC4907CBFBDE947FB6A5A254EA85FBCEB0ECF6F02E69A3D52B"}}'
+--let $mrs_client_arg_payload='{ "id": 1, "vec": [2.3, 2.2], "cbin": "AMM", "cbit": false, "cset": "","geo0": {"type": "Point","coordinates": [1.0,3.0]}, "cbit1": false, "cblob": "", "cdate": "2020-12-01", "cenum": "value1", "ctext": "numeric zeros", "ctime": "12:01:50.000000", "cyear": 2020, "cbit10": "AAA=", "cfloat": 0.0, "cbigint": 0, "cdouble": 12.1, "geo4326": {"type": "Point", "coordinates": [0.0,0.0]}, "cdecimal": 0.0, "ctinyint": 0, "cvarchar": "new_value", "cdatetime": "2020-12-01 12:01:50.000000", "csmallint": 0, "cmediumint": 0, "ctimestamp": "2020-12-01 12:01:50.000000","_metadata": {"etag": "D127D31581DB8E378DD997485990FE3A64059E8BFDB52E7E921997FCBE2FADAA"}}'
 --let $mrs_client_arg_expected_status=412
 --source ../include/mrs/mrs_client.inc
 
@@ -122,7 +125,7 @@ update basic_schema.table3 set cdouble = 12.12 where id = 1;
 --let $mrs_client_replace_regexp=/(.*)"gtid": ".*"/\1"gtid": "GTID"/
 --let $mrs_client_arg_request_type='POST'
 --let $mrs_client_arg_path='/svc/basic_schema/tab/'
---let $mrs_client_arg_payload='{ "vec": [2.3, 2.2], "cbin": "NEW", "cbit": false, "cset": "","geo0": {"type": "Point","coordinates": [1.0,3.0]}, "cbit1": false, "cblob": "", "cdate": "2020-12-01", "cenum": "value1", "ctext": "numeric zeros", "ctime": "12:01:50.000000", "cyear": 2020, "cbit10": "AAA=", "cfloat": 0.0, "cbigint": 0, "cdouble": 12.1, "geo4326": {"type": "Point", "coordinates": [0.0,0.0]}, "cdecimal": 0.0, "ctinyint": 0, "cvarchar": "new_value", "cdatetime": "2020-12-01 12:01:50.000000", "csmallint": 0, "cmediumint": 0, "ctimestamp": "2020-12-01 12:01:50.000000", "_metadata": {"etag": "CA79107DEC51CFEC4907CBFBDE947FB6A5A254EA85FBCEB0ECF6F02E69A3D52A"}}'
+--let $mrs_client_arg_payload='{ "vec": [2.3, 2.2], "cbin": "NEW", "cbit": false, "cset": "","geo0": {"type": "Point","coordinates": [1.0,3.0]}, "cbit1": false, "cblob": "", "cdate": "2020-12-01", "cenum": "value1", "ctext": "numeric zeros", "ctime": "12:01:50.000000", "cyear": 2020, "cbit10": "AAA=", "cfloat": 0.0, "cbigint": 0, "cdouble": 12.1, "geo4326": {"type": "Point", "coordinates": [0.0,0.0]}, "cdecimal": 0.0, "ctinyint": 0, "cvarchar": "new_value", "cdatetime": "2020-12-01 12:01:50.000000", "csmallint": 0, "cmediumint": 0, "ctimestamp": "2020-12-01 12:01:50.000000", "_metadata": {"etag": "D127D31581DB8E378DD997485990FE3A64059E8BFDB52E7E921997FCBE2FADAB"}}'
 --let $mrs_client_arg_expected_status=Ok
 --let $mrs_client_arg_display=body
 --source ../include/mrs/mrs_client.inc
@@ -134,7 +137,7 @@ update basic_schema.table3 set cdouble = 12.12 where id = 1;
 --let $mrs_client_replace_regexp=/(.*)"gtid": ".*"/\1"gtid": "GTID"/
 --let $mrs_client_arg_request_type='PUT'
 --let $mrs_client_arg_path='/svc/basic_schema/tab/7'
---let $mrs_client_arg_payload='{ "id": 7, "vec": [2.3, 2.2], "cbin": "AMM", "cbit": false, "cset": "","geo0": {"type": "Point","coordinates": [1.0,3.0]}, "cbit1": false, "cblob": "", "cdate": "2020-12-01", "cenum": "value1", "ctext": "numeric zeros", "ctime": "12:01:50.000000", "cyear": 2020, "cbit10": "AAA=", "cfloat": 0.0, "cbigint": 0, "cdouble": 12.1, "geo4326": {"type": "Point", "coordinates": [0.0,0.0]}, "cdecimal": 0.0, "ctinyint": 0, "cvarchar": "new_value", "cdatetime": "2020-12-01 12:01:50.000000", "csmallint": 0, "cmediumint": 0, "ctimestamp": "2020-12-01 12:01:50.000000", "_metadata": {"etag": "CA79107DEC51CFEC4907CBFBDE947FB6A5A254EA85FBCEB0ECF6F02E69A3D52B"}}'
+--let $mrs_client_arg_payload='{ "id": 7, "vec": [2.3, 2.2], "cbin": "AMM", "cbit": false, "cset": "","geo0": {"type": "Point","coordinates": [1.0,3.0]}, "cbit1": false, "cblob": "", "cdate": "2020-12-01", "cenum": "value1", "ctext": "numeric zeros", "ctime": "12:01:50.000000", "cyear": 2020, "cbit10": "AAA=", "cfloat": 0.0, "cbigint": 0, "cdouble": 12.1, "geo4326": {"type": "Point", "coordinates": [0.0,0.0]}, "cdecimal": 0.0, "ctinyint": 0, "cvarchar": "new_value", "cdatetime": "2020-12-01 12:01:50.000000", "csmallint": 0, "cmediumint": 0, "ctimestamp": "2020-12-01 12:01:50.000000", "_metadata": {"etag": "D127D31581DB8E378DD997485990FE3A64059E8BFDB52E7E921997FCBE2FADAA"}}'
 --let $mrs_client_arg_expected_status=Ok
 --let $mrs_client_arg_display=body
 --source ../include/mrs/mrs_client.inc

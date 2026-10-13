@@ -5,12 +5,14 @@ RESET BINARY LOGS AND GTIDS;
 --let $extra_mrs_router_id=1
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 
+# restd: VECTOR(2) and 2-element values (upstream: VECTOR, values of 1 and 2
+# elements); MariaDB's VECTOR has a fixed dimension
 CREATE TABLE test.vec(
   id INTEGER AUTO_INCREMENT PRIMARY KEY,
-  v VECTOR);
+  v VECTOR(2));
 
 INSERT INTO test.vec(v)
-   VALUES(STRING_TO_VECTOR('[0]')),
+   VALUES(STRING_TO_VECTOR('[0,0]')),
          (STRING_TO_VECTOR('[1,2]')),
          (STRING_TO_VECTOR('[0,2]')),
          (NULL);
@@ -79,7 +81,7 @@ INSERT INTO test.vec(v)
 --echo
 --echo #
 --echo # I.4
---let $mrs_client_arg_path='/svc/test/vec/?q={"v":[0]}'
+--let $mrs_client_arg_path='/svc/test/vec/?q={"v":[0,0]}'
 --source ../include/mrs/mrs_client.inc
 
 --let $mrs_client_arg_path='/svc/test/vec/?q={"v":[0,3]}'

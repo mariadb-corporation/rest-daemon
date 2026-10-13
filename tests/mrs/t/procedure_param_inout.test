@@ -430,7 +430,7 @@ exec $MRS_CLIENT_ARGS
 --echo
 --echo #
 --echo # II.16
---let $mrs_client_arg_path='/svc/proc/set_vector?result=[10,20]'
+--let $mrs_client_arg_path='/svc/proc/set_vector?result=[10,20,30]'
 --source ../include/mrs/mrs_client.inc
 
 
@@ -576,7 +576,7 @@ exec $MRS_CLIENT_ARGS
 --echo #
 --echo # III.16
 --let $mrs_client_arg_path='/svc/proc/set_vector'
---let $mrs_client_arg_payload='{"result":[10,20]}'
+--let $mrs_client_arg_payload='{"result":[10,20,30]}'
 --let $mrs_client_arg_request_type='PUT'
 --source ../include/mrs/mrs_client.inc
 

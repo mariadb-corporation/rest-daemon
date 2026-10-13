@@ -174,7 +174,9 @@ BEGIN
   SET result = a+1;
 END;$$
 
-CREATE PROCEDURE `proc_schema`.`move_vector` (a VECTOR, OUT result VECTOR)
+# restd: VECTOR(3), the tests pass 3-element vectors (upstream: VECTOR);
+# MariaDB's VECTOR has a fixed dimension
+CREATE PROCEDURE `proc_schema`.`move_vector` (a VECTOR(3), OUT result VECTOR(3))
 BEGIN
   SET result = a;
 END;$$
@@ -199,7 +201,7 @@ BEGIN
   SET result = a;
 END;$$
 
-CREATE PROCEDURE `proc_schema`.`resultset_vector` (a VECTOR)
+CREATE PROCEDURE `proc_schema`.`resultset_vector` (a VECTOR(3))
 BEGIN
   SELECT a;
 END;$$
@@ -289,9 +291,12 @@ BEGIN
   SET result = result+1;
 END;$$
 
-CREATE PROCEDURE `proc_schema`.`set_vector` (INOUT result VECTOR)
+# restd: upstream appended [1,2,3] to the input (the dimension changed, which
+# a fixed VECTOR(3) can't); the output is a different 3-element vector, NULL
+# stays NULL
+CREATE PROCEDURE `proc_schema`.`set_vector` (INOUT result VECTOR(3))
 BEGIN
-  SET result = STRING_TO_VECTOR(REPLACE(JSON_MERGE(CAST(CONVERT(VECTOR_TO_STRING(result) using utf8) as JSON) , "[1,2,3]")," ",""));
+  SET result = IF(result IS NULL, NULL, STRING_TO_VECTOR("[1,2,3]"));
 END;$$
 
 
