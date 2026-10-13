@@ -112,7 +112,9 @@ void SlowQueryMonitor::execute(const std::function<void()> &fn,
   } catch (const mysqlrouter::MySQLSession::Error &e) {
     auto killed = state->killed;
     on_query_end(state);
-    if (e.code() == 2013 && killed)
+    // restd: a session the monitor killed reports CR_SERVER_LOST (2013) or,
+    // over TLS on some versions (MariaDB 11.8), CR_SSL_CONNECTION_ERROR (2026)
+    if ((e.code() == 2013 || e.code() == 2026) && killed)
       throw http::Error(HttpStatusCode::GatewayTimeout,
                         "Database request timed out");
     else
