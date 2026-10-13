@@ -26,6 +26,9 @@
 
 #include "mrs/database/helper/query.h"
 
+#include <cstdlib>
+#include <string>
+
 #include "mysql/harness/logging/logging.h"
 
 IMPORT_LOG_FUNCTIONS()
@@ -47,6 +50,40 @@ void QueryLog::prepare_and_execute(MySQLSession *session, const std::string &q,
   QueryRaw::prepare_and_execute(session, q, pt, on_resultset_end);
 }
 
+namespace {
+// MariaDB's "max_recursive_iterations exceeded, the result may be incomplete"
+// (ER_QUERY_RESULT_INCOMPLETE)
+constexpr unsigned kMariadbRecursionTruncated = 1931;
+
+/**
+ * restd: a recursive CTE that runs into a cycle (a role, user or group
+ * hierarchy that loops) fails on MySQL with ER_CTE_MAX_RECURSION_DEPTH;
+ * MariaDB stops it with a warning and returns what it has. Raise that warning
+ * as the error, so a cycle is refused on both servers (a login with circular
+ * roles fails, as before).
+ */
+void throw_on_truncated_recursion(MySQLSession *session) {
+  if (session->warning_count() == 0 || !session->is_mariadb()) return;
+
+  std::string message;
+  MySQLSession::ResultRowProcessor find = [&message](
+                                              const MySQLSession::ResultRow &w) {
+    if (w.size() >= 3 && w[1] &&
+        std::strtoul(w[1], nullptr, 10) == kMariadbRecursionTruncated) {
+      message = w[2] ? w[2] : "";
+      return false;
+    }
+    return true;
+  };
+  session->query("SHOW WARNINGS", find, [](unsigned, MYSQL_FIELD *) {});
+  if (!message.empty()) {
+    throw mysqlrouter::MySQLSession::Error(
+        "Recursive query aborted: " + message, kMariadbRecursionTruncated,
+        message);
+  }
+}
+}  // namespace
+
 void QueryRaw::query(MySQLSession *session, const std::string &q) {
   try {
     MySQLSession::ResultRowProcessor processor = [this](const ResultRow &r) {
@@ -56,6 +93,7 @@ void QueryRaw::query(MySQLSession *session, const std::string &q) {
     session->query(q, processor, [this](unsigned number, MYSQL_FIELD *fields) {
       on_metadata(number, fields);
     });
+    throw_on_truncated_recursion(session);
   } catch (const mysqlrouter::MySQLSession::Error &) {
     sqlstate_ = session->last_sqlstate();
     throw;

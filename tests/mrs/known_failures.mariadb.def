@@ -6,4 +6,3 @@ destination_read_only: MariaDB has no super_read_only; read_only does not apply 
 mrs_metadata_logger: same as destination_read_only (super_read_only)
 setup_mrs_errors: on MariaDB granting a role needs ADMIN OPTION on it, GRANT ALL ... WITH GRANT OPTION (the test's setup account) is not enough
 passthrough_db_user: MariaDB activates no role by default and has no SET ROLE ALL; the passthrough account needs a default role (SET DEFAULT ROLE), which the test does not set
-role_privileges: to investigate: the first login with auth app any_service_auth gets the SCRAM challenge (200) instead of the expected 307
