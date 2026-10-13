@@ -125,7 +125,19 @@ _PS_PROCESSLIST = re.compile(r"\bperformance_schema\.processlist\b", re.I)
 _MYSQL_USER_COLS = re.compile(r"\bselect\s+user,\s*host\s+from\s+mysql\.user\b", re.I)
 
 
+# MySQL's auth_socket is MariaDB's built-in unix_socket; both take the OS user
+# as the authentication string
+_AUTH_SOCKET = re.compile(r"\bIDENTIFIED\s+WITH\s+auth_socket\b", re.I)
+
+
+def server_options(options: list[str]) -> list[str]:
+    """a test's mysqld options for MariaDB: unix_socket is built in, there is
+    no auth_socket.so to load"""
+    return [o for o in options if not re.match(r"--plugin-load(-add)?=auth_socket(\.so)?$", o)]
+
+
 def rewrite(sql: str) -> str:
+    sql = _AUTH_SOCKET.sub("IDENTIFIED VIA unix_socket", sql)
     if _RESET_GTIDS.match(sql):
         return "DO 0"  # no GTIDs to reset, nothing to do
     sql = _ROLE_EDGES.sub(r"SELECT Role AS from_user, User AS to_user FROM mysql.roles_mapping WHERE User LIKE \1 ORDER BY Role", sql)

@@ -26,17 +26,16 @@
 ## Current state
 
 - **M2.1 (build on Connector/C): done** on macOS (3.4.11 Homebrew), Ubuntu (3.4.9, `libmariadb-dev` unpacked), Windows (3.4.8 vcpkg): ctest 113/113 each; MySQL build 113/113.
-- **M2.2 (run against MariaDB):** macOS vs 13.2 build tree and Windows vs 11.8.9 LTS (ARM64 sandbox package, x64 daemon): smoke test incl. MRS scripts passes; ad-hoc CRUD with JSON/GEOMETRY/VECTOR on macOS. Linux pending.
-- **M2.3 (suites on MariaDB):** MRS suite MariaDB mode on macOS: 97 passed, 0 failed, 14 skipped, 10 xfailed, 1 xpassed; MySQL mode unchanged (116/5/1). **Windows MariaDB mode vs 11.8.9 LTS (2026-10-12): 97 passed, 0 failed, 14 skipped, 10 xfailed, 1 xpassed**, the same as macOS vs 13.2 (after the clean `SHUTDOWN` fix and ignoring the timing-dependent dropped-users note). Live-DB unit tests on MariaDB not done.
+- **M2.2 (run against MariaDB): done.** Smoke test incl. MRS scripts passes on macOS (13.2 build tree), Windows and Ubuntu (11.8.9 LTS ARM64 sandbox packages); ad-hoc CRUD with JSON/GEOMETRY/VECTOR on macOS.
+- **M2.3 (suites on MariaDB):** MRS suite MariaDB mode on macOS: 97 passed, 0 failed, 14 skipped, 10 xfailed, 1 xpassed; MySQL mode unchanged (116/5/1). **Windows vs 11.8.9 LTS: 97 passed, 0 failed, 14 skipped, 10 xfailed, 1 xpassed**, the same as macOS vs 13.2. **Ubuntu vs 11.8.9 LTS: 98 passed, 0 failed, 13 skipped** (+ `destination_socket`, which macOS and Windows skip), 10 xfailed, 1 xpassed (2026-10-12). Live-DB unit tests on MariaDB not done.
 - Known failures to investigate (`tests/mrs/known_failures.mariadb.def`): `json_view`, `json_view_access` (join sub-object carries all table columns), `role_privileges` (first login gets the SCRAM challenge instead of 307).
 
 ## Next steps
 
-1. Linux (Ubuntu VM): a MariaDB 11.8 server and the mariadb-shell there (packages unpacked, no root), then smoke test and the MRS suite in MariaDB package mode.
-2. The three "to investigate" known failures.
-3. Live-DB unit tests (`RUN_WITH_LIVE_MYSQLD`, `tests/helpers/shared_server.cc`) against MariaDB.
-4. Phase M2.4 cleanup: remove the async-task code (`query_rest_task*`, `mysql_task_monitor*`, task-status endpoints, `mysqlTask` options, the nonblocking path of `MySQLSession`); README/CLAUDE.md for MariaDB; decide on keeping the MySQL build.
-5. Then Milestone 3 (schema 5.0.0).
+1. The three "to investigate" known failures.
+2. Live-DB unit tests (`RUN_WITH_LIVE_MYSQLD`, `tests/helpers/shared_server.cc`) against MariaDB.
+3. Phase M2.4 cleanup: remove the async-task code (`query_rest_task*`, `mysql_task_monitor*`, task-status endpoints, `mysqlTask` options, the nonblocking path of `MySQLSession`); README/CLAUDE.md for MariaDB; decide on keeping the MySQL build.
+4. Then Milestone 3 (schema 5.0.0).
 
 ## Files that matter
 
@@ -49,7 +48,7 @@
 - `tests/mrs/mrstest/mariadb_sql.py` → MySQL-only SQL rewrites and output normalisation for the MariaDB mode.
 - `tests/mrs/{disabled,known_failures}.mariadb.def`, `tests/mrs/r/*.mariadb.result` → MariaDB overlays.
 - `tests/mrs/include/schema/mrs_metadata_schema-version4-mariadb.sql` → 4.1.6 deployment script (comments as `#`, no seeded `MySQL` auth app).
-- VM scripts: `tools/vm/win.sh`, `win_sync.sh`, `win_wip.sh`; on the Windows VM `<win-home>\mrsd-win-mariadb.cmd`, `mrsd-smoke-mariadb.sh`, `mrsd-pytest-mariadb.ps1`.
+- VM scripts: `tools/vm/win.sh`, `win_sync.sh`, `win_wip.sh`; on the Windows VM `<win-home>\mrsd-win-mariadb.cmd`, `mrsd-smoke-mariadb.sh`, `mrsd-pytest-mariadb.ps1`; on the Ubuntu VM (`git push vm main`) `<dev>/mrsd-smoke-mariadb.sh`, `<dev>/mrsd-pytest-mariadb.sh` (MariaDB 11.8.9 and mariadb-shell 26.10.1 packages in `<downloads>`).
 
 ## Gotchas / things not to repeat
 
@@ -62,6 +61,7 @@
 - `win_wip.sh` resets the Windows clone to its own HEAD and applies only the uncommitted diff: run `win_sync.sh` first when there are new commits, or committed work silently disappears from the VM.
 - MariaDB's system tables are Aria: a killed server (Windows `TerminateProcess`) corrupts the grant and role tables and every later test fails with 1959/126. The harness stops MariaDB with SQL `SHUTDOWN`.
 - Unix socket paths must stay under 104 bytes (macOS): use `/tmp/...`.
+- The Ubuntu VM's disk is small (12 GB free after removing the old MySQL build trees on 2026-10-12; only `build-mariadb` and `build-test-venv` are left, recreate others from the how-to in `docs/PROGRESS.md`).
 - This Mac's `grep` is ugrep: patterns starting with `-` or `--include` before the pattern misparse; scan with Python when in doubt.
 - MariaDB renders booleans of system variables as ON/OFF, has no `super_read_only`/`offline_mode`, reports JSON routine results as LONGTEXT, compares geometry SRIDs, activates one role at a time.
 

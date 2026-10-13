@@ -83,7 +83,10 @@ def test_mrs(name, paths, mysqld, tmp_path, request):
             result_file = mariadb_result
     router_cnf = SUITE_DIR / "t" / f"{name}-router.cnf"
 
-    mysqld.ensure_options(server_options_for(SUITE_DIR / "t" / f"{name}.cnf"))
+    options = server_options_for(SUITE_DIR / "t" / f"{name}.cnf")
+    if paths.is_mariadb:
+        options = mariadb_sql.server_options(options)
+    mysqld.ensure_options(options)
     mrsd = Mrsd(paths, mysqld, tmp_path / "router",
                 router_cnf if router_cnf.exists() else None)
     mrsd.start()

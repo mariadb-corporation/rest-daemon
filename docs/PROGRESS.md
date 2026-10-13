@@ -19,8 +19,8 @@ Plan: [PLAN.md](PLAN.md). Current state and next steps: `.claude/PROJECT_CONTEXT
 |---|---|
 | M2.0: MariaDB dependency inventory | ✅ done 2026-10-07, verdict GO in stages ([milestone2-inventory.md](milestone2-inventory.md)) |
 | M2.1: build against MariaDB Connector/C | ✅ done 2026-10-09: build + ctest 113/113 on macOS (3.4.11), Linux (3.4.9) and Windows (3.4.8, vcpkg); the MySQL build still passes |
-| M2.2: run against a MariaDB server | 🟡 smoke test incl. MRS scripts passes on macOS (MariaDB 13.2) and Windows (11.8.9 LTS); Linux pending |
-| M2.3: test suites on MariaDB | 🟡 macOS 2026-10-09: MRS suite 97 passed, 14 skipped (vector, offline_mode, gtid_mode + the 5 MySQL skips), 10 xfailed (known differences, 3 to investigate), 13 MariaDB result files; unit + component 113/113; MySQL mode unchanged (116/5/1). Windows vs 11.8.9: the same 97/14/10/1 (2026-10-12). Linux pending |
+| M2.2: run against a MariaDB server | ✅ done 2026-10-12: smoke test incl. MRS scripts passes on macOS (MariaDB 13.2), Windows and Ubuntu (11.8.9 LTS) |
+| M2.3: test suites on MariaDB | 🟡 macOS 2026-10-09: MRS suite 97 passed, 14 skipped (vector, offline_mode, gtid_mode + the 5 MySQL skips), 10 xfailed (known differences, 3 to investigate), 13 MariaDB result files; unit + component 113/113; MySQL mode unchanged (116/5/1). Windows vs 11.8.9: the same 97/14/10/1; Ubuntu vs 11.8.9: 98 passed, 0 failed (2026-10-12). Open: 3 known failures to investigate, live-DB unit tests |
 | M2.4: cleanup | ⬜ |
 
 ## How to build and test (macOS)
@@ -635,3 +635,8 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   are Milestone 4.
 - `/checkpoint` and `/read-checkpoint` brought over from the shell repo;
   `.claude/PROJECT_CONTEXT.md` holds the state and next steps now.
+- Ubuntu VM: MariaDB 11.8.9 and mariadb-shell 26.10.1 ARM64 packages in `<downloads>`
+  (wrappers `<dev>/mrsd-smoke-mariadb.sh`, `<dev>/mrsd-pytest-mariadb.sh`). Smoke test incl.
+  MRS scripts passes; MRS suite 98 passed, 0 failed, 13 skipped, 10 xfailed, 1 xpassed:
+  `destination_socket` (skipped on macOS and Windows) runs with MySQL's `auth_socket`
+  accounts mapped to MariaDB's built-in `unix_socket`. Phase M2.2 done.
