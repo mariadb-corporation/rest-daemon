@@ -12,10 +12,10 @@
 
 --source ./check_mrs_schema_version.inc
 
-if ($mrs_schema_version == 4)
+if ($mrs_schema_version == 5)
 {
-  # the MariaDB shell plugins' deployment script (4.1.6+)
-  --source ../schema/mrs_metadata_schema-version4-mariadb.sql
+  # MariaDB Shell's deployment script 5.0.0 (tools/analysis/make_test_schema.py)
+  --source ../schema/mariadb_rest_service-5.0.0.sql
   --let $_mrs_schema_version_supported=1
 }
 
@@ -25,7 +25,7 @@ if (!$_mrs_schema_version_supported)
   --die MRS test-suite executed with unsupported schema version $mrs_schema_version.
 }
 
-UPDATE mysql_rest_service_metadata.config SET data = JSON_MERGE_PATCH(data, '{"sqlQuery":{"timeout":60000}}');
+UPDATE mariadb_rest_service.config SET data = JSON_MERGE_PATCH(data, '{"sqlQuery":{"timeout":60000}}');
 
 --enable_query_log
 --enable_result_log

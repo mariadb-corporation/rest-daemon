@@ -1,4 +1,4 @@
---let $mrs_schema_version=4
+--let $mrs_schema_version=5
 
 if ($ROUTER_MRS_SCHEMA)
 {

@@ -1,5 +1,5 @@
 --source include/have_router.inc
---source ../include/mrs/is_mrs_schema_v3_or_v4.inc
+--source ../include/mrs/is_mrs_schema_v5.inc
 
 # Set the router-id, to generate statistics
 # this way we can wait until router detects
