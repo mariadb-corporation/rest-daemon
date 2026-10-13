@@ -36,14 +36,14 @@ namespace database {
 
 class QueryRouterInfo : private Query {
  public:
-  std::optional<uint64_t> find_existing_router_instances(
+  std::optional<std::string> find_existing_router_instances(
       MySQLSession *session, const std::string &router_name,
       const std::string &address);
 
  private:
   void on_row(const ResultRow &r) override;
 
-  std::optional<uint64_t> id_;
+  std::optional<std::string> id_;
 };
 
 }  // namespace database

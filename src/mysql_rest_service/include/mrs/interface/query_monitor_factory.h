@@ -48,11 +48,11 @@ class QueryMonitorFactory {
   virtual ~QueryMonitorFactory() = default;
 
   virtual std::unique_ptr<database::QueryState> create_turn_state_fetcher(
-      const std::optional<uint64_t> &router_id) = 0;
+      const std::optional<std::string> &rest_daemon_id) = 0;
   virtual std::unique_ptr<database::QueryEntriesUrlHost>
   create_url_host_fetcher() = 0;
   virtual std::unique_ptr<database::QueryEntriesDbService>
-  create_db_service_fetcher(const std::optional<uint64_t> &router_id) = 0;
+  create_db_service_fetcher(const std::optional<std::string> &rest_daemon_id) = 0;
   virtual std::unique_ptr<database::QueryEntriesDbSchema>
   create_db_schema_fetcher() = 0;
   virtual std::unique_ptr<database::QueryEntriesDbObject>
@@ -68,7 +68,7 @@ class QueryMonitorFactory {
   create_url_host_monitor(const uint64_t last_audit_log_id) = 0;
   virtual std::unique_ptr<database::QueryEntriesDbService>
   create_db_service_monitor(const uint64_t last_audit_log_id,
-                            const std::optional<uint64_t> &router_id) = 0;
+                            const std::optional<std::string> &rest_daemon_id) = 0;
   virtual std::unique_ptr<database::QueryEntriesDbSchema>
   create_db_schema_monitor(const uint64_t last_audit_log_id) = 0;
   virtual std::unique_ptr<database::QueryEntriesDbObject>

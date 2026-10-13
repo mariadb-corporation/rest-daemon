@@ -45,8 +45,8 @@ class SchemaMonitorFactory : public mrs::interface::QueryMonitorFactory {
   ~SchemaMonitorFactory() override = default;
 
   std::unique_ptr<database::QueryState> create_turn_state_fetcher(
-      const std::optional<uint64_t> &router_id) override {
-    return std::make_unique<QueryState>(router_id);
+      const std::optional<std::string> &rest_daemon_id) override {
+    return std::make_unique<QueryState>(rest_daemon_id);
   }
 
   std::unique_ptr<database::QueryEntriesUrlHost> create_url_host_fetcher()
@@ -55,8 +55,8 @@ class SchemaMonitorFactory : public mrs::interface::QueryMonitorFactory {
   }
 
   std::unique_ptr<database::QueryEntriesDbService> create_db_service_fetcher(
-      const std::optional<uint64_t> &router_id) override {
-    return std::make_unique<QueryEntriesDbService>(router_id);
+      const std::optional<std::string> &rest_daemon_id) override {
+    return std::make_unique<QueryEntriesDbService>(rest_daemon_id);
   }
 
   std::unique_ptr<database::QueryEntriesDbSchema> create_db_schema_fetcher()
@@ -91,9 +91,9 @@ class SchemaMonitorFactory : public mrs::interface::QueryMonitorFactory {
 
   std::unique_ptr<database::QueryEntriesDbService> create_db_service_monitor(
       const uint64_t last_audit_log_id,
-      const std::optional<uint64_t> &router_id) override {
+      const std::optional<std::string> &rest_daemon_id) override {
     return std::make_unique<QueryChangesDbService>(last_audit_log_id,
-        router_id);
+        rest_daemon_id);
   }
 
   std::unique_ptr<database::QueryEntriesDbSchema> create_db_schema_monitor(

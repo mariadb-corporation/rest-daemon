@@ -32,8 +32,8 @@ namespace mrs {
 namespace database {
 
 QueryChangesDbService::QueryChangesDbService(
-    const uint64_t last_audit_log_id, const std::optional<uint64_t> &router_id)
-    : QueryEntriesDbService(router_id) {
+    const uint64_t last_audit_log_id, const std::optional<std::string> &rest_daemon_id)
+    : QueryEntriesDbService(rest_daemon_id) {
   audit_log_id_ = last_audit_log_id;
 }
 

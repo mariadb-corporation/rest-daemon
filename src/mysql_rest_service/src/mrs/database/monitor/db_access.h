@@ -49,10 +49,10 @@ class DbAccess {
  public:
   DbAccess(mrs::interface::QueryFactory *query_factory,
            QueryMonitorFactory *query_monitor_factory,
-           std::optional<uint64_t> router_id)
-      : state{query_monitor_factory->create_turn_state_fetcher(router_id)},
+           std::optional<std::string> rest_daemon_id)
+      : state{query_monitor_factory->create_turn_state_fetcher(rest_daemon_id)},
         url_host{query_monitor_factory->create_url_host_fetcher()},
-        db_service{query_monitor_factory->create_db_service_fetcher(router_id)},
+        db_service{query_monitor_factory->create_db_service_fetcher(rest_daemon_id)},
         db_schema{query_monitor_factory->create_db_schema_fetcher()},
         db_object{
             query_monitor_factory->create_db_object_fetcher(query_factory)},
@@ -60,7 +60,7 @@ class DbAccess {
         auth_user{query_monitor_factory->create_auth_user_monitor(0)},
         content_file{query_monitor_factory->create_content_file_fetcher()},
         content_set{query_monitor_factory->create_content_set_fetcher()},
-        router_id_{router_id},
+        rest_daemon_id_{rest_daemon_id},
         query_monitor_factory_{query_monitor_factory},
         query_factory_{query_factory} {}
 
@@ -85,7 +85,7 @@ class DbAccess {
       url_host = query_monitor_factory_->create_url_host_monitor(
           url_host->get_last_update());
       db_service = query_monitor_factory_->create_db_service_monitor(
-          db_service->get_last_update(), router_id_);
+          db_service->get_last_update(), rest_daemon_id_);
       db_schema = query_monitor_factory_->create_db_schema_monitor(
           db_schema->get_last_update());
       db_object = query_monitor_factory_->create_db_object_monitor(
@@ -142,7 +142,7 @@ class DbAccess {
   std::unique_ptr<QueryEntriesContentSet> content_set;
 
   bool fetcher_updated_{false};
-  std::optional<uint64_t> router_id_;
+  std::optional<std::string> rest_daemon_id_;
   QueryMonitorFactory *query_monitor_factory_;
   mrs::interface::QueryFactory *query_factory_;
 };

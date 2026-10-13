@@ -61,7 +61,7 @@ class MasterKeyReadError : public std::runtime_error {
 
 /**
  * @brief SetRouterIdEnvVariableError class represents error duing
- * adding ROUTER_ID variable to environment. More detail about the
+ * adding REST_DAEMON_ID variable to environment. More detail about the
  * nature of the error can be accessed using what() member function.
  */
 class SetRouterIdEnvVariableError : public std::runtime_error {
@@ -182,12 +182,14 @@ class ROUTER_UTILS_EXPORT KeyringInfo {
   void generate_master_key() noexcept;
 
   /**
-   * @brief Adds ROUTER_ID variable to environment.
+   * @brief Adds the REST_DAEMON_ID variable (the daemon's UUID) to the
+   * environment, for the master key reader (restd: upstream's ROUTER_ID held
+   * the integer router id).
    *
-   * @throw SetRouterIdEnvVariableError if adding ROUTER_ID to environment
+   * @throw SetRouterIdEnvVariableError if adding REST_DAEMON_ID to environment
    * fails.
    */
-  void add_router_id_to_env(uint32_t router_id) const;
+  void add_rest_daemon_id_to_env(const std::string &rest_daemon_id) const;
 
   /**
    * @brief Checks if master-key-reader/master-key-writer should be

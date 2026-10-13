@@ -38,7 +38,8 @@ namespace mrs {
 namespace database {
 
 void QueryStatistics::update_statistics(MySQLSession *session,
-                                        uint64_t router_id, uint64_t timespan,
+                                        const std::string &rest_daemon_id,
+                                        uint64_t timespan,
                                         const Snapshot &snap) {
   query_.reset(
       metadata_sql("INSERT INTO "
@@ -66,7 +67,7 @@ void QueryStatistics::update_statistics(MySQLSession *session,
     }
   }
 
-  query_ << router_id << timespan;
+  query_ << rest_daemon_id << timespan;
   for (auto id : direct_ids) {
     query_ << snap[id].second;
   }

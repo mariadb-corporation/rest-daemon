@@ -104,9 +104,9 @@ bool query_is_node_read_only(mysqlrouter::MySQLSession *session) {
 }
 
 void update_router_attributes_on_start(mysqlrouter::MySQLSession *session,
-                                       std::optional<uint64_t> router_id_,
+                                       std::optional<std::string> rest_daemon_id_,
                                        const std::string &developer) {
-  if (!router_id_) return;
+  if (!rest_daemon_id_) return;
 
   std::string sql = metadata_sql("UPDATE mariadb_rest_service.rest_daemon SET attributes=");
   if (developer.empty()) {
@@ -116,7 +116,7 @@ void update_router_attributes_on_start(mysqlrouter::MySQLSession *session,
         "JSON_SET(attributes, '$.developer'," + session->quote(developer) + ")";
   }
 
-  sql += " WHERE id = " + std::to_string(*router_id_);
+  sql += " WHERE id = " + session->quote(*rest_daemon_id_);
 
   session->execute(sql);
 }
@@ -203,7 +203,7 @@ void SchemaMonitor::run() {
 
       if (!attributes_updated_on_start) {
         update_router_attributes_on_start((*session_check_version).get(),
-                                          configuration_.router_id_,
+                                          configuration_.rest_daemon_id_,
                                           configuration_.developer_);
         attributes_updated_on_start = true;
       }
@@ -217,7 +217,7 @@ void SchemaMonitor::run() {
       proxy_query_factory_->change_subject(create_query_factory());
 
       DbAccess fetcher(proxy_query_factory_, factory.get(),
-                       configuration_.router_id_);
+                       configuration_.rest_daemon_id_);
 
       log_system("Monitoring MySQL REST metadata (version: %s)",
                  current_schema_version.str().c_str());
@@ -334,7 +334,7 @@ void SchemaMonitor::run() {
               "version=?, name=?, last_check_in=NOW()")};
 
           const auto [name, address] = get_router_name_and_address();
-          update << configuration_.router_id_ << name << address
+          update << configuration_.rest_daemon_id_ << name << address
                  << MYSQL_ROUTER_PACKAGE_NAME << MYSQL_ROUTER_VERSION
                  << (configuration_.developer_.empty()
                          ? "{}"
@@ -357,7 +357,7 @@ void SchemaMonitor::run() {
 
             QueryStatistics store_stats;
             store_stats.update_statistics(
-                session.get(), configuration_.router_id_, status_time,
+                session.get(), configuration_.rest_daemon_id_, status_time,
                 entities_manager_->fetch_counters());
             last_stored_time = actual_stored_time;
           } catch (const std::exception &exc) {

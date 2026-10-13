@@ -87,14 +87,14 @@ class MrsdSetup {
   void check_files_exist();
   void set_owner();
   void load_existing_deployment();
-  uint64_t register_instance();
-  void store_developer(uint64_t router_id);
-  void create_accounts(uint64_t router_id);
-  void store_account_metadata(uint64_t router_id, const std::string &key,
+  std::string register_instance();
+  void store_developer(const std::string &rest_daemon_id);
+  void create_accounts(const std::string &rest_daemon_id);
+  void store_account_metadata(const std::string &rest_daemon_id, const std::string &key,
                               const std::string &user);
   bool prepare_tls_certificates();
-  void store_secrets_in_keyring(uint64_t router_id);
-  void write_config(uint64_t router_id);
+  void store_secrets_in_keyring(const std::string &rest_daemon_id);
+  void write_config(const std::string &rest_daemon_id);
   void write_scripts();
   void print_report() const;
 

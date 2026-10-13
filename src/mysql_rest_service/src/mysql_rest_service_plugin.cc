@@ -96,7 +96,7 @@ void trace_error(const char *variable_user, const char *access,
       variable_user, e.code(), e.message().c_str());
 }
 
-std::optional<uint64_t> find_existing_routers(
+std::optional<std::string> find_existing_routers(
     mysqlrouter::MySQLSession *session, const std::string &router_name,
     const std::string &address) {
   mrs::database::QueryRouterInfo q;
@@ -188,11 +188,12 @@ class MrsModule {
 
     const auto existing_id_maybe =
         find_existing_routers(conn1.get(), name, address);
-    if (existing_id_maybe && *existing_id_maybe != configuration.router_id_) {
+    if (existing_id_maybe &&
+        *existing_id_maybe != configuration.rest_daemon_id_) {
       throw std::runtime_error(
-          "Metadata already contains Router registered as '" + name + "' at '" +
-          address + "' with id: " + std::to_string(*existing_id_maybe) +
-          ", new id: " + std::to_string(configuration.router_id_));
+          "Metadata already contains a REST daemon registered as '" + name +
+          "' at '" + address + "' with id: " + *existing_id_maybe +
+          ", configured id: " + configuration.rest_daemon_id_);
     }
 
     return true;

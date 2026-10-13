@@ -301,7 +301,7 @@ void MetadataLogger::check_dynamic_config(mysqlrouter::MySQLSession *session) {
       "mariadb_rest_service.rest_daemon where id = ?), JSON_OBJECT())"
       ") as mrsMetadataLoggerOptions")};
 
-  query << configuration_->router_id_;
+  query << configuration_->rest_daemon_id_;
 
   auto result{session->query_one(query.str())};
 
@@ -425,7 +425,7 @@ bool MetadataLogger::flush_records(LogRecordBuffer &records) {
 
       for (size_t i = 0; i < batch_size; ++i) {
         const auto &record = records.front();
-        insert_sql << configuration_->router_id_ << to_string(record.created)
+        insert_sql << configuration_->rest_daemon_id_ << to_string(record.created)
                    << mysql_harness::logging::log_level_to_string(record.level)
                    << record.domain << record.message << record.process_id;
 
@@ -461,7 +461,7 @@ void MetadataLogger::report_dropped_logs(mysqlrouter::MySQLSession *session) {
                       std::to_string(dropped_logs_num) +
                       " messages. They were dropped."};
 
-  insert_sql << configuration_->router_id_
+  insert_sql << configuration_->rest_daemon_id_
              << to_string(std::chrono::system_clock::now())
              << mysql_harness::logging::log_level_to_string(
                     mysql_harness::logging::LogLevel::kWarning)

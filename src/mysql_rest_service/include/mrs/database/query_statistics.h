@@ -42,7 +42,8 @@ class QueryStatistics : private Query {
  public:
   using Snapshot = observability::EntitiesManager::Snapshot;
 
-  virtual void update_statistics(MySQLSession *session, uint64_t router_id,
+  virtual void update_statistics(MySQLSession *session,
+                                 const std::string &rest_daemon_id,
                                  uint64_t timespan, const Snapshot &snap);
 };
 

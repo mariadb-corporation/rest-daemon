@@ -42,7 +42,7 @@ const mysqlrouter::sqlstring k_s_enabled_and_published{
     "s.enabled and s.published"};
 
 QueryEntriesDbService::QueryEntriesDbService(
-    std::optional<uint64_t> router_id) {
+    std::optional<std::string> rest_daemon_id) {
   // Alias `service_id`, used by QueryChangesDbService
   query_ =
       metadata_query("SELECT * FROM (SELECT"
@@ -54,7 +54,7 @@ QueryEntriesDbService::QueryEntriesDbService(
       "  s.custom_metadata_schema !"
       " FROM mariadb_rest_service.`service` as s ) as parent ");
 
-  if (!router_id) {
+  if (!rest_daemon_id) {
     query_ << k_s_enabled_and_published;
   } else {
     mysqlrouter::sqlstring service_is_enabled{
@@ -64,7 +64,7 @@ QueryEntriesDbService::QueryEntriesDbService(
         "AND"
         " (SELECT 0=COUNT(r.id) from mariadb_rest_service.rest_daemon r"
         " WHERE r.id=?))) ")};
-    service_is_enabled << router_id.value() << router_id.value();
+    service_is_enabled << rest_daemon_id.value() << rest_daemon_id.value();
 
     query_ << service_is_enabled;
   }

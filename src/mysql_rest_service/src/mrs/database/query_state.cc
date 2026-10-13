@@ -34,8 +34,8 @@ namespace database {
 
 using DbState = QueryState::DbState;
 
-QueryState::QueryState(const std::optional<uint64_t> &router_id)
-    : router_id_{router_id} {}
+QueryState::QueryState(const std::optional<std::string> &rest_daemon_id)
+    : rest_daemon_id_{rest_daemon_id} {}
 
 void QueryState::query_state(MySQLSession *session) {
   changed_ = false;

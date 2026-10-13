@@ -174,16 +174,17 @@ void KeyringInfo::generate_master_key() noexcept {
   master_key_ = rg.generate_strong_password(kKeyLength);
 }
 
-void KeyringInfo::add_router_id_to_env(uint32_t router_id) const {
+void KeyringInfo::add_rest_daemon_id_to_env(
+    const std::string &rest_daemon_id) const {
   int err_code;
 #ifdef _WIN32
-  err_code = _putenv_s("ROUTER_ID", std::to_string(router_id).c_str());
+  err_code = _putenv_s("REST_DAEMON_ID", rest_daemon_id.c_str());
 #else
-  err_code = ::setenv("ROUTER_ID", std::to_string(router_id).c_str(), 1);
+  err_code = ::setenv("REST_DAEMON_ID", rest_daemon_id.c_str(), 1);
 #endif
   if (err_code)
     throw SetRouterIdEnvVariableError(
-        "Failed to add ROUTER_ID=" + std::to_string(router_id) +
+        "Failed to add REST_DAEMON_ID=" + rest_daemon_id +
         " to Environment, error_code=" + std::to_string(err_code));
 }
 

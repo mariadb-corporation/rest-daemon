@@ -42,7 +42,7 @@ class EndpointConfiguration {
   virtual std::string get_debug_port() const = 0;
   virtual const std::string &get_mysql_user_data_access() const = 0;
   virtual const std::string &get_mysql_user() const = 0;
-  virtual uint64_t get_router_id() const = 0;
+  virtual std::string get_rest_daemon_id() const = 0;
   virtual std::optional<std::string> get_developer() const = 0;
 };
 

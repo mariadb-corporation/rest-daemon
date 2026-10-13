@@ -40,7 +40,7 @@ class QueryState : public Query {
   using DbState = mrs::database::entry::DbState;
 
  public:
-  QueryState(const std::optional<uint64_t> &router_id);
+  QueryState(const std::optional<std::string> &rest_daemon_id);
 
   virtual void query_state(MySQLSession *session);
   virtual bool was_changed() const;
@@ -60,7 +60,7 @@ class QueryState : public Query {
   DbState state_;
   bool changed_{true};
   bool has_rows_{false};
-  std::optional<uint64_t> router_id_;
+  std::optional<std::string> rest_daemon_id_;
 };
 
 }  // namespace database

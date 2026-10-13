@@ -152,6 +152,14 @@ struct UniversalId {
     }
   }
 
+  // restd: the canonical text of a MariaDB `UUID`
+  // (`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`, lower case)
+  std::string to_uuid_string() const {
+    auto hex = to_string();
+    for (size_t pos : {8, 13, 18, 23}) hex.insert(pos, 1, '-');
+    return hex;
+  }
+
   std::string to_string() const {
     // lower-case hex
     constexpr std::array<char, 16> hex_chars = {

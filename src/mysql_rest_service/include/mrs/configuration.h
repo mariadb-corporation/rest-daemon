@@ -60,7 +60,9 @@ class Configuration {
   // mysql_read_{write,only}_route options that pointed at routing plugins.
   std::string destinations_ro_;
   std::string destinations_rw_;
-  uint64_t router_id_;
+  // restd: the `rest_daemon` row's UUID (canonical text); upstream's
+  // router_id was an integer
+  std::string rest_daemon_id_;
   // restd: the REST metadata schema this instance serves
   std::string metadata_schema_;
   std::optional<std::string> router_name_;

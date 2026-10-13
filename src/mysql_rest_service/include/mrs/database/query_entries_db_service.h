@@ -42,7 +42,7 @@ class QueryEntriesDbService : protected Query {
   using VectorOfEntries = std::vector<DbService>;
 
  public:
-  QueryEntriesDbService(std::optional<uint64_t> router_id);
+  QueryEntriesDbService(std::optional<std::string> rest_daemon_id);
 
   void force_query_all();
   virtual uint64_t get_last_update();

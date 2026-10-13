@@ -51,21 +51,17 @@ class KeyringHandler {
   KeyringInfo &get_ki() { return ki_; }
 
  private:
-  // ROUTER_ID for the master key reader (restd: [mysql_rest_service])
-  static uint32_t get_router_id(const mysql_harness::Config &config) {
-    uint32_t result = 0;
-
+  // REST_DAEMON_ID for the master key reader (restd: the UUID text of
+  // [mysql_rest_service] rest_daemon_id; upstream: ROUTER_ID, an integer)
+  static std::string get_rest_daemon_id(const mysql_harness::Config &config) {
     if (config.has_any("mysql_rest_service")) {
       const auto &mrs_sections = config.get("mysql_rest_service");
       for (const auto &section : mrs_sections) {
-        if (section->has("router_id")) {
-          std::istringstream iss(section->get("router_id"));
-          iss >> result;
-          break;
-        }
+        if (section->has("rest_daemon_id"))
+          return section->get("rest_daemon_id");
       }
     }
-    return result;
+    return {};
   }
 
   void init_keyring_using_prompted_password() {
@@ -84,7 +80,7 @@ class KeyringHandler {
 
   void init_keyring_using_external_facility(
       const mysql_harness::Config &config) {
-    ki_.add_router_id_to_env(get_router_id(config));
+    ki_.add_rest_daemon_id_to_env(get_rest_daemon_id(config));
     if (!ki_.read_master_key()) {
       throw MasterKeyReadError(
           "Cannot fetch master key using master key reader:" +

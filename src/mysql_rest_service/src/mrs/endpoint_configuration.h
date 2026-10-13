@@ -54,7 +54,9 @@ class EndpointConfiguration : public mrs::interface::EndpointConfiguration {
     return configuration_.mysql_user_;
   }
 
-  uint64_t get_router_id() const override { return configuration_.router_id_; }
+  std::string get_rest_daemon_id() const override {
+    return configuration_.rest_daemon_id_;
+  }
 
   std::optional<std::string> get_developer() const override {
     if (configuration_.developer_.empty()) return {};

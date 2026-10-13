@@ -29,6 +29,7 @@
 #include <stdexcept>
 
 #include "helper/plugin_monitor.h"
+#include "mrs/database/entry/universal_id.h"
 #include "mrs/database/metadata_schema.h"
 #include "mysql_rest_service_plugin_config.h"
 
@@ -194,7 +195,18 @@ PluginConfig::PluginConfig(const ConfigSection *section,
       get_option(section, "mysql_ssl_cipher", StringOption{});
   destination_ssl_.tls_version_ =
       get_option(section, "mysql_tls_version", StringOption{});
-  router_id_ = get_option(section, "router_id", IntOption<uint64_t>{});
+  // restd: the daemon's id is a UUID (upstream: router_id, an integer)
+  {
+    const auto id = get_option(section, "rest_daemon_id", StringOption{});
+    mrs::database::entry::UniversalId uid;
+    if (id.size() != 36 ||
+        !mrs::database::entry::UniversalId::from_text(&uid, id.data(),
+                                                      id.size()))
+      throw std::invalid_argument(
+          "option `rest_daemon_id`: '" + id +
+          "' is not a UUID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)");
+    rest_daemon_id_ = uid.to_uuid_string();
+  }
   // restd: the metadata schema name, for every statement on the metadata and
   // the role names derived from it
   metadata_schema_ = get_option(section, "metadata_schema", StringOption{});
@@ -254,7 +266,7 @@ bool PluginConfig::init_runtime_configuration() {
 bool PluginConfig::is_required(std::string_view option) const {
   if (option == "mysql_user") return true;
   if (option == "mysql_read_write_destinations") return true;
-  if (option == "router_id") return true;
+  if (option == "rest_daemon_id") return true;
 
   return false;
 }

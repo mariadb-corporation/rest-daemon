@@ -479,8 +479,8 @@ std::string AuthorizeManager::get_jwt_token(
   const auto jti = generate_uuid();
   log_debug("Generated JWT with 'jti' set to: %s", jti.c_str());
   doc_set_member(payload, "jti", jti);
-  doc_set_member(payload, "instance_id",
-                 "router-" + std::to_string(configuration_->get_router_id()));
+  // restd: the daemon's UUID (upstream: "router-<router_id>")
+  doc_set_member(payload, "instance_id", configuration_->get_rest_daemon_id());
   doc_set_member(payload, "exp", exp);
   doc_set_member(payload, "iss", aid.to_string());
 

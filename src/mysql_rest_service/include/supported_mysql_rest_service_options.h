@@ -44,7 +44,7 @@ static constexpr std::array mysql_rest_service_supported_options{
     "mysql_ssl_curves",
     "mysql_ssl_cipher",
     "mysql_tls_version",
-    "router_id",
+    "rest_daemon_id",
     // restd: the REST metadata schema (<prefix>mariadb_rest_service<postfix>)
     "metadata_schema",
     "metadata_refresh_interval",
