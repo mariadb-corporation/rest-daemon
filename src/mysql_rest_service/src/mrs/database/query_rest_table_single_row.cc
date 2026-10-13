@@ -103,13 +103,13 @@ void QueryRestTableSingleRow::build_query(
                           encode_bigints_as_strings_);
   qb.process_view(object_);
 
-  std::vector<mysqlrouter::sqlstring> fields;
-  if (!qb.select_items().is_empty()) fields.push_back(qb.select_items());
+  // restd: links go through the builder, which orders the members
   if (include_links_) {
-    fields.emplace_back(
+    mysqlrouter::sqlstring links{
         "'links', JSON_ARRAY(JSON_OBJECT('rel', 'self', "
-        "'href', CONCAT(?,'/',CONCAT_WS(',',?))))");
-    fields.back() << url_route << dv::format_key(*object_, pk);
+        "'href', CONCAT(?,'/',CONCAT_WS(',',?))))"};
+    links << url_route << dv::format_key(*object_, pk);
+    qb.add_member("links", links);
   }
 
   if (where.is_empty()) {
@@ -134,7 +134,7 @@ void QueryRestTableSingleRow::build_query(
   } else {
     query_ = "SELECT JSON_OBJECT(?), ? as is_owned FROM ? ?";
   }
-  query_ << fields << row_owner_check << qb.from_clause() << where;
+  query_ << qb.select_items() << row_owner_check << qb.from_clause() << where;
 
   if (lock_rows_ == RowLockType::FOR_UPDATE)
     query_.append_preformatted(" FOR UPDATE NOWAIT");

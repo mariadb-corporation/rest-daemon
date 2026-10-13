@@ -202,6 +202,32 @@ void JsonQueryBuilder::process_table(std::shared_ptr<Table> parent_table,
       add_reference_field(*reference);
     }
   }
+
+  join_select_items();
+}
+
+void JsonQueryBuilder::add_member(const std::string &key,
+                                  const mysqlrouter::sqlstring &item) {
+  // "," as upstream joined these members, so the MySQL SQL is unchanged
+  m_items.push_back({key, item, ","});
+  join_select_items();
+}
+
+void JsonQueryBuilder::join_select_items() {
+  // restd: MySQL returns JSON_OBJECT members sorted by key length, then
+  // bytewise; MariaDB keeps them in argument order. Pass them in MySQL's order
+  // so that responses and etags (hashed in document order) match on both.
+  if (helper::is_mariadb_server()) {
+    std::stable_sort(m_items.begin(), m_items.end(),
+                     [](const auto &a, const auto &b) {
+                       if (a.key.size() != b.key.size())
+                         return a.key.size() < b.key.size();
+                       return a.key < b.key;
+                     });
+  }
+  m_select_items = mysqlrouter::sqlstring();
+  for (const auto &item : m_items)
+    m_select_items.append_preformatted_sep(item.separator, item.sql);
 }
 
 mysqlrouter::sqlstring JsonQueryBuilder::subquery_object(
@@ -309,7 +335,7 @@ void JsonQueryBuilder::add_column_field(const Column &column) {
   auto item =
       get_field_format(column.type, column.datatype, false, bigins_as_string_);
   item << column.name << table_->table_alias << column.column_name;
-  m_select_items.append_preformatted_sep(", ", item);
+  m_items.push_back({column.name, item});
 }
 
 void JsonQueryBuilder::add_reference_field(const ForeignKeyReference &fk) {
@@ -318,8 +344,8 @@ void JsonQueryBuilder::add_reference_field(const ForeignKeyReference &fk) {
   auto subquery = make_subquery(fk);
   auto item = mysqlrouter::sqlstring("?, ");
   item << fk.name;
-  m_select_items.append_preformatted_sep(", ", item);
-  m_select_items.append_preformatted(subquery);
+  item.append_preformatted(subquery);
+  m_items.push_back({fk.name, item});
 }
 
 mysqlrouter::sqlstring JsonQueryBuilder::from_clause() const {

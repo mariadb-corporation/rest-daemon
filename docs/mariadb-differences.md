@@ -18,7 +18,12 @@ with MySQL. Found while porting the MRS functional suite (Milestone 2, see
 - **JSON routine results and parameters** are LONGTEXT to MariaDB everywhere
   (`information_schema`, result metadata): a function `RETURNS JSON` delivers
   its value as a JSON *string*, not as a nested document. JSON *columns* are
-  recognised (extended column metadata) and work as on MySQL.
+  recognised in results (extended column metadata). But the metadata schema
+  records a JSON column's datatype as `longtext` (MariaDB's `COLUMN_TYPE`),
+  so on writes the service treats it as text: arrays, objects, numbers and
+  `null` are stored correctly, while a JSON *string* value (`"hello"`, `""`)
+  is written unquoted and rejected by the column's `json_valid` check. Fixing
+  this needs the metadata schema (shell and plugins) to report `json`.
 - **Roles**: MariaDB activates one role at a time and no role by default.
   The service accounts created by `--setup` get a default role; an account
   used for pass-through authentication (`mysql_user_data_access` or MySQL
@@ -43,9 +48,11 @@ with MySQL. Found while porting the MRS functional suite (Milestone 2, see
   prints the double `-999.9998779296876`).
 - **Integer display widths** (`int(11)`) appear in MariaDB's metadata; the
   OpenAPI output strips them.
-- **JSON text** is returned as stored (MySQL normalizes to `{"a": 1}` with a
-  space), so document lengths differ; member order follows the insertion
-  order (MySQL sorts keys).
+- **JSON text** in JSON columns is returned and stored as given (MySQL
+  normalizes to `{"a": 1}` with a space and sorts the keys), so document
+  lengths differ. The objects the service builds itself (rows, nested
+  references) are emitted in MySQL's member order, so their responses and
+  etags are the same on both servers.
 - `DROP USER` of an account with open connections emits a Note.
 - Error texts differ (e.g. "Table doesn't exist" where MySQL says "Unknown
   database").

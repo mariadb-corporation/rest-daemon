@@ -408,28 +408,24 @@ void QueryRestTable::build_query(const ObjectFieldFilter &field_filter,
   } else {
     query_ = sqlstring("SELECT JSON_OBJECT(?) as doc FROM ? ? LIMIT ?,?");
   }
-  std::vector<sqlstring> json_object_fields;
-
-  if (!qb.select_items().is_empty())
-    json_object_fields.push_back(qb.select_items());
-
   auto pk_columns = dv::format_key_names(*object_);
 
+  // restd: links go through the builder, which orders the members
   if (include_links_) {
     if (pk_columns.is_empty()) {
       static sqlstring empty_links{"'links', JSON_ARRAY()"};
-      json_object_fields.push_back(empty_links);
+      qb.add_member("links", empty_links);
     } else {
       sqlstring fmt{
           "'links', "
           "JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT(?,'/',"
           "CONCAT_WS(',',?))))"};
       fmt << url << pk_columns;
-      json_object_fields.push_back(fmt);
+      qb.add_member("links", fmt);
     }
   }
 
-  query_ << json_object_fields;
+  query_ << qb.select_items();
   query_ << qb.from_clause();
   query_ << where << offset << limit;
 }

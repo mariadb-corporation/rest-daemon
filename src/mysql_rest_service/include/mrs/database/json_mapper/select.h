@@ -120,6 +120,9 @@ class JsonQueryBuilder {
     return q;
   }
 
+  // restd: adds a "key, value" member to the object built by select_items()
+  void add_member(const std::string &key, const mysqlrouter::sqlstring &item);
+
   const mysqlrouter::sqlstring &select_items() const { return m_select_items; }
   mysqlrouter::sqlstring from_clause() const;
 
@@ -130,9 +133,17 @@ class JsonQueryBuilder {
   std::shared_ptr<Table> table_;
   std::string m_path_prefix;
   mysqlrouter::sqlstring m_select_items;
+  // restd: JSON_OBJECT members before joining them into m_select_items
+  struct Member {
+    std::string key;
+    mysqlrouter::sqlstring sql;  // "key, value"
+    std::string separator = ", ";
+  };
+  std::vector<Member> m_items;
   bool for_update_ = false;
   bool bigins_as_string_ = false;
 
+  void join_select_items();
   void process_table(std::shared_ptr<Table> parent_table,
                      std::shared_ptr<Table> table,
                      const std::string &path_prefix);
