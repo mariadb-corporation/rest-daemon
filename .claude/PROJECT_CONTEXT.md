@@ -35,9 +35,9 @@
 ## Next steps
 
 1. Windows: sync (`win_sync.sh`), rebuild and rerun the MariaDB-mode suite with the latest fixes.
-2. Live-DB unit tests (`RUN_WITH_LIVE_MYSQLD`, `tests/helpers/shared_server.cc`) against MariaDB.
-3. Phase M2.4 cleanup: remove the async-task code (`query_rest_task*`, `mysql_task_monitor*`, task-status endpoints, `mysqlTask` options, the nonblocking path of `MySQLSession`); README/CLAUDE.md for MariaDB; decide on keeping the MySQL build.
-4. Then Milestone 3 (schema 5.0.0).
+2. Phase M2.4 cleanup: remove the async-task code (`query_rest_task*`, `mysql_task_monitor*`, task-status endpoints, `mysqlTask` options, the nonblocking path of `MySQLSession`); README/CLAUDE.md for MariaDB; decide on keeping the MySQL build.
+3. Then Milestone 3 (schema 5.0.0).
+4. After Milestone 3: review the open point "JSON columns on MariaDB" (docs/PLAN.md): JSON-string writes fail because the metadata records JSON columns as `longtext`; the live tests `DatabaseQueryPut/Post.special_types` fail on it until then.
 
 ## Files that matter
 

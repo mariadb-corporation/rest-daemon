@@ -117,10 +117,55 @@ std::optional<mysql_harness::Path> mysql_package_dir() {
     return mysql_harness::Path(env);
   }
 #ifdef MRSD_MYSQL_PACKAGE_DIR
+  // empty in a build against MariaDB Connector/C
+  if (MRSD_MYSQL_PACKAGE_DIR[0] == '\0') return std::nullopt;
   return mysql_harness::Path(MRSD_MYSQL_PACKAGE_DIR);
 #else
   return std::nullopt;
 #endif
+}
+
+// restd: or a MariaDB server, from the environment variables the MRS
+// functional suite uses: MARIADB_BUILD_DIR (+ MARIADB_SOURCE_DIR, for
+// mariadb-install-db) for a server build tree, or MARIADB_PACKAGE_DIR for a
+// server package.
+struct MariadbServer {
+  mysql_harness::Path mariadbd;
+  std::vector<std::string> install_db;  // the command, without the datadir
+  std::vector<std::string> server_args;
+};
+
+std::string env_or_empty(const char *name) {
+  const char *v = std::getenv(name);
+  return v ? v : "";
+}
+
+std::optional<MariadbServer> mariadb_server() {
+  using mysql_harness::Path;
+  if (auto build = env_or_empty("MARIADB_BUILD_DIR"); !build.empty()) {
+    Path b(build);
+    return MariadbServer{
+        b.join("sql").join("mariadbd" EXE_EXTENSION),
+        {b.join("scripts").join("mariadb-install-db").str(), "--no-defaults",
+         "--srcdir=" + env_or_empty("MARIADB_SOURCE_DIR"),
+         "--builddir=" + build},
+        {"--lc-messages-dir=" + b.join("sql").join("share").str()}};
+  }
+  if (auto pkg = env_or_empty("MARIADB_PACKAGE_DIR"); !pkg.empty()) {
+    Path p(pkg);
+#ifdef _WIN32
+    std::vector<std::string> install{
+        p.join("bin").join("mariadb-install-db.exe").str()};
+#else
+    std::vector<std::string> install{
+        p.join("scripts").join("mariadb-install-db").str(), "--no-defaults",
+        "--basedir=" + pkg};
+#endif
+    return MariadbServer{p.join("bin").join("mariadbd" EXE_EXTENSION),
+                         install,
+                         {"--basedir=" + pkg}};
+  }
+  return std::nullopt;
 }
 }  // namespace
 
@@ -129,6 +174,40 @@ std::optional<mysql_harness::Path> mysql_package_dir() {
 // initializes the server once into mysqld_init_once_dir_ and creates copies
 // from that into mysqld_dir_
 void SharedServer::initialize_server(const std::string &datadir) {
+  if (auto mariadb = mariadb_server()) {
+    if (!mariadb->mariadbd.exists()) {
+      mysqld_failed_to_start_ = true;
+      return;
+    }
+    std::vector<std::string> args(mariadb->install_db.begin() + 1,
+                                  mariadb->install_db.end());
+#ifdef _WIN32
+    args.push_back("-d");
+    args.push_back(datadir);  // no -R: root@localhost, no anonymous accounts
+#else
+    args.push_back("--datadir=" + datadir);
+    args.push_back("--auth-root-authentication-method=normal");
+    // no test database and, with it, no anonymous accounts (they would
+    // shadow '%' accounts for local connections)
+    args.push_back("--skip-test-db");
+#endif
+    auto &proc = process_manager()
+                     .spawner(mariadb->install_db.front())
+                     .wait_for_sync_point(ProcessManager::Spawner::SyncPoint::NONE)
+                     .spawn(args);
+    try {
+      proc.wait_for_exit(120s);
+    } catch (const std::exception &e) {
+      process_manager().dump_logs();
+      FAIL() << e.what();
+    }
+    if (proc.exit_code() != 0) {
+      mysqld_failed_to_start_ = true;
+      process_manager().dump_logs();
+    }
+    return;
+  }
+
   auto pkg = mysql_package_dir();
   auto bindir = pkg ? pkg->join("bin") : process_manager().get_origin();
   auto mysqld = bindir.join("mysqld" EXE_EXTENSION);
@@ -228,6 +307,41 @@ void SharedServer::spawn_server_with_datadir(
   // set the socket-path's in the datadir.
   classic_socket_dest_ = {Path(datadir).join("mysql.sock").str()};
   x_socket_dest_ = {Path(datadir).join("mysqlx.sock").str()};
+
+  if (auto mariadb = mariadb_server()) {
+    // restd: no X protocol, GTID or redo-log options on MariaDB, and no
+    // systemd notification (a build without systemd sends none): wait for
+    // the port instead
+    std::vector<std::string> margs{
+        "--no-defaults",
+        "--datadir=" + datadir,
+        "--log-error=" + datadir + mysql_harness::Path::directory_separator +
+            log_file_name,
+        "--port=" + std::to_string(classic_tcp_destination().port()),
+        "--bind-address=127.0.0.1",
+#ifndef _WIN32
+        "--socket=" + classic_socket_destination().path(),
+#endif
+        "--innodb_buffer_pool_size=16M",
+        // the tests compare binary-log positions to see whether a request
+        // wrote; MySQL logs by default, MariaDB does not
+        "--log-bin=binlog",
+    };
+    for (const auto &a : mariadb->server_args) margs.push_back(a);
+    for (const auto &arg : extra_args) margs.push_back(arg);
+
+    auto &proc = process_manager()
+                     .spawner(mariadb->mariadbd.str())
+                     .wait_for_sync_point(ProcessManager::Spawner::SyncPoint::NONE)
+                     .spawn(margs);
+    proc.set_logging_path(datadir, log_file_name);
+    if (!wait_for_port_ready(classic_tcp_destination().port(), 60s)) {
+      mysqld_failed_to_start_ = true;
+      process_manager().dump_logs();
+    }
+    ++starts_;
+    return;
+  }
 
   std::vector<std::string> args{
       "--no-defaults",  //

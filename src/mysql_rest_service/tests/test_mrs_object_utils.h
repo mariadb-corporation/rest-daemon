@@ -286,26 +286,27 @@ class ViewBuilder {
 
     table->foreach_field<ForeignKeyReference,
                          bool>([session, table, &fks](ForeignKeyReference &fk) {
-      std::string for_name;
-      std::string ref_name;
-
       // mapping explicitly given
       if (!fk.column_mapping.empty()) return false;
 
-      if (fk.to_many) {
-        for_name = fk.ref_table->schema + "/" + fk.ref_table->table;
-        ref_name = table->schema + "/" + table->table;
-      } else {
-        ref_name = fk.ref_table->schema + "/" + fk.ref_table->table;
-        for_name = table->schema + "/" + table->table;
-      }
+      // restd: from information_schema.KEY_COLUMN_USAGE, which MySQL and
+      // MariaDB both have (upstream read MySQL's innodb_foreign tables)
+      const Table *for_table = table;
+      const Table *ref_table = fk.ref_table.get();
+      if (fk.to_many) std::swap(for_table, ref_table);
 
+      auto quoted = [session](const std::string &v) {
+        return session->quote(v);
+      };
       session->query(
-          "select fk.id, ((select group_concat(concat(for_col_name, ':', "
-          "ref_col_name)) from information_schema.innodb_foreign_cols where "
-          "id=fk.id order by pos)) from information_schema.innodb_foreign fk "
-          "where for_name = '" +
-              for_name + "' and ref_name = '" + ref_name + "'",
+          "SELECT constraint_name, GROUP_CONCAT(CONCAT(column_name, ':', "
+          "referenced_column_name) ORDER BY ordinal_position) FROM "
+          "information_schema.key_column_usage WHERE table_schema = " +
+              quoted(for_table->schema) +
+              " AND table_name = " + quoted(for_table->table) +
+              " AND referenced_table_schema = " + quoted(ref_table->schema) +
+              " AND referenced_table_name = " + quoted(ref_table->table) +
+              " GROUP BY constraint_name",
           [&fk](const auto &row) {
             for (const auto &col_pair :
                  mysql_harness::split_string(row[1], ',', true)) {

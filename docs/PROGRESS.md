@@ -20,7 +20,7 @@ Plan: [PLAN.md](PLAN.md). Current state and next steps: `.claude/PROJECT_CONTEXT
 | M2.0: MariaDB dependency inventory | ✅ done 2026-10-07, verdict GO in stages ([milestone2-inventory.md](milestone2-inventory.md)) |
 | M2.1: build against MariaDB Connector/C | ✅ done 2026-10-09: build + ctest 113/113 on macOS (3.4.11), Linux (3.4.9) and Windows (3.4.8, vcpkg); the MySQL build still passes |
 | M2.2: run against a MariaDB server | ✅ done 2026-10-12: smoke test incl. MRS scripts passes on macOS (MariaDB 13.2), Windows and Ubuntu (11.8.9 LTS) |
-| M2.3: test suites on MariaDB | 🟡 macOS 2026-10-09: MRS suite 97 passed, 14 skipped (vector, offline_mode, gtid_mode + the 5 MySQL skips), 10 xfailed (known differences, 3 to investigate), 13 MariaDB result files; unit + component 113/113; MySQL mode unchanged (116/5/1). Windows vs 11.8.9: the same 97/14/10/1; Ubuntu vs 11.8.9: 98 passed, 0 failed (2026-10-12). Open: 3 known failures to investigate, live-DB unit tests |
+| M2.3: test suites on MariaDB | 🟡 2026-10-13: MRS suite on macOS (13.2) and Windows (11.8.9) 100 passed, 0 failed, 14 skipped, 7 xfailed (known differences), 1 xpassed; Ubuntu (11.8.9) 101 passed, 0 failed (2026-10-12); unit + component 113/113 on all three; MySQL mode unchanged (116/5/1). Live-DB unit tests on macOS: MySQL 104/104, MariaDB 102/104 (the JSON-columns open point). Open: live-DB unit tests on Ubuntu and Windows |
 | M2.4: cleanup | ⬜ |
 
 ## How to build and test (macOS)
@@ -106,6 +106,22 @@ MYSQL_PACKAGE_DIR=<dev>/mysql/mysql-26.7.0-macos15-arm64 \
 - `known_failures.def`: expected failures (xfail) with reasons
 - `mysqltest` from the server build (`ninja mysqltest` in mysql-server/build) is useful to
   check what the real interpreter does with a construct
+
+### Live-DB unit tests (`routertest_mrs_plugin`)
+`DatabaseQuery*` and `JsonMapping*` start their own server when `RUN_WITH_LIVE_MYSQLD=1`
+(`tests/helpers/shared_server.cc`); otherwise they are skipped.
+```sh
+# MySQL (build-test, server from MRSD_MYSQL_PACKAGE_DIR)
+RUN_WITH_LIVE_MYSQLD=1 build-test/runtime_output_directory/routertest_mrs_plugin \
+  --gtest_filter='DatabaseQuery*.*:JsonMapping*.*'
+# MariaDB (build-mariadb; or MARIADB_PACKAGE_DIR=<package>)
+RUN_WITH_LIVE_MYSQLD=1 MARIADB_BUILD_DIR=<dev>/mariadb-server/light-build \
+MARIADB_SOURCE_DIR=<dev>/mariadb-server \
+  build-mariadb/runtime_output_directory/routertest_mrs_plugin \
+  --gtest_filter='DatabaseQuery*.*:JsonMapping*.*'
+```
+- MySQL 104/104; MariaDB 102/104, the 2 `special_types` failures are the JSON-string
+  write limitation (docs/mariadb-differences.md)
 
 ### MRS scripts (JIT) step of the smoke test
 

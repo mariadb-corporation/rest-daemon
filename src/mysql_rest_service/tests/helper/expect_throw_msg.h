@@ -28,9 +28,19 @@
 #define ROUTER_SRC_MYSQL_REST_SERVICE_TESTS_HELPER_EXPECT_THROW_MSG_H_
 
 #include <gtest/gtest.h>
+#include <regex>
 #include <string>
 #include <vector>
+#include "helper/server_flavor.h"
 #include "helpers/router_test_helpers.h"
+
+// restd: MariaDB names the key without its table in duplicate-entry errors:
+// "for key 'PRIMARY'" where MySQL says "for key 'table.PRIMARY'".
+inline std::string server_error_text(const std::string &mysql_msg) {
+  if (!helper::is_mariadb_server()) return mysql_msg;
+  static const std::regex k_key{"for key '[^'.]+\\.([^']+)'"};
+  return std::regex_replace(mysql_msg, k_key, "for key '$1'");
+}
 
 namespace testing {
 namespace internal {
@@ -119,8 +129,9 @@ struct String_msg {
 #define EXPECT_REST_ERROR(statement, msg) \
   EXPECT_THROW_LIKE(statement, mrs::interface::RestError, msg)
 
-#define EXPECT_MYSQL_ERROR(statement, msg) \
-  EXPECT_THROW_LIKE(statement, mysqlrouter::MySQLSession::Error, msg)
+#define EXPECT_MYSQL_ERROR(statement, msg)                        \
+  EXPECT_THROW_LIKE(statement, mysqlrouter::MySQLSession::Error, \
+                    server_error_text(msg))
 
 #define EXPECT_DUALITY_ERROR(statement, msg) \
   EXPECT_THROW_LIKE(statement, mrs::database::DataMappingViewError, msg)

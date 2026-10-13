@@ -246,6 +246,21 @@ document generation, GTID tracking, `mysql_tasks`, account setup, tests.
 ("unverified on MariaDB"); it is solved, if needed, in the three repositories together.
 It only matters for deployments with read-only replicas.
 
+## Open point: JSON columns on MariaDB (review after Milestone 3)
+
+MariaDB's `JSON` is a `longtext` with a column-level `json_valid` check, and the 4.1.6
+metadata schema records it as `longtext` (`COLUMN_TYPE`). The daemon then writes a JSON
+*string* value unquoted and the check rejects it (arrays, objects, numbers, `null` and
+reads work; see docs/mariadb-differences.md; the live tests `DatabaseQueryPut/Post.special_types`
+fail on it). Candidate fixes:
+- metadata schema (preferred): `table_columns_with_references` reports `json` when the
+  column has `CHECK_CONSTRAINTS` `LEVEL='Column'`, `CONSTRAINT_NAME=<column>`,
+  `CHECK_CLAUSE='json_valid(`<column>`)'`; plus the shell's fallback `query_plain_columns()`.
+  Done in the shell and plugins together; view columns and objects created earlier
+  (datatype stored in `db_column`) aren't covered;
+- daemon: detect the same constraint when an object loads.
+Review once the 5.0.0 schema (Milestone 3) is in, against that schema.
+
 ## Target repository layout
 
 ```
@@ -365,3 +380,5 @@ mrsd/
 - 2026-10-12: GTID/"asof" on MariaDB is an open point, not a milestone, like in the
   MariaDB shell and plugins; solved in the three repositories together if needed.
   Packaging and CI are Milestone 4 again.
+- 2026-10-12: JSON-string writes to MariaDB JSON columns (datatype `longtext` in the
+  metadata) are an open point, reviewed after Milestone 3 (schema 5.0.0).
