@@ -15,11 +15,11 @@ MySQL Shell `mrs` plugin, MySQL Shell for VS Code), and serves the same REST
 endpoints as `mysqlrouter` with MRS enabled. Verified on Linux, macOS and Windows
 (unit + component tests, MRS functional suite, smoke test incl. MRS scripts).
 
-**Milestone 2 (current):** migrate to MariaDB (Connector/C,
+**Milestone 2 ✅ done (2026-10-13):** migrate to MariaDB (Connector/C,
 MRS metadata schema and queries, MariaDB-aware destination providers).
 Phases are listed under "Milestone 2" below.
 
-**Milestone 3:** the MariaDB metadata schema 5.0.0 (`mariadb_rest_service`,
+**Milestone 3 (current):** the MariaDB metadata schema 5.0.0 (`mariadb_rest_service`,
 with an optional name prefix/postfix; tables renamed, e.g. `db_object` →
 `rest_object`, `router` → `rest_daemon`; roles `mariadb_rest_service_*`), as it
 lands on the main branches of the MariaDB shell and plugins. Milestone 2 stays
@@ -236,7 +236,7 @@ document generation, GTID tracking, `mysql_tasks`, account setup, tests.
 - Exit: unit + component + MRS suite pass on Linux, macOS, Windows against MariaDB, with a
   recorded list of disabled tests and why.
 
-### Phase M2.4: cleanup
+### Phase M2.4: cleanup ✅ done (2026-10-13)
 - ✅ 2026-10-13: REST async tasks removed: `mysql_tasks` calls, the task monitor, the
   task-status endpoints, the `mysqlTask` options (still tolerated in metadata), the async
   OpenAPI variant, and the nonblocking query path of `MySQLSession` (only the task
@@ -253,7 +253,7 @@ document generation, GTID tracking, `mysql_tasks`, account setup, tests.
 - ✅ 2026-10-13: VECTOR coverage: the 7 vector tests ported to fixed dimensions and
   re-enabled, which found two daemon bugs (INOUT `VECTOR` parameters failed with 1292,
   OUT ones rendered as base64) and the malformed-base64 500.
-- Remaining: the `restd:` markers pass.
+- ✅ 2026-10-13: the `restd:` markers reworded for the MariaDB-only tree.
 
 ## Open point: GTID read-your-writes on MariaDB (Milestone 4)
 
@@ -410,3 +410,7 @@ mrsd/
 - 2026-10-13: GTID/"asof" becomes Milestone 4, after the schema upgrade, shared with the
   shell and plugins; its code is left in place (not deleted with the MySQL support).
   Packaging and CI are Milestone 5.
+- 2026-10-13: Milestone 2 closed. The final smoke-test rerun was skipped by decision (the
+  Mac's shell build already targets 5.0.0; Ubuntu passed after the MySQL removal).
+  Milestone 3 (schema 5.0.0) starts: 5.0.0 is on the main branches of the MariaDB shell
+  (deployment script `mariadb_rest_service_deployment_5.0.0.sql`) and plugins.

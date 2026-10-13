@@ -104,7 +104,7 @@ static std::string append_length_dec(const MYSQL_FIELD *field) {
 
 std::string txt_from_mysql_column_type(const MYSQL_FIELD *field) {
   using namespace std::string_literals;
-  // restd: JSON/VECTOR on MariaDB come from the extended metadata
+  // restd: JSON/VECTOR come from the extended metadata (the field type says LONGTEXT/VARBINARY)
   switch (mrsd::effective_field_type(field)) {
     case MYSQL_TYPE_DECIMAL:
       return "DECIMAL"s + append_length_dec(field);
@@ -189,7 +189,7 @@ std::string txt_from_mysql_column_type(const MYSQL_FIELD *field) {
 }
 
 JsonType from_mysql_column_type(const MYSQL_FIELD *field) {
-  // restd: JSON/VECTOR on MariaDB come from the extended metadata
+  // restd: JSON/VECTOR come from the extended metadata (the field type says LONGTEXT/VARBINARY)
   switch (mrsd::effective_field_type(field)) {
     case MYSQL_TYPE_DECIMAL:
     case MYSQL_TYPE_NEWDECIMAL:

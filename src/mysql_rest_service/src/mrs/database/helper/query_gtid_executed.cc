@@ -51,8 +51,10 @@ static std::vector<std::string> expect_single_row_array_strings(
 }
 
 namespace {
-// restd: MariaDB has neither gtid_executed nor these functions; its GTIDs
-// (domain-server-sequence) need their own implementation (an open point, see PLAN.md)
+// restd: upstream's MySQL GTID functions, parked: MariaDB has neither
+// gtid_executed nor these functions, its GTIDs (domain-server-sequence) need
+// their own implementation (Milestone 4, see PLAN.md). $asof is refused at
+// parse time (FilterObjectGenerator::parse_asof), so this guard is a backstop.
 void require_mysql_gtids(mysqlrouter::MySQLSession *session) {
   if (session->is_mariadb())
     throw std::runtime_error(

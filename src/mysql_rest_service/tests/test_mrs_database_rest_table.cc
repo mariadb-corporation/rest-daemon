@@ -600,7 +600,6 @@ void DatabaseRestTableTest::SetUp() {
               "", "", "", mysqlrouter::MySQLSession::kDefaultConnectTimeout,
               mysqlrouter::MySQLSession::kDefaultReadTimeout,
               CLIENT_FOUND_ROWS);
-  // restd: the SQL generators' server flavour, set by the plugin at start
 
   reset_test();
 }

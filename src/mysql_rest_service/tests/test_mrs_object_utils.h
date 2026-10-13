@@ -289,8 +289,8 @@ class ViewBuilder {
       // mapping explicitly given
       if (!fk.column_mapping.empty()) return false;
 
-      // restd: from information_schema.KEY_COLUMN_USAGE, which MySQL and
-      // MariaDB both have (upstream read MySQL's innodb_foreign tables)
+      // restd: from information_schema.KEY_COLUMN_USAGE (upstream read
+      // MySQL's information_schema.innodb_foreign_cols)
       const Table *for_table = table;
       const Table *ref_table = fk.ref_table.get();
       if (fk.to_many) std::swap(for_table, ref_table);

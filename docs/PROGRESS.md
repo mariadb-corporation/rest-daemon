@@ -13,7 +13,7 @@ Plan: [PLAN.md](PLAN.md). Current state and next steps: `.claude/PROJECT_CONTEXT
 | 3: MRS setup and cleanup | ✅ done 2026-10-05: branding (`mariadb-restd`), `--setup`, routing/cluster cleanup; tests pass on all three platforms |
 | 4: packaging and CI | ⏸ moved to Milestone 4 (2026-10-07): tar.gz (Linux, macOS), deb, rpm, Windows ZIP done and verified (unpacked); real deb/rpm installs need root; MSI deferred; CI last |
 
-**Milestone 1 (standalone daemon) is complete (2026-10-07).** Milestone 2 (MariaDB) is current.
+**Milestone 1 (standalone daemon) is complete (2026-10-07). Milestone 2 (MariaDB) is complete (2026-10-13).** Milestone 3 (schema 5.0.0) is current.
 
 | Milestone 2 phase | Status |
 |---|---|
@@ -21,7 +21,7 @@ Plan: [PLAN.md](PLAN.md). Current state and next steps: `.claude/PROJECT_CONTEXT
 | M2.1: build against MariaDB Connector/C | ✅ done 2026-10-09: build + ctest 113/113 on macOS (3.4.11), Linux (3.4.9) and Windows (3.4.8, vcpkg); the MySQL build was kept as the safety net until 2026-10-13 |
 | M2.2: run against a MariaDB server | ✅ done 2026-10-12: smoke test incl. MRS scripts passes on macOS (MariaDB 13.2), Windows and Ubuntu (11.8.9 LTS) |
 | M2.3: test suites on MariaDB | ✅ done 2026-10-13: MRS suite on macOS (13.2) and Windows (11.8.9) 100 passed, 0 failed, 14 skipped, 7 xfailed (known differences), 1 xpassed; Ubuntu (11.8.9) 101 passed, 0 failed (2026-10-12); unit + component 113/113 on all three; MySQL mode unchanged (116/5/1). Live-DB unit tests: MySQL 104/104 (macOS); MariaDB 102/104 on macOS, Ubuntu and Windows (the JSON-columns open point). M2.3 exit criteria met |
-| M2.4: cleanup | 🟡 2026-10-13: REST async tasks removed; MySQL build and MySQL server support dropped (Connector/C only, MariaDB 10.11+ only; −6k lines); docs for MariaDB. Open: the `restd:` marker pass, the follow-ups in PLAN.md (VECTOR coverage, fixed-pool `SET ROLE`, minimum version) |
+| M2.4: cleanup | ✅ done 2026-10-13: async tasks removed; MySQL build and server support dropped; follow-ups (pass-through role, SET STATEMENT timeouts, VECTOR coverage + 3 daemon fixes, 2026 kill mapping); `restd:` markers. Suite on Ubuntu 110 passed, 0 failed, 6 skipped, 5 xfailed, 1 xpassed |
 
 ## How to build and test (macOS)
 
@@ -692,3 +692,12 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   14 skipped, 7 xfailed, 1 xpassed, Ubuntu 101/0/13/7/1. (Windows ctest: one 30 s timeout
   in `routertest_component_http_server`, `GET__empty_static_folder_with_trailing_spaces_404`,
   passes when rerun; seen twice now under load, unrelated to MariaDB.)
+- Follow-ups: the pass-through pool activates an account's single role
+  (`passthrough_db_user` passes); `sqlQuery.timeout` through `SET STATEMENT
+  max_statement_time` (the `MAX_EXECUTION_TIME` hint only exists from MariaDB 12.0, so the
+  timeout did nothing on 11.8); a killed session reported as 2026 (TLS, 11.8) maps to 504
+  (`timeout` passes); the VECTOR tests ported to fixed dimensions and re-enabled, which
+  found INOUT VECTOR parameters failing (1292, now bound as BLOB), OUT ones rendered as
+  base64 and malformed base64 giving 500 (now NULL, as MRS); upstream's `" INTEGER"` typo.
+  Suite on Ubuntu: 110 passed, 0 failed, 6 skipped, 5 xfailed, 1 xpassed.
+- `restd:` marker pass; Milestone 2 closed. The final smoke tests were skipped by decision.

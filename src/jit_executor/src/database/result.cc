@@ -177,7 +177,7 @@ void DbResult::fetch_metadata() {
               fields[index].table, fields[index].org_name, fields[index].name,
               fields[index].length, fields[index].decimals,
               // TODO(rennox): enable collation handling
-              // restd: JSON/VECTOR on MariaDB come from the extended metadata
+              // restd: JSON/VECTOR come from the extended metadata (the field type says LONGTEXT/VARBINARY)
               map_data_type(mrsd::effective_field_type(&fields[index]),
                             fields[index]
                                 .flags /*,

@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1335 USA
 
-# restd: standalone MySQL REST Service daemon.
+# restd: the MariaDB REST Service daemon (mariadb-restd).
 #
 # Forked from MySQL Router (mysql-server/router). The router CMake files are
 # kept as upstream as possible; cmake/compat/ provides the parts of the MySQL

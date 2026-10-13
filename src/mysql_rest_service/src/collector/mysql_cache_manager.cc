@@ -120,7 +120,8 @@ Object MysqlCacheManager::MysqlCacheCallbacks::object_allocate(bool wait) {
     sqls.push_back("SET ROLE "s + role_);
   }
 
-  // restd: appended by execute_initial_sqls(), on MySQL only
+  // restd: GTID tracking is parked (Milestone 4); execute_initial_sqls()
+  // skips it, a MariaDB server has no session_track_gtids
   obj->set_track_own_gtids(connection_configuration_.is_rw());
 
   obj->connect_and_set_opts(new_connection_params(wait), sqls);

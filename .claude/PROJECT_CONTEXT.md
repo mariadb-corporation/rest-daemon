@@ -2,15 +2,15 @@
 
 ## Project
 
-`mariadb-restd` (MariaDB REST Service Daemon) is the REST service daemon for MariaDB, forked from MySQL Router's MySQL REST Service (MRS) plugin (`mysql-server/router`, trunk `06a5c1c99c3`, no history, no upstream sync). It serves REST endpoints for tables, views, procedures, functions and JS/TS scripts defined in the REST metadata schema. Milestone 1 (standalone daemon on MySQL 9.x / 26.7) is done; **Milestone 2 (MariaDB: Connector/C + MariaDB server) is current and MariaDB-only since 2026-10-13** (MySQL build and server support dropped; restore point: tag `m2-pre-build-decision`, bundle in `<dev>/rest-daemon-backups/`). Plan of record: `docs/PLAN.md`; build/test how-to and the session history: `docs/PROGRESS.md`; user-visible MariaDB differences: `docs/mariadb-differences.md`.
+`mariadb-restd` (MariaDB REST Service Daemon) is the REST service daemon for MariaDB, forked from MySQL Router's MySQL REST Service (MRS) plugin (`mysql-server/router`, trunk `06a5c1c99c3`, no history, no upstream sync). It serves REST endpoints for tables, views, procedures, functions and JS/TS scripts defined in the REST metadata schema. Milestone 1 (standalone daemon on MySQL 9.x / 26.7) is done; **Milestone 2 (MariaDB) is done (2026-10-13); the project is MariaDB-only; Milestone 3 (schema 5.0.0) is current** (MySQL build and server support dropped; restore point: tag `m2-pre-build-decision`, bundle in `<dev>/rest-daemon-backups/`). Plan of record: `docs/PLAN.md`; build/test how-to and the session history: `docs/PROGRESS.md`; user-visible MariaDB differences: `docs/mariadb-differences.md`.
 
 ## Milestones
 
 | # | What | State |
 |---|---|---|
 | 1 | Standalone daemon on MySQL (Linux, macOS, Windows) | done 2026-10-07 |
-| 2 | MariaDB: Connector/C, MariaDB server, metadata schema **4.1.6** as on the `main` branches of the MariaDB shell and shell plugins | current |
-| 3 | Metadata schema **5.0.0** (`mariadb_rest_service`, prefix/postfix, renamed tables, `mariadb_rest_service_*` roles), once it lands on those `main` branches. Spec: the shell repo's `.claude/context/rest-daemon-5.0.md` | after 2 |
+| 2 | MariaDB: Connector/C, MariaDB server, metadata schema **4.1.6** | done 2026-10-13 |
+| 3 | Metadata schema **5.0.0** (`mariadb_rest_service`, prefix/postfix, renamed tables, `mariadb_rest_service_*` roles), now on the `main` branches of the shell and plugins. Spec: the shell repo's `.claude/context/rest-daemon-5.0.md` (read with `git show main:...`) | current |
 | 4 | GTID read-your-writes (`asof`, `_metadata.gtid`) on MariaDB GTIDs, together with the shell and plugins; the MySQL implementation is parked in the tree, `asof` is refused with a clear 400 | after 3 |
 | 5 | Packaging (real deb/rpm installs, MSI) and GitHub Actions CI | last |
 
@@ -35,9 +35,9 @@
 
 ## Next steps
 
-1. M2.4, remaining: the `restd:` marker pass (each marker a plain statement of what differs from upstream); follow-ups: VECTOR coverage in the suite (fixtures with `VECTOR(n)`), the fixed pool's `SET ROLE`, the stated minimum version (10.11 vs 11.1 for the schema, 11.7 for VECTOR). Then close M2.
-2. Milestone 3 (schema 5.0.0): also re-record the suite results on MariaDB and retire the rewrite layer.
-3. After Milestone 3: review the open point "JSON columns on MariaDB" (docs/PLAN.md): JSON-string writes fail because the metadata records JSON columns as `longtext`; the live tests `DatabaseQueryPut/Post.special_types` fail on it until then. Then Milestone 4 (GTID), 5 (packaging, CI; also bundle the Connector/C auth plugins).
+1. Milestone 3 (schema 5.0.0): inventory of every daemon touch-point (schema name option + prefix/postfix, table/column/role renames, UUID ids, `rest_daemon` registration, version gate 5.0.x, vendor/app names, status counters, audit-log polling with an overlap window), then the phases in PLAN.md. Test fixtures: the 5.0.0 deployment script from the shell's `main`; re-record the suite and retire the rewrite layer where possible.
+2. After Milestone 3: the JSON-columns open point; then Milestone 4 (GTID), 5 (packaging, CI).
+3. M2 final state verified: Ubuntu 110 passed / 0 failed / 6 skipped / 5 xfailed / 1 xpassed; Windows 109 / 0 / 7 / 5 / 1 (it skips `destination_socket`); ctest 113/113, live 102/104 on both.
 
 ## Files that matter
 
