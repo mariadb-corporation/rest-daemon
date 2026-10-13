@@ -222,7 +222,7 @@ document generation, GTID tracking, `mysql_tasks`, account setup, tests.
 - Exit: smoke test (REST view GET, and MRS scripts if in scope) passes on MariaDB on all
   three platforms.
 
-### Phase M2.3: test suites on MariaDB
+### Phase M2.3: test suites on MariaDB ✅ done (2026-10-13)
 - `tests/mrs` harness: `mariadbd` start/reset, 4.1.6 deployment script instead of the v4
   dump, MariaDB-specific expectations (result files, GTID format, error codes), disabled
   tests with reasons (`disabled.def`).

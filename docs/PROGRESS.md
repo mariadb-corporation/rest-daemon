@@ -20,7 +20,7 @@ Plan: [PLAN.md](PLAN.md). Current state and next steps: `.claude/PROJECT_CONTEXT
 | M2.0: MariaDB dependency inventory | ✅ done 2026-10-07, verdict GO in stages ([milestone2-inventory.md](milestone2-inventory.md)) |
 | M2.1: build against MariaDB Connector/C | ✅ done 2026-10-09: build + ctest 113/113 on macOS (3.4.11), Linux (3.4.9) and Windows (3.4.8, vcpkg); the MySQL build still passes |
 | M2.2: run against a MariaDB server | ✅ done 2026-10-12: smoke test incl. MRS scripts passes on macOS (MariaDB 13.2), Windows and Ubuntu (11.8.9 LTS) |
-| M2.3: test suites on MariaDB | 🟡 2026-10-13: MRS suite on macOS (13.2) and Windows (11.8.9) 100 passed, 0 failed, 14 skipped, 7 xfailed (known differences), 1 xpassed; Ubuntu (11.8.9) 101 passed, 0 failed (2026-10-12); unit + component 113/113 on all three; MySQL mode unchanged (116/5/1). Live-DB unit tests on macOS: MySQL 104/104, MariaDB 102/104 (the JSON-columns open point). Open: live-DB unit tests on Ubuntu and Windows |
+| M2.3: test suites on MariaDB | ✅ done 2026-10-13: MRS suite on macOS (13.2) and Windows (11.8.9) 100 passed, 0 failed, 14 skipped, 7 xfailed (known differences), 1 xpassed; Ubuntu (11.8.9) 101 passed, 0 failed (2026-10-12); unit + component 113/113 on all three; MySQL mode unchanged (116/5/1). Live-DB unit tests: MySQL 104/104 (macOS); MariaDB 102/104 on macOS, Ubuntu and Windows (the JSON-columns open point). M2.3 exit criteria met |
 | M2.4: cleanup | ⬜ |
 
 ## How to build and test (macOS)
@@ -122,6 +122,11 @@ MARIADB_SOURCE_DIR=<dev>/mariadb-server \
 ```
 - MySQL 104/104; MariaDB 102/104, the 2 `special_types` failures are the JSON-string
   write limitation (docs/mariadb-differences.md)
+- Ubuntu: same command in `<dev>/mrsd/build-mariadb` with
+  `MARIADB_PACKAGE_DIR=<downloads>/mariadb-11.8.9-linux-glibc2.34-arm-64bit-sandbox`.
+  Windows: `<win-home>\mrsd-live-mariadb.cmd [gtest args]` (vcvars, the build's
+  `runtime_output_directory` and `plugin_output_directory` on PATH, the shell's `bin` last
+  for the ARM64 server's OpenSSL DLLs; without them: exit 0xC0000135, DLL not found)
 
 ### MRS scripts (JIT) step of the smoke test
 

@@ -110,8 +110,10 @@ class ObjectRowOwnership {
   std::shared_ptr<entry::Table> m_table;
   std::string m_owner_column_name;
   std::optional<mysqlrouter::sqlstring> m_user_id;
-  const VectorOfRowGroupOwnership &m_row_groups;
-  const std::set<UniversalId> &m_user_groups;
+  // restd: copies, not references: the constructors' defaults (`= {}`) are
+  // temporaries, so a reference to them dangled once the object was built
+  VectorOfRowGroupOwnership m_row_groups;
+  std::set<UniversalId> m_user_groups;
 };
 
 }  // namespace database
