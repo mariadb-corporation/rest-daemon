@@ -73,12 +73,9 @@ bool QueryEntryFields::query_parameters(MySQLSession *session,
   query_ = {
       "SELECT ofx.id, ofx.represents_reference_id, ofx.name,"
       "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.in')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.out')),"
-      "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.name')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.datatype')),"
-      "       JSON_CONTAINS(JSON_EXTRACT(d.options,'$.mysqlTask.userVariables'),"
-      "         JSON_EXTRACT(ofx.db_column,'$.name'))"
+      "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.name')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.datatype'))"
       "   FROM mysql_rest_service_metadata.object_field as ofx"
       "   JOIN mysql_rest_service_metadata.object as o on ofx.object_id=o.id"
-      "   JOIN mysql_rest_service_metadata.db_object d on o.db_object_id=d.id"
       "        WHERE o.kind='PARAMETERS' and o.db_object_id=? ORDER BY "
       "ofx.position"};
 
@@ -100,12 +97,9 @@ bool QueryEntryFields::query_parameters(MySQLSession *session,
     query_ = {
         "SELECT ofx.id, ofx.represents_reference_id, ofx.name,"
         "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.in')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.out')),"
-        "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.name')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.datatype')),"
-        "       JSON_CONTAINS(JSON_EXTRACT(d.options,'$.mysqlTask.userVariables'),"
-        "         JSON_EXTRACT(ofx.db_column,'$.name'))"
+        "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.name')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.datatype'))"
         "   FROM mysql_rest_service_metadata.object_field as ofx"
         "   JOIN mysql_rest_service_metadata.object as o on ofx.object_id=o.id"
-        "   JOIN mysql_rest_service_metadata.db_object d on o.db_object_id=d.id"
         "        WHERE o.kind='RESULT' and o.id=? ORDER BY ofx.position"};
 
     query_ << item.id;
@@ -189,7 +183,6 @@ void QueryEntryFields::on_row_params(const ResultRow &row) {
   mysql_row.unserialize(&param_out);
   mysql_row.unserialize(&entry.bind_name);
   mysql_row.unserialize(&entry.raw_data_type);
-  mysql_row.unserialize(&entry.is_user_variable);
   if (!represents_reference_id.has_value()) {
     ColumnDatatypeConverter()(&entry.data_type, entry.raw_data_type);
   }

@@ -134,8 +134,8 @@ TEST_F(QueryRestSpTests,
        procedure_has_one_empty_resultset_fields_in_the_same_order) {
   const char *k_resultset_name = "firstRS";
   mrs::database::entry::ResultSets rs{{},
-                                      {{{{{}, "a1", {}, "f1", {}, {}, false},
-                                         {{}, "a2", {}, "f2", {}, {}, false}},
+                                      {{{{{}, "a1", {}, "f1", {}, {}},
+                                         {{}, "a2", {}, "f2", {}, {}}},
                                         k_resultset_name,
                                         {}}}};
   const std::string kUnknowResultset0 = "items0";
@@ -166,8 +166,8 @@ TEST_F(QueryRestSpTests,
        procedure_has_one_empty_resultset_fields_in_the_mixed_order) {
   const char *k_resultset_name = "firstRS";
   mrs::database::entry::ResultSets rs{{},
-                                      {{{{{}, "a2", {}, "f2", {}, {}, false},
-                                         {{}, "a1", {}, "f1", {}, {}, false}},
+                                      {{{{{}, "a2", {}, "f2", {}, {}},
+                                         {{}, "a1", {}, "f1", {}, {}}},
                                         k_resultset_name,
                                         {}}}};
   const std::string kUnknowResultset0 = "items0";
