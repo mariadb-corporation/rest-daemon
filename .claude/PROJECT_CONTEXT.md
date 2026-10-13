@@ -29,11 +29,12 @@
 - **M2.2 (run against MariaDB): done.** Smoke test incl. MRS scripts passes on macOS (13.2 build tree), Windows and Ubuntu (11.8.9 LTS ARM64 sandbox packages); ad-hoc CRUD with JSON/GEOMETRY/VECTOR on macOS.
 - **M2.3 (suites on MariaDB):** MRS suite MariaDB mode on macOS: 97 passed, 0 failed, 14 skipped, 10 xfailed, 1 xpassed; MySQL mode unchanged (116/5/1). **Windows vs 11.8.9 LTS: 97 passed, 0 failed, 14 skipped, 10 xfailed, 1 xpassed**, the same as macOS vs 13.2. **Ubuntu vs 11.8.9 LTS: 98 passed, 0 failed, 13 skipped** (+ `destination_socket`, which macOS and Windows skip), 10 xfailed, 1 xpassed (2026-10-12). Live-DB unit tests on MariaDB not done.
 - macOS after the normaliser fix (2026-10-12): 99 passed, 0 failed, 14 skipped, 8 xfailed, 1 xpassed. `json_view` and `json_view_access` were no daemon issue: the tests' `replace_regex` placeholders (`"etag":ETAG`, eaten commas, `GTID`) made their output unparsable, so the key-order normalisation never ran.
-- Known failure to investigate (`tests/mrs/known_failures.mariadb.def`): `role_privileges` (first login with auth app `any_service_auth` gets the SCRAM challenge, 200, instead of a 307).
+- `role_privileges`: a cycle in a role/user/group hierarchy made MySQL's recursive CTEs fail (cte_max_recursion_depth, the login is refused) but MariaDB's stop with warning 1931 and a truncated result (the login went on). Decision (user, 2026-10-12): keep "a cycle refuses the login" on both servers; `QueryRaw::query()` raises warning 1931 as an error on MariaDB. (Switching to `UNION` would have let such users in: rejected.)
+- **Latest (2026-10-12):** macOS MariaDB mode 100 passed, 0 failed, 14 skipped, 7 xfailed, 1 xpassed; Ubuntu 101 passed, 0 failed, 13 skipped, 7 xfailed; MySQL mode 116/5/1; ctest 113/113 on both builds. No known failure left to investigate; the 7 xfails are documented server differences. Windows not rerun since the role fix.
 
 ## Next steps
 
-1. The "to investigate" known failure `role_privileges`.
+1. Windows: sync (`win_sync.sh`), rebuild and rerun the MariaDB-mode suite with the latest fixes.
 2. Live-DB unit tests (`RUN_WITH_LIVE_MYSQLD`, `tests/helpers/shared_server.cc`) against MariaDB.
 3. Phase M2.4 cleanup: remove the async-task code (`query_rest_task*`, `mysql_task_monitor*`, task-status endpoints, `mysqlTask` options, the nonblocking path of `MySQLSession`); README/CLAUDE.md for MariaDB; decide on keeping the MySQL build.
 4. Then Milestone 3 (schema 5.0.0).

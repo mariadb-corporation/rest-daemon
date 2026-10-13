@@ -644,3 +644,11 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   the normaliser now parses output with the tests' bare placeholders (`"etag":ETAG`,
   `TIMESTAMP`, `GTID` lines, eaten commas) and drops the empty `_metadata` MySQL leaves once
   its gtid is filtered. macOS: 99 passed, 0 failed, 14 skipped, 8 xfailed, 1 xpassed.
+- `role_privileges` on MariaDB: a cycle in the role/user/group hierarchy is refused as on
+  MySQL. MySQL aborts the recursive CTEs (cte_max_recursion_depth); MariaDB truncates them
+  with warning 1931, which `QueryRaw::query()` now raises as an error (checked only when a
+  query ends with warnings; `is_mariadb()` first, for the strict unit-test mocks).
+- Harness: a MariaDB datadir bootstrap is retried once and reports its output (one of three
+  workers' `mariadb-install-db` stopped half-way on Ubuntu once).
+- Results: macOS MariaDB mode 100 passed, 0 failed, 7 xfailed; Ubuntu 101 passed, 0 failed,
+  7 xfailed; MySQL mode 116/5/1; ctest 113/113 on both builds.

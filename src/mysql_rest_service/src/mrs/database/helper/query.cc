@@ -63,7 +63,7 @@ constexpr unsigned kMariadbRecursionTruncated = 1931;
  * roles fails, as before).
  */
 void throw_on_truncated_recursion(MySQLSession *session) {
-  if (session->warning_count() == 0 || !session->is_mariadb()) return;
+  if (!session->is_mariadb() || session->warning_count() == 0) return;
 
   std::string message;
   MySQLSession::ResultRowProcessor find = [&message](
