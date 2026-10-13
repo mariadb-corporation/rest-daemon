@@ -24,7 +24,6 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "mrsd/compat_client.h"  // restd: MySQL-only ER_* codes
 #include "bootstrap_mysql_account.h"
 
 #include <iomanip>
@@ -175,7 +174,7 @@ std::set<std::string> BootstrapMySQLAccount::get_hostnames_of_created_accounts(
             "SHOW WARNINGS: Failed to parse error code from error code column (column content = '"s +
             row[1] + "'): " + e.what());
       }
-      if (code != ER_USER_ALREADY_EXISTS) {
+      if (code != ER_USER_CREATE_EXISTS) {
         return true;  // true = give me another row
       }
 
@@ -392,12 +391,9 @@ void BootstrapMySQLAccount::create_users(const std::string &username,
   // build string containing account/auth list
   std::string accounts_with_auth;
   {
-    // restd: MariaDB has no caching_sha2_password by default; its default
-    // authentication plugin is used there
-    const std::string auth_part =
-        (mysql_->is_mariadb() ? " IDENTIFIED BY "s
-                              : " IDENTIFIED WITH `caching_sha2_password` BY "s) +
-        mysql_->quote(password);
+    // restd: the server's default authentication plugin (upstream named
+    // caching_sha2_password)
+    const std::string auth_part = " IDENTIFIED BY "s + mysql_->quote(password);
 
     const std::string quoted_username = mysql_->quote(username);
     bool is_first{true};
@@ -456,18 +452,15 @@ void BootstrapMySQLAccount::give_grants_to_users(
 
     // if we were granting some roles we need to make sure they are enabled by
     // default
-    std::string default_role;  // restd: best effort on MariaDB, see below
+    std::string default_role;  // restd: best effort, see below
     if (user_options.grant_role.size() > 0) {
-      if (mysql_->is_mariadb()) {
-        // restd: one default role per account on MariaDB; the connection
-        // pools SET ROLE explicitly, the default only matters for ad-hoc
-        // connections. Setting another account's default role needs
-        // privileges on the mysql schema, which the setup account may lack.
-        default_role = "SET DEFAULT ROLE "s + user_options.grant_role.front() +
-                       " FOR " + new_accounts;
-      } else {
-        statements.push_back("SET DEFAULT ROLE ALL TO " + new_accounts);
-      }
+      // restd: one default role per account (upstream: SET DEFAULT ROLE ALL).
+      // The metadata connection pool sets its role explicitly; the default
+      // matters for the other connections. Setting another account's default
+      // role needs privileges on the mysql schema, which the setup account
+      // may lack, so this is best effort.
+      default_role = "SET DEFAULT ROLE "s + user_options.grant_role.front() +
+                     " FOR " + new_accounts;
     }
 
     for (const auto &s : statements) {

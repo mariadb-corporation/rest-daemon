@@ -28,7 +28,6 @@
 #define _MYSQL_REST_SERVICE_INCLUDE_HELPER_SQLSTRING_UTILS_H_
 
 #include <string>
-#include "helper/server_flavor.h"  // restd: MariaDB-specific SQL
 #include "mrs/endpoint/handler/helper/utilities.h"
 #include "mysqlrouter/utils_sqlstring.h"
 
@@ -45,15 +44,11 @@ inline mysqlrouter::sqlstring get_sql_format(DataType type) {
     case DataType::GEOMETRY:
       return mysqlrouter::sqlstring("ST_GeomFromGeoJSON(?)");
 
-    case DataType::VECTOR:  // restd: MariaDB names
-      return mysqlrouter::sqlstring(helper::is_mariadb_server()
-                                        ? "VEC_FromText(?)"
-                                        : "STRING_TO_VECTOR(?)");
+    case DataType::VECTOR:  // restd: MariaDB's function
+      return mysqlrouter::sqlstring("VEC_FromText(?)");
 
-    case DataType::JSON:  // restd: no JSON cast on MariaDB, the text is JSON
-      return mysqlrouter::sqlstring(helper::is_mariadb_server()
-                                        ? "?"
-                                        : "CAST(? as JSON)");
+    case DataType::JSON:  // restd: no JSON cast, the text is the JSON
+      return mysqlrouter::sqlstring("?");
 
     default: {
     }

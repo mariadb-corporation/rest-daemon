@@ -24,7 +24,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "mrsd/compat_client.h"  // restd: MySQL-only ER_* codes
 #include "mrs/database/query_rest_table_updater.h"
 
 #include <set>
@@ -163,10 +162,11 @@ PrimaryKeyColumnValues JsonMappingUpdater::update(
     current_doc =
         select_one(session, pk_values, is_owned, RowLockType::FOR_UPDATE);
   } catch (const MySQLSession::Error &e) {
-    // ER_LOCK_NOWAIT happens when SELECT ... FOR UPDATE NOWAIT fails because
+    // ER_LOCK_WAIT_TIMEOUT (restd: MariaDB's code for NOWAIT, upstream
+    // ER_LOCK_NOWAIT) happens when SELECT ... FOR UPDATE NOWAIT fails because
     // someone else locked the row (e.g. another user updating the same row
     // at the same time via MRS)
-    if (e.code() == ER_LOCK_NOWAIT) throw interface::ETagMismatch();
+    if (e.code() == ER_LOCK_WAIT_TIMEOUT) throw interface::ETagMismatch();
   }
 
   if (current_doc.empty()) {

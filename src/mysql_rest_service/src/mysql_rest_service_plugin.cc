@@ -25,7 +25,6 @@
 */
 
 #include <algorithm>  // max
-#include "helper/server_flavor.h"  // restd: MariaDB-specific SQL
 #include <array>
 #include <map>
 #include <memory>  // unique_ptr
@@ -37,7 +36,6 @@
 
 #include <mysql.h>  // mysql_library_init
 
-#include "mrsd/compat_client.h"  // restd: MySQL-only ER_* codes
 #include "my_thread.h"     // NOLINT(build/include_subdir)
 #include "mysqld_error.h"  // NOLINT(build/include_subdir)
 #include "socket_operations.h"
@@ -80,7 +78,7 @@ namespace {
 
 void trace_error(const char *variable_user, const char *access,
                  const char *role, const mysqlrouter::MySQLSession::Error &e) {
-  if (e.code() == ER_ROLE_NOT_GRANTED) {
+  if (e.code() == ER_INVALID_ROLE) {
     log_error(
         "MySQL Server account, set in '%s' (MRS/%s access), "
         "must be granted with '%s' role.",
@@ -138,10 +136,9 @@ class MrsModule {
           collector::kMySQLConnectionMetadataRO, true);
 
       check_version_compatibility(conn1.get());
-      helper::set_mariadb_server(conn1->is_mariadb());
     } catch (const MySQLSession::Error &e) {
       if (!fail_on_no_role_granted &&
-          (e.code() == ER_ROLE_NOT_GRANTED ||
+          (e.code() == ER_INVALID_ROLE ||
            e.code() == ER_ACCESS_DENIED_ERROR ||
            e.code() == ER_ACCESS_DENIED_NO_PASSWORD_ERROR)) {
         return false;
@@ -160,7 +157,7 @@ class MrsModule {
       check_version_compatibility(conn2.get());
     } catch (const MySQLSession::Error &e) {
       if (!fail_on_no_role_granted &&
-          (e.code() == ER_ROLE_NOT_GRANTED ||
+          (e.code() == ER_INVALID_ROLE ||
            e.code() == ER_ACCESS_DENIED_ERROR ||
            e.code() == ER_ACCESS_DENIED_NO_PASSWORD_ERROR)) {
         return false;

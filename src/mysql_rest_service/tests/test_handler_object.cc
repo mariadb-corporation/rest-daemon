@@ -223,9 +223,12 @@ TEST_F(HandleObjectTests, fetch_object_feed) {
   EXPECT_CALL(
       mock_session,
       query(
+          // restd: members in the order the documents render them (key
+          // length, then bytewise), see JsonQueryBuilder::join_select_items()
           StartsWith("SELECT /*+ MAX_EXECUTION_TIME(2000) */ "
-                     "JSON_OBJECT('column1', `t0`.`column1`, 'column2', `t0`.`"
-                     "column2`, 'column3', `t0`.`column3`,'links'"),
+                     "JSON_OBJECT('links', JSON_ARRAY(), 'column1', "
+                     "`t0`.`column1`, 'column2', `t0`.`column2`, 'column3', "
+                     "`t0`.`column3`)"),
           _, _));
 
   object.handle_get(&ctxt);
@@ -256,9 +259,12 @@ TEST_F(HandleObjectTests, fetch_object_single) {
   EXPECT_CALL(
       mock_session,
       query(
+          // restd: members in the order the documents render them (key
+          // length, then bytewise), see JsonQueryBuilder::join_select_items()
           StartsWith("SELECT /*+ MAX_EXECUTION_TIME(2000) */ "
-                     "JSON_OBJECT('column1', `t0`.`column1`, 'column2', `t0`.`"
-                     "column2`, 'column3', `t0`.`column3`,'links'"),
+                     "JSON_OBJECT('links', JSON_ARRAY(), 'column1', "
+                     "`t0`.`column1`, 'column2', `t0`.`column2`, 'column3', "
+                     "`t0`.`column3`)"),
           _, _));
 
   object.handle_get(&ctxt);

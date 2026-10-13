@@ -25,7 +25,6 @@
 */
 
 #include "mrs/database/helper/sp_function_query.h"
-#include "helper/server_flavor.h"  // restd: MariaDB-specific SQL
 
 #include <stdexcept>
 
@@ -160,21 +159,15 @@ static mysqlrouter::sqlstring to_sqlstring(const std::string &value,
     case ColumnType::GEOMETRY: {
       auto position = value.find_first_not_of(" \t");
       if (std::string::npos != position && '{' == value[position]) {
-        // restd: MariaDB's ST_GeomFromGeoJSON has no SRID argument (and no
-        // SRID attribute on columns to match)
-        if (helper::is_mariadb_server())
-          return mysqlrouter::sqlstring("ST_GeomFromGeoJSON(?)") << value;
-        return mysqlrouter::sqlstring("ST_GeomFromGeoJSON(?,1,?)")
-               << value << column->srid;
+        // restd: ST_GeomFromGeoJSON has no SRID argument (and columns no
+        // SRID attribute to match)
+        return mysqlrouter::sqlstring("ST_GeomFromGeoJSON(?)") << value;
       }
       return mysqlrouter::sqlstring("ST_GeomFromText(?, ?)")
              << value << column->srid;
     }
     case ColumnType::VECTOR: {
-      return mysqlrouter::sqlstring(helper::is_mariadb_server()
-                                        ? "VEC_FromText(?)"
-                                        : "STRING_TO_VECTOR(?)")
-             << value;
+      return mysqlrouter::sqlstring("VEC_FromText(?)") << value;
     }
 
     case ColumnType::BINARY:
@@ -269,16 +262,10 @@ mysqlrouter::sqlstring to_sqlstring(const std::string &value, DataType type) {
     }
 
     case DataType::VECTOR:
-      return mysqlrouter::sqlstring(helper::is_mariadb_server()
-                                        ? "VEC_FromText(?)"
-                                        : "STRING_TO_VECTOR(?)")
-             << value;
+      return mysqlrouter::sqlstring("VEC_FromText(?)") << value;
 
     case DataType::JSON:
-      return mysqlrouter::sqlstring(helper::is_mariadb_server()
-                                        ? "?"
-                                        : "CAST(? as JSON)")
-             << value;
+      return mysqlrouter::sqlstring("?") << value;
 
     case DataType::STRING:
       return mysqlrouter::sqlstring("?") << value;

@@ -84,7 +84,6 @@ if (mysqld.global.mrs_router_id === undefined) {
           "get_routing_guidelines",
           "mrs_set_sql_mode",
           "mrs_set_meta_provider_role",
-          "mrs_select_version",
           "mrs_select_basedir",
           "mrs_set_data_provider_role",
 

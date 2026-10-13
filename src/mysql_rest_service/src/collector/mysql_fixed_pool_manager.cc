@@ -118,10 +118,8 @@ void MysqlFixedPoolManager::init(DestinationProvider *destination,
     obj->connect(conn_params);
     mrs::Counter<kEntityCounterMySQLConnectionsCreated>::increment();
 
-    // enable all roles, in case necessary ones are not enabled by default.
-    // restd: MariaDB activates one role at a time and has no ROLE ALL; the
-    // account's default role applies there.
-    if (!obj->is_mariadb()) obj->execute("SET ROLE ALL");
+    // restd: upstream enabled all roles here (SET ROLE ALL); MariaDB
+    // activates one role at a time, the account's default role applies.
 
     CachedObject cached{&cache_manager_, false, obj.release()};
 

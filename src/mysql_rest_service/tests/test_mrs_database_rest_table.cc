@@ -29,7 +29,6 @@
 
 #include "test_mrs_database_rest_table.h"
 
-#include "helper/server_flavor.h"  // restd
 
 constexpr const char *k_test_ddl[] = {
     "CREATE SCHEMA mrstestdb", "USE mrstestdb",
@@ -602,7 +601,6 @@ void DatabaseRestTableTest::SetUp() {
               mysqlrouter::MySQLSession::kDefaultReadTimeout,
               CLIENT_FOUND_ROWS);
   // restd: the SQL generators' server flavour, set by the plugin at start
-  helper::set_mariadb_server(m_->is_mariadb());
 
   reset_test();
 }

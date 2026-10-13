@@ -57,13 +57,13 @@ constexpr unsigned kMariadbRecursionTruncated = 1931;
 
 /**
  * restd: a recursive CTE that runs into a cycle (a role, user or group
- * hierarchy that loops) fails on MySQL with ER_CTE_MAX_RECURSION_DEPTH;
- * MariaDB stops it with a warning and returns what it has. Raise that warning
- * as the error, so a cycle is refused on both servers (a login with circular
- * roles fails, as before).
+ * hierarchy that loops) is stopped by the server with a warning, and it
+ * returns what it has (MySQL fails it with ER_CTE_MAX_RECURSION_DEPTH, which
+ * the code was written for). Raise that warning as the error, so a cycle is
+ * refused (a login with circular roles fails, as upstream).
  */
 void throw_on_truncated_recursion(MySQLSession *session) {
-  if (!session->is_mariadb() || session->warning_count() == 0) return;
+  if (session->warning_count() == 0) return;
 
   std::string message;
   MySQLSession::ResultRowProcessor find = [&message](

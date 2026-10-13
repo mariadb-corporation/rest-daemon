@@ -25,7 +25,6 @@
 */
 
 #include "mrs/database/filter_object_generator.h"
-#include "helper/server_flavor.h"  // restd: MariaDB-specific SQL
 
 #include <map>
 #include <set>
@@ -106,9 +105,7 @@ class tosVec {
     return v->IsString() || is_vec_json(v);
   }
   mysqlrouter::sqlstring to_sqlstring(entry::Column *, Value *v) const {
-    // restd: MariaDB names
-    const char *fmt = helper::is_mariadb_server() ? "VEC_FromText(?)"
-                                                  : "STRING_TO_VECTOR(?)";
+    const char *fmt = "VEC_FromText(?)";  // restd: MariaDB's function
     if (v->IsString()) return mysqlrouter::sqlstring(fmt) << v->GetString();
 
     return mysqlrouter::sqlstring(fmt) << helper::json::to_string(v);
@@ -156,11 +153,9 @@ class tosGeom {
       return mysqlrouter::sqlstring("ST_GeomFromText(?, ?)")
              << v->GetString() << dfield->srid;
 
-    if (helper::is_mariadb_server())  // restd: no SRID argument
-      return mysqlrouter::sqlstring("ST_GeomFromGeoJSON(?)")
-             << helper::json::to_string(v);
-    return mysqlrouter::sqlstring("ST_GeomFromGeoJSON(?,1,?)")
-           << helper::json::to_string(v) << dfield->srid;
+    // restd: no SRID argument
+    return mysqlrouter::sqlstring("ST_GeomFromGeoJSON(?)")
+           << helper::json::to_string(v);
   }
 };
 
@@ -422,9 +417,7 @@ namespace {
 mysqlrouter::sqlstring with_column_srid(const mysqlrouter::sqlstring &column,
                                         const entry::Column *dfield,
                                         mysqlrouter::sqlstring value) {
-  if (!helper::is_mariadb_server() || !dfield ||
-      dfield->type != entry::ColumnType::GEOMETRY)
-    return value;
+  if (!dfield || dfield->type != entry::ColumnType::GEOMETRY) return value;
   mysqlrouter::sqlstring result{"ST_GeomFromWKB(ST_AsBinary(?), ST_SRID(?))"};
   result << value << column;
   return result;

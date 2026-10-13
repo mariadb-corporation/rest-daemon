@@ -24,7 +24,6 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "mrsd/compat_client.h"  // restd: MySQL-only ER_* codes
 #include "mrs/endpoint/handler/authentication/handler_authorize_user.h"
 
 #include <cassert>
@@ -91,7 +90,7 @@ HttpResult HandlerAuthorizeUser::handle_put(RequestContext *ctxt) {
       authorization_manager_->get_user_manager()->update_email(
           &ctxt->sql_session_cache, ctxt->user.user_id, email);
     } catch (const mysqlrouter::MySQLSession::Error &e) {
-      if (ER_CHECK_CONSTRAINT_VIOLATED == e.code()) {
+      if (ER_CONSTRAINT_FAILED == e.code()) {  // restd: MariaDB's code
         throw http::Error(HttpStatusCode::BadRequest,
                           "Invalid value for 'email' field.");
       }

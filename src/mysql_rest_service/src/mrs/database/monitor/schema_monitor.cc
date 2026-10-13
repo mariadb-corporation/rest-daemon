@@ -24,7 +24,6 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "mrsd/compat_client.h"  // restd: MySQL-only ER_* codes
 
 #include <cstring>
 #include "mrs/database/schema_monitor.h"
@@ -107,21 +106,15 @@ mrs::interface::SupportedMrsMetadataVersion check_supported_mrs_version(
 }
 
 bool query_is_node_read_only(mysqlrouter::MySQLSession *session) {
-  // restd: no super_read_only on MariaDB
-  mysqlrouter::sqlstring q = session->is_mariadb()
-                                 ? "select @@read_only, @@read_only"
-                                 : "select @@super_read_only, @@read_only";
-
-  auto result{session->query_one(q)};
+  // restd: read_only only (no super_read_only); upstream checked both
+  auto result{session->query_one("select @@read_only")};
 
   if (nullptr == result.get()) return false;
-  if (!(*result)[0] || (!(*result)[1])) return false;
+  if (!(*result)[0]) return false;
 
-  // restd: MariaDB renders the boolean as ON/OFF, MySQL as 1/0
-  auto is_on = [](const char *v) {
-    return strcmp(v, "1") == 0 || strcmp(v, "ON") == 0;
-  };
-  return is_on((*result)[0]) || is_on((*result)[1]);
+  // rendered as ON/OFF or 1/0
+  const char *v = (*result)[0];
+  return strcmp(v, "1") == 0 || strcmp(v, "ON") == 0;
 }
 
 void update_router_attributes_on_start(mysqlrouter::MySQLSession *session,

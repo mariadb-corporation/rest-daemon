@@ -121,6 +121,9 @@ class RouterMrsConfig : public RouterComponentTest {
 
     JsonAllocator allocator;
     json_doc.AddMember("mrs_router_id", mrs_router_id, allocator);
+    // restd: the daemon only accepts a MariaDB server (the handshake's
+    // version string), 10.11 or later
+    json_doc.AddMember("server_version", "11.8.0-MariaDB", allocator);
 
     const auto json_str = json_to_string(json_doc);
 

@@ -25,7 +25,6 @@
 */
 
 #include "mrs/endpoint/handler/handler_db_object_table.h"
-#include "helper/server_flavor.h"  // restd: MariaDB-specific SQL
 
 #include <algorithm>
 #include <map>
@@ -154,9 +153,7 @@ mysqlrouter::sqlstring rest_param_to_sql_value(
       return result;
     }
     case mrs::database::entry::ColumnType::VECTOR: {
-      mysqlrouter::sqlstring result{helper::is_mariadb_server()
-                                        ? "VEC_FromText(?)"
-                                        : "STRING_TO_VECTOR(?)"};
+      mysqlrouter::sqlstring result{"VEC_FromText(?)"};  // restd
       result << value;
       return result;
     }
@@ -166,8 +163,7 @@ mysqlrouter::sqlstring rest_param_to_sql_value(
       return result;
     }
     case mrs::database::entry::ColumnType::JSON: {
-      mysqlrouter::sqlstring result{
-          helper::is_mariadb_server() ? "?" : "CAST(? AS JSON)"};
+      mysqlrouter::sqlstring result{"?"};  // restd: no JSON cast
       result << value;
       return result;
     }
@@ -269,7 +265,7 @@ void execute_and_handle_timeout(F fn) {
   try {
     fn();
   } catch (const mysqlrouter::MySQLSession::Error &e) {
-    if (e.code() == ER_QUERY_TIMEOUT) {
+    if (e.code() == ER_STATEMENT_TIMEOUT) {
       mrs::Counter<kEntityCounterSqlQueryTimeouts>::increment();
 
       throw mrs::http::Error(HttpStatusCode::GatewayTimeout,

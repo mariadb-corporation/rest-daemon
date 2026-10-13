@@ -55,19 +55,6 @@ constexpr enum_field_types MYSQL_TYPE_VECTOR =
     static_cast<enum_field_types>(242);
 #endif
 
-// MySQL-only server error codes the daemon checks for, mapped to the code a
-// MariaDB server returns in the same situation
-// (docs/milestone2-inventory.md, 3a). Codes without a counterpart
-// (ER_GTID_MODE_OFF) are handled at the call site.
-#define ER_ROLE_NOT_GRANTED ER_INVALID_ROLE  // SET ROLE of a role not granted
-#define ER_CHECK_CONSTRAINT_VIOLATED ER_CONSTRAINT_FAILED
-#define ER_LOCK_NOWAIT ER_LOCK_WAIT_TIMEOUT  // SELECT ... FOR UPDATE NOWAIT
-#define ER_USER_ALREADY_EXISTS ER_USER_CREATE_EXISTS  // CREATE USER IF NOT EXISTS
-// a statement timeout (max_statement_time, MAX_EXECUTION_TIME hint)
-#ifdef ER_QUERY_TIMEOUT  // only in the newest libmariadb headers
-#undef ER_QUERY_TIMEOUT
-#endif
-#define ER_QUERY_TIMEOUT ER_STATEMENT_TIMEOUT
 // no offline mode on MariaDB; the code is never returned
 #ifndef ER_SERVER_OFFLINE_MODE
 #define ER_SERVER_OFFLINE_MODE 3032

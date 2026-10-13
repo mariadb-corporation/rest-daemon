@@ -29,7 +29,6 @@
 #include <vector>
 
 #include "helper/expect_throw_msg.h"
-#include "helper/server_flavor.h"
 #include "mock/mock_session.h"
 #include "mrs/database/query_rest_table_updater.h"
 #include "test_mrs_database_rest_table.h"
@@ -393,10 +392,8 @@ TEST_F(DatabaseQueryPost, special_types) {
   EXPECT_STREQ("000000000101000000E5D022DBF93E284039B4C876BE0F4140", (*row)[1]);
   EXPECT_STREQ("1", (*row)[2]);
   EXPECT_STREQ("48656C6C6F20576F726C640A", (*row)[3]);
-  // restd: MariaDB stores JSON text as given, MySQL normalises it
-  EXPECT_STREQ(helper::is_mariadb_server() ? "[1,{\"a\":true,\"b\":null}]"
-                                           : "[1, {\"a\": true, \"b\": null}]",
-               (*row)[4]);
+  // restd: JSON text stored as given
+  EXPECT_STREQ("[1,{\"a\":true,\"b\":null}]", (*row)[4]);
 
   root->with_check_ = false;
 

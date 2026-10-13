@@ -1451,24 +1451,6 @@ function get_response(stmt_key, options) {
       return {"stmt": "SET @@SESSION.sql_mode=DEFAULT;", "ok": {}};
     case "mrs_set_meta_provider_role":
       return {"stmt": "SET ROLE mysql_rest_service_meta_provider", "ok": {}};
-    case "mrs_select_version":
-      return {
-        stmt:
-            "SELECT substring_index(@@version, '.', 1), concat(@@version_comment, @@version)",
-        result: {
-          columns: [
-            {
-              "name": "substring_index(@@version, '.', 1)",
-              "type": "VAR_STRING"
-            },
-            {
-              "name": "concat(@@version_comment, @@version)",
-              "type": "VAR_STRING"
-            }
-          ],
-          rows: [["9", "Source distribution mrs"]],
-        }
-      };
     case "mrs_select_basedir":
       return {
         stmt: "SELECT @@basedir",

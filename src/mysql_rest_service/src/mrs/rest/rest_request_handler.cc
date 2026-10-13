@@ -24,7 +24,6 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "mrsd/compat_client.h"  // restd: MySQL-only ER_* codes
 #include "mrs/rest/rest_request_handler.h"
 
 #include <memory>

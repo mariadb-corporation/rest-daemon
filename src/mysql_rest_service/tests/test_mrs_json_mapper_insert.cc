@@ -187,7 +187,7 @@ TEST_F(JsonMappingInsert, root_insert) {
     "id": 1,
     "data": "Test"
   })*"),
-                     "Duplicate entry '1' for key 'root.PRIMARY' (1062)");
+                     "Duplicate entry '1' for key 'PRIMARY' (1062)");
 }
 
 TEST_F(JsonMappingInsert, root_autoinc) {
@@ -265,7 +265,7 @@ TEST_F(JsonMappingInsert, root_autoinc) {
   EXPECT_INSERT(root, test_nullpk, ids);
   EXPECT_INSERT(root, test_newpk, ids);
   EXPECT_MYSQL_ERROR(test_insert(root, test_duppk, ids),
-                     "Duplicate entry '1' for key 'root.PRIMARY' (1062)");
+                     "Duplicate entry '1' for key 'PRIMARY' (1062)");
 
   // with children
   const auto test_nested_nopk = R"*({
@@ -315,7 +315,7 @@ TEST_F(JsonMappingInsert, root_autoinc) {
 
   // (should steal child1n 3 and insert new 100)
   EXPECT_MYSQL_ERROR(test_insert(root, test_nested_newpk1, ids),
-                     "Duplicate entry '3' for key 'child_1n.PRIMARY' (1062)");
+                     "Duplicate entry '3' for key 'PRIMARY' (1062)");
   EXPECT_INSERT(root, test_nested_newpk2, ids);
   EXPECT_INSERT(root, test_nested_nopk, ids);
 
@@ -400,7 +400,7 @@ TEST_F(JsonMappingInsert, root_uuid) {
     "child1n": []>>
   })*",
                                  ids),
-                     "Duplicate entry 'd23' for key 'root.PRIMARY' (1062)");
+                     "Duplicate entry 'd23' for key 'PRIMARY' (1062)");
 
   // with children
   const auto test_nested_nopk = R"*({
@@ -680,7 +680,7 @@ TEST_F(JsonMappingInsert, child1n) {
                     "ID for table `child_1n` missing in JSON input");
   EXPECT_INSERT(root_insert, test_newpk, ids);
   EXPECT_MYSQL_ERROR(test_insert(root_insert, test_duppk, ids),
-                     "Duplicate entry '1' for key 'child_1n.PRIMARY' (1062)");
+                     "Duplicate entry '1' for key 'PRIMARY' (1062)");
 
   EXPECT_JSON_ERROR(test_insert(root_update, test_nopk, ids),
                     "ID for table `child_1n` missing in JSON input");
@@ -789,7 +789,7 @@ TEST_F(JsonMappingInsert, child1n_autoinc) {
 
   EXPECT_INSERT(root_insert_insert, test_newpk, ids);
   EXPECT_MYSQL_ERROR(test_insert(root_insert_insert, test_duppk, ids),
-                     "Duplicate entry '1' for key 'child_1n.PRIMARY' (1062)");
+                     "Duplicate entry '1' for key 'PRIMARY' (1062)");
 
   EXPECT_DUALITY_ERROR(
       test_insert(root_insert_update, test_newpk, ids),

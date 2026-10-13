@@ -28,7 +28,6 @@
 #define ROUTER_SRC_MYSQL_REST_SERVICE_INCLUDE_MRS_DATABASE_HELPER_SP_FUNCTION_QUERY_H_
 
 #include <vector>
-#include "helper/server_flavor.h"  // restd: MariaDB-specific SQL
 
 #include "helper/http/url.h"
 #include "http/base/uri.h"
@@ -77,15 +76,11 @@ inline mysqlrouter::sqlstring get_sql_format(
       return value.IsObject() ? mysqlrouter::sqlstring("ST_GeomFromGeoJSON(?)")
                               : mysqlrouter::sqlstring("ST_GeomFromText(?)");
 
-    case DataType::VECTOR:  // restd: MariaDB names
-      return mysqlrouter::sqlstring(helper::is_mariadb_server()
-                                        ? "VEC_FromText(?)"
-                                        : "STRING_TO_VECTOR(?)");
+    case DataType::VECTOR:  // restd: MariaDB's function
+      return mysqlrouter::sqlstring("VEC_FromText(?)");
 
-    case DataType::JSON:  // restd: no JSON cast on MariaDB
-      return mysqlrouter::sqlstring(helper::is_mariadb_server()
-                                        ? "?"
-                                        : "CAST(? as JSON)");
+    case DataType::JSON:  // restd: no JSON cast, the text is the JSON
+      return mysqlrouter::sqlstring("?");
 
     default: {
     }

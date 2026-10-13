@@ -76,7 +76,10 @@ class MockMySQLSession : public collector::CountedMySQLSession {
 
   MOCK_METHOD(uint64_t, last_insert_id, (), (override, noexcept));
   MOCK_METHOD(uint64_t, affected_rows, (), (override, noexcept));
-  MOCK_METHOD(unsigned, warning_count, (), (override, noexcept));
+  // restd: not mocked: every query is followed by a warning_count() check
+  // (a truncated recursive CTE is raised as an error), which a strict mock
+  // would flag. No test expects warnings.
+  unsigned warning_count() noexcept override { return 0; }
   MOCK_METHOD(std::string, quote, (const std::string &, char),
               (const, override));
   MOCK_METHOD(bool, is_connected, (), (override, noexcept));

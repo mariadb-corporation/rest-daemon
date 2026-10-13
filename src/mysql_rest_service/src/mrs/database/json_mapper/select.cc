@@ -25,7 +25,6 @@
 */
 
 #include "mrs/database/json_mapper/select.h"
-#include "helper/server_flavor.h"  // restd: MariaDB-specific SQL
 #include <algorithm>
 #include <iostream>
 #include <memory>
@@ -73,13 +72,12 @@ mysqlrouter::sqlstring format_where_expr(const Table &table,
   return format_where_expr(table, table.table_alias, f, omit_row_owner);
 }
 
-// restd: MySQL's JSON_OBJECT renders DATETIME/TIMESTAMP/TIME with their
-// microseconds ("2020-12-01 12:01:50.000000"); MariaDB renders them as the
-// column's precision. The same text for both servers.
-static const char *mariadb_temporal_format(entry::ColumnType type,
-                                           const std::string &datatype) {
-  if (!helper::is_mariadb_server() || type != entry::ColumnType::STRING)
-    return nullptr;
+// restd: JSON_OBJECT renders DATETIME/TIMESTAMP/TIME at the column's
+// precision; the REST documents carry the microseconds
+// ("2020-12-01 12:01:50.000000"), as the MySQL REST Service does.
+static const char *temporal_format(entry::ColumnType type,
+                                   const std::string &datatype) {
+  if (type != entry::ColumnType::STRING) return nullptr;
   if (helper::starts_with(datatype, "datetime") ||
       helper::starts_with(datatype, "timestamp"))
     return "DATE_FORMAT(!.!,'%Y-%m-%d %H:%i:%s.%f')";
@@ -93,16 +91,11 @@ mysqlrouter::sqlstring format_key_names(const Table &table) {
     mysqlrouter::sqlstring col;
     if (c->type == entry::ColumnType::BINARY)
       col = mysqlrouter::sqlstring("TO_BASE64(!.!)");
-    else if (c->type == entry::ColumnType::GEOMETRY)
-      col = mysqlrouter::sqlstring(helper::is_mariadb_server()
-                                       ? "JSON_EXTRACT(ST_AsGeoJSON(!.!),'$')"
-                                       : "ST_AsGeoJSON(!.!)");
+    else if (c->type == entry::ColumnType::GEOMETRY)  // restd: typed as JSON
+      col = mysqlrouter::sqlstring("JSON_EXTRACT(ST_AsGeoJSON(!.!),'$')");
     else if (c->type == entry::ColumnType::VECTOR)
-      col = mysqlrouter::sqlstring(
-          helper::is_mariadb_server()
-              ? "JSON_EXTRACT(VEC_ToText(!.!),'$')"
-              : "CAST(CONVERT(VECTOR_TO_STRING(!.!) using utf8mb4) AS JSON)");
-    else if (const char *fmt = mariadb_temporal_format(c->type, c->datatype))
+      col = mysqlrouter::sqlstring("JSON_EXTRACT(VEC_ToText(!.!),'$')");
+    else if (const char *fmt = temporal_format(c->type, c->datatype))
       col = mysqlrouter::sqlstring(fmt);
     else
       col = mysqlrouter::sqlstring("!.!");
@@ -122,19 +115,13 @@ mysqlrouter::sqlstring format_key(const Table &table,
     if (column->type == entry::ColumnType::BINARY)
       s.append_preformatted_sep(",", mysqlrouter::sqlstring("TO_BASE64(?)")
                                          << c.second);
-    else if (column->type == entry::ColumnType::GEOMETRY)
+    else if (column->type == entry::ColumnType::GEOMETRY)  // restd: as JSON
       s.append_preformatted_sep(
-          ",", mysqlrouter::sqlstring(helper::is_mariadb_server()
-                                          ? "JSON_EXTRACT(ST_AsGeoJSON(?),'$')"
-                                          : "St_AsGeoJSON(?)")
+          ",", mysqlrouter::sqlstring("JSON_EXTRACT(ST_AsGeoJSON(?),'$')")
                    << c.second);
     else if (column->type == entry::ColumnType::VECTOR)
       s.append_preformatted_sep(
-          ",", mysqlrouter::sqlstring(
-                   helper::is_mariadb_server()
-                       ? "JSON_EXTRACT(VEC_ToText(?),'$')"
-                       : "CAST(CONVERT(VECTOR_TO_STRING(?) using utf8mb4) AS "
-                         "JSON)")
+          ",", mysqlrouter::sqlstring("JSON_EXTRACT(VEC_ToText(?),'$')")
                    << c.second);
     else
       s.append_preformatted_sep(",", c.second);
@@ -208,23 +195,21 @@ void JsonQueryBuilder::process_table(std::shared_ptr<Table> parent_table,
 
 void JsonQueryBuilder::add_member(const std::string &key,
                                   const mysqlrouter::sqlstring &item) {
-  // "," as upstream joined these members, so the MySQL SQL is unchanged
+  // "," as upstream joined these members
   m_items.push_back({key, item, ","});
   join_select_items();
 }
 
 void JsonQueryBuilder::join_select_items() {
-  // restd: MySQL returns JSON_OBJECT members sorted by key length, then
-  // bytewise; MariaDB keeps them in argument order. Pass them in MySQL's order
-  // so that responses and etags (hashed in document order) match on both.
-  if (helper::is_mariadb_server()) {
-    std::stable_sort(m_items.begin(), m_items.end(),
-                     [](const auto &a, const auto &b) {
-                       if (a.key.size() != b.key.size())
-                         return a.key.size() < b.key.size();
-                       return a.key < b.key;
-                     });
-  }
+  // restd: JSON_OBJECT keeps its members in argument order; pass them in the
+  // order the MySQL REST Service renders them (key length, then bytewise), so
+  // that documents and etags (hashed in document order) are the same.
+  std::stable_sort(m_items.begin(), m_items.end(),
+                   [](const auto &a, const auto &b) {
+                     if (a.key.size() != b.key.size())
+                       return a.key.size() < b.key.size();
+                     return a.key < b.key;
+                   });
   m_select_items = mysqlrouter::sqlstring();
   for (const auto &item : m_items)
     m_select_items.append_preformatted_sep(item.separator, item.sql);
@@ -292,19 +277,12 @@ static mysqlrouter::sqlstring get_field_format(entry::ColumnType type,
   else if (type == entry::ColumnType::BINARY)
     return {value_only ? "TO_BASE64(!.!)" : "?, TO_BASE64(!.!)"};
   else if (type == entry::ColumnType::GEOMETRY) {
-    // restd: on MariaDB the GeoJSON text must be re-typed as JSON to nest
-    if (helper::is_mariadb_server())
-      return {value_only ? "JSON_EXTRACT(ST_AsGeoJSON(!.!),'$')"
-                         : "?, JSON_EXTRACT(ST_AsGeoJSON(!.!),'$')"};
-    return {value_only ? "ST_AsGeoJSON(!.!)" : "?, ST_AsGeoJSON(!.!)"};
+    // restd: the GeoJSON text must be re-typed as JSON to nest
+    return {value_only ? "JSON_EXTRACT(ST_AsGeoJSON(!.!),'$')"
+                       : "?, JSON_EXTRACT(ST_AsGeoJSON(!.!),'$')"};
   } else if (type == entry::ColumnType::VECTOR) {
-    if (helper::is_mariadb_server())
-      return {value_only ? "JSON_EXTRACT(VEC_ToText(!.!),'$')"
-                         : "?, JSON_EXTRACT(VEC_ToText(!.!),'$')"};
-    return {
-        value_only
-            ? "CAST(CONVERT(VECTOR_TO_STRING(!.!) using utf8mb4)AS JSON)"
-            : "?, CAST(CONVERT(VECTOR_TO_STRING(!.!)  using utf8mb4)AS JSON)"};
+    return {value_only ? "JSON_EXTRACT(VEC_ToText(!.!),'$')"
+                       : "?, JSON_EXTRACT(VEC_ToText(!.!),'$')"};
   }
   return {value_only ? "!.!" : "?, !.!"};
 }
@@ -321,7 +299,7 @@ static mysqlrouter::sqlstring get_field_format(entry::ColumnType type,
       return {value_only ? "CONVERT(!.!,CHAR)" : "?, CONVERT(!.!, CHAR)"};
   }
 
-  if (const char *fmt = mariadb_temporal_format(type, datatype)) {
+  if (const char *fmt = temporal_format(type, datatype)) {
     if (value_only) return mysqlrouter::sqlstring(fmt);
     return mysqlrouter::sqlstring(("?, " + std::string(fmt)).c_str());
   }
