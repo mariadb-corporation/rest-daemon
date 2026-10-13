@@ -1,7 +1,7 @@
 # Progress log
 
-Plan: [PLAN.md](PLAN.md). Update this file at the end of every work session:
-tick tasks, add a session entry, and rewrite "Next steps".
+Plan: [PLAN.md](PLAN.md). Current state and next steps: `.claude/PROJECT_CONTEXT.md`
+(`/checkpoint`). This file keeps the build/test how-to and a session log entry per session.
 
 ## Status
 
@@ -286,10 +286,7 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
 - [x] cleanup of routing/cluster leftovers (stages 1, 2a, 2b)
 
 ## Open questions
-- GTID read-your-writes (`readOwnWrites`, `$asof`) on MariaDB: an open point shared with
-  the MariaDB shell and plugins, solved there together if needed (PLAN.md).
-- Minimum server 10.11 vs. the metadata schema 4.1.6 (`JSON_SCHEMA_VALID` needs 11.1):
-  to raise with the plugin team.
+See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`).
 
 ## Resolved questions
 - JIT: `-DMRS_JIT_EXECUTOR_LIB=<dir>` (lib + headers), built from `ext/polyglot` in this repo
@@ -302,30 +299,7 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
   `<dev>/rest-daemon` (moved there 2026-10-07 from `<dev>/mysql/mrsd`).
 
 ## Next steps
-1. Phase M2.3 follow-ups on macOS: the three "to investigate" known failures
-   (`json_view`, `json_view_access`: the join sub-object carries all table columns;
-   `role_privileges`: the first login gets the SCRAM challenge instead of a 307), then
-   the live-DB unit tests (`RUN_WITH_LIVE_MYSQLD` with a MariaDB server).
-2. Phases M2.2/M2.3 on Linux and Windows: a MariaDB server on the VMs (Ubuntu: the
-   `mariadb-server` packages unpacked like the connector; Windows: a MariaDB zip), the
-   mariadb-shell + plugins for the smoke test, then the functional suite in MariaDB mode.
-3. Phase M2.1 (original plan, done): build against MariaDB Connector/C (macOS first). Local resources: MariaDB
-   13.2.0 Release build in `<dev>/mariadb-server/light-build` (`sql/mariadbd`, static
-   `libmariadb/libmariadb/libmariadbclient.a` with `CONC_WITH_SSL=OPENSSL`), built shell in
-   `<dev>/shell/bld/bin/mariadb-shell`, MRS plugins in `<dev>/mariadb-shell-plugins`.
-   A Connector/C package build (shared `libmariadb`, OpenSSL) is still needed.
-3. Open items from Milestone 1 (now Milestone 4, packaging and CI):
-   - Rename (`mariadb-restd`): Ubuntu passed (ctest 113/113, deb, smoke incl. MRS scripts,
-     MRS suite 117 passed/4 skipped/1 xpassed); Windows passed (ctest 113/113, ZIP smoke
-     incl. MRS scripts with a clean PATH, MRS suite 116 passed/5 skipped/1 xpassed);
-     Fedora rpm built; macOS ctest, setup tests and smoke incl. MRS scripts.
-   - The VM clones were force-updated to the rewritten history (attribution trailers
-     removed); if a push is rejected, `git push --force <vm|fedora> main`.
-   - Real `apt install` / `dnf install` tests of the deb/rpm (need root on the VMs).
-   - The VMs still build the JIT library in their shell checkouts; can switch to
-     `ext/polyglot` of this repo.
-4. Push to GitHub: not yet (wait for the user's go).
-5. Windows MSI (deferred), CI with GitHub Actions (last).
+See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/checkpoint`.
 
 ## Session log
 

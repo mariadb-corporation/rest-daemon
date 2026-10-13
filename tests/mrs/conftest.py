@@ -246,6 +246,19 @@ class Mysqld:
 
     def stop(self) -> None:
         if self.proc and self.proc.poll() is None:
+            if self.paths.is_mariadb:
+                # MariaDB's system tables are Aria: a killed server (on Windows
+                # terminate() is TerminateProcess) leaves them corrupted, and
+                # the role and grant tables break every following test
+                try:
+                    c = pymysql.connect(host="127.0.0.1", port=self.port, user="root")
+                    with c.cursor() as cur:
+                        cur.execute("SHUTDOWN")
+                    c.close()
+                    self.proc.wait(60)
+                    return
+                except (pymysql.err.MySQLError, subprocess.TimeoutExpired):
+                    pass
             self.proc.terminate()
             try:
                 self.proc.wait(60)
