@@ -80,6 +80,13 @@ static void impl_columns_set(std::vector<helper::Column> &c,
     if (i.type_json == helper::JsonType::kBlob &&
         column_def->data_type == ColumnType::STRING)
       i.type_json = helper::JsonType::kString;
+    // restd: an OUT/INOUT VECTOR parameter comes back as a plain binary
+    // string (no extended metadata on a routine's OUT result set); the
+    // metadata knows its type, so it renders as an array, not as base64
+    if (column_def->data_type == ColumnType::VECTOR) {
+      i.type = MYSQL_TYPE_VECTOR;
+      i.type_txt = "VECTOR";
+    }
   }
 }
 

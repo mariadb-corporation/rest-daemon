@@ -114,8 +114,8 @@ std::string txt_from_mysql_column_type(const MYSQL_FIELD *field) {
       return "TINYINT"s + appedn_unsigned(field);
     case MYSQL_TYPE_SHORT:
       return "SMALLINT"s + appedn_unsigned(field);
-    case MYSQL_TYPE_LONG:
-      return " INTEGER"s + appedn_unsigned(field);
+    case MYSQL_TYPE_LONG:  // restd: upstream had " INTEGER" (leading space)
+      return "INTEGER"s + appedn_unsigned(field);
     case MYSQL_TYPE_FLOAT:
       return "FLOAT"s + append_length_dec(field);
     case MYSQL_TYPE_DOUBLE:

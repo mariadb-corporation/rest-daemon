@@ -289,8 +289,16 @@ void RowChangeOperation::on_value(
     tmp << helper::json::to_string(value.new_value());
   } else if (column.type == entry::ColumnType::BINARY &&
              value.new_value().IsString()) {
-    tmp << (mysqlrouter::sqlstring("FROM_BASE64(?)")
-            << value.new_value().GetString());
+    // restd: MySQL's FROM_BASE64 yields NULL for malformed base64, which is
+    // what the MySQL REST Service stored; MariaDB's raises 1958 in strict
+    // mode, so the value is checked here and NULL stored, as before
+    try {
+      Base64::decode(value.new_value().GetString());
+      tmp << (mysqlrouter::sqlstring("FROM_BASE64(?)")
+              << value.new_value().GetString());
+    } catch (const std::exception &) {
+      tmp = mysqlrouter::sqlstring("NULL");
+    }
   } else if (value.new_value().IsBool()) {
     tmp << value.new_value().GetBool();
   } else {

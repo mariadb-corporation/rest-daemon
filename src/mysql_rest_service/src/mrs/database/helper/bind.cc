@@ -167,7 +167,10 @@ enum_field_types MysqlBind::to_mysql_type(DataType pdt) {
     case DataType::BOOLEAN:
       return MYSQL_TYPE_TINY_BLOB;
     case DataType::VECTOR:
-      return MYSQL_TYPE_VECTOR;
+      // restd: a BLOB parameter: MariaDB's binary protocol has no VECTOR
+      // parameter type, the bytes of a MYSQL_TYPE_VECTOR parameter went
+      // through a character-set conversion ("Incorrect vector value")
+      return MYSQL_TYPE_BLOB;
 
     default:
       return MYSQL_TYPE_NULL;
