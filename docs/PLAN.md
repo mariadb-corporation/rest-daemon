@@ -25,7 +25,12 @@ with an optional name prefix/postfix; tables renamed, e.g. `db_object` →
 lands on the main branches of the MariaDB shell and plugins. Milestone 2 stays
 on the schema of their main branches today (4.1.6).
 
-**Milestone 4 (final):** packaging and CI (the former Phase 4, see below). The
+**Milestone 4:** GTID read-your-writes (`asof`, `_metadata.gtid`) on MariaDB GTIDs, done
+together with the MariaDB shell and plugins (it touches the three repositories). Until
+then the daemon refuses `asof` with a clear error and the MySQL implementation stays
+parked in the tree (see the open point below).
+
+**Milestone 5 (final):** packaging and CI (the former Phase 4, see below). The
 packaging done so far (tar.gz, deb, rpm, Windows ZIP) stays in the tree; the
 remaining items (real deb/rpm installs, MSI, GitHub Actions) are finished last.
 
@@ -239,7 +244,7 @@ document generation, GTID tracking, `mysql_tasks`, account setup, tests.
 - Remove MySQL-only code paths that are no longer reachable (or keep the dual build, per
   decision), README/docs for MariaDB, `restd:` markers.
 
-## Open point: GTID read-your-writes on MariaDB
+## Open point: GTID read-your-writes on MariaDB (Milestone 4)
 
 `readOwnWrites`, `_metadata.gtid` and the `$asof` filter are built on MySQL's GTIDs
 (`session_track_gtids`, `gtid_executed`, `WAIT_FOR_EXECUTED_GTID_SET`); MariaDB's differ
@@ -386,3 +391,11 @@ mrsd/
   metadata) are an open point, reviewed after Milestone 3 (schema 5.0.0).
 - 2026-10-13: the REST async-task code is removed from both builds (M2.4); the
   `mysqlTask` options in existing metadata are ignored, not rejected.
+- 2026-10-13: the MySQL build and MySQL server support are dropped. MariaDB Connector/C
+  becomes the only client library and a MariaDB server the only supported server; the
+  libmysqlclient build, the `is_mariadb()` runtime branches and the MySQL modes of the
+  test suites and smoke test go. Restore point: tag `m2-pre-build-decision` and the
+  bundle `<dev>/rest-daemon-backups/rest-daemon-2026-10-13-m2-pre-build-decision.bundle`.
+- 2026-10-13: GTID/"asof" becomes Milestone 4, after the schema upgrade, shared with the
+  shell and plugins; its code is left in place (not deleted with the MySQL support).
+  Packaging and CI are Milestone 5.

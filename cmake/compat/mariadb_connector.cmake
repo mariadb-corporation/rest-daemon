@@ -26,8 +26,8 @@
 # <prefix>/lib[/mariadb | /<multiarch>] and the client auth plugins from
 # <prefix>/lib[/<multiarch>]/{mariadb,libmariadb3}/plugin.
 #
-# Defines the same names as mysql_package.cmake, so the rest of the build
-# doesn't care which client library it got:
+# Defines the names the router CMake files expect for the client library
+# (upstream's names, kept so those files stay close to upstream):
 #   MySQL::client             IMPORTED shared library target
 #   MYSQL_CLIENT_INCLUDE_DIR  include directory
 #   MYSQL_CLIENT_VERSION      Connector/C version, e.g. 3.4.11

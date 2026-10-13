@@ -24,7 +24,7 @@
 #   BUNDLE_SCAN_DIRS     install-prefix relative directories with the binaries
 #                        whose dependencies are bundled
 #   BUNDLE_AVOID_DIR     on a name clash, prefer copies outside this directory
-#                        (the MySQL package's private OpenSSL: the binaries
+#                        (the client package's private OpenSSL: the binaries
 #                        link the build's OpenSSL, and one copy is shipped)
 
 SET(_prefix "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}")
@@ -111,7 +111,7 @@ ENDIF()
 IF(NOT APPLE)
   # ELF: RUNPATH applies only to an object's own dependencies. The bundled
   # libraries get RUNPATH $ORIGIN, so that their dependencies (libssl ->
-  # libcrypto, libicuuc -> libicudata, libmysqlclient -> libssl) are the
+  # libcrypto, libicuuc -> libicudata, libmariadb -> libssl) are the
   # bundled copies too, not the system's.
   IF(_bundled_names)
     FIND_PROGRAM(_patchelf patchelf)

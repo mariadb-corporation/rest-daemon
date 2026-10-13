@@ -19,8 +19,7 @@
 # kept as upstream as possible; cmake/compat/ provides the parts of the MySQL
 # server build environment they expect.
 #
-# Required, one of:
-#   -DMYSQL_PACKAGE_DIR=<extracted MySQL server package, 9.x or later>
+# Required:
 #   -DMARIADB_CONNECTOR_DIR=<MariaDB Connector/C installation, 3.4 or later>
 # Optional:
 #   -DMRS_JIT_EXECUTOR_LIB=<dir with libjitexecutor and its headers>
@@ -72,15 +71,9 @@ OPTION(WITH_UNIT_TESTS "Build the unit and component tests" OFF)
 INCLUDE(cmake/compat/build_env.cmake)
 INCLUDE(cmake/compat/fileutils.cmake)
 INCLUDE(cmake/compat/configure_checks.cmake)
-# the client library: MariaDB Connector/C or MySQL's libmysqlclient. Both
-# define MySQL::client; the MariaDB one also defines MRSD_CLIENT_MARIADB.
-IF(MARIADB_CONNECTOR_DIR)
-  INCLUDE(cmake/compat/mariadb_connector.cmake)
-  SET(MRSD_CLIENT_PACKAGE_DIR "${MARIADB_CONNECTOR_DIR}")
-ELSE()
-  INCLUDE(cmake/compat/mysql_package.cmake)
-  SET(MRSD_CLIENT_PACKAGE_DIR "${MYSQL_PACKAGE_DIR}")
-ENDIF()
+# the client library: MariaDB Connector/C, as the MySQL::client target
+INCLUDE(cmake/compat/mariadb_connector.cmake)
+SET(MRSD_CLIENT_PACKAGE_DIR "${MARIADB_CONNECTOR_DIR}")
 INCLUDE(cmake/compat/third_party.cmake)
 
 # global flags, as in the server build
@@ -125,7 +118,7 @@ INCLUDE_DIRECTORIES(
 ADD_CUSTOM_TARGET(copy_custom_libraries)
 ADD_CUSTOM_TARGET(clang_tidy_prerequisites)
 
-# replacements for libmysqlclient internals + vendored strings/dtoa
+# replacements for the client-library internals upstream used + vendored strings/dtoa
 ADD_SUBDIRECTORY(compat)
 
 # ---------------------------------------------------------------------------
@@ -168,14 +161,13 @@ ENDIF()
 
 # ---------------------------------------------------------------------------
 # bundled runtime libraries (last install rule: runs after everything else is
-# installed). The client library (libmysqlclient or libmariadb) always;
+# installed). The client library (libmariadb) always;
 # OpenSSL and ICU in the STANDALONE layout (tarballs, ZIP, MSI), from the
 # system in deb/rpm.
 # ---------------------------------------------------------------------------
 # matched against the dependency as recorded (@rpath/..., absolute path, or a
 # bare DLL name), hence the (^|/) anchor
-SET(_bundle_regexes "(^|/)libmysqlclient[^/]*$" "(^|/)libmysql\\.dll$"
-  "(^|/)libmariadb[^/]*$")
+SET(_bundle_regexes "(^|/)libmariadb[^/]*$")
 SET(_bundle_dirs "${MYSQL_CLIENT_LIBRARY_DIR}")
 IF(INSTALL_LAYOUT STREQUAL "STANDALONE")
   LIST(APPEND _bundle_regexes "(^|/)lib(ssl|crypto)[^/]*$" "(^|/)(lib)?icu[^/]*$")

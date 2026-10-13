@@ -30,8 +30,8 @@ INCLUDE(Plugin)
 # were used by the router's cluster metadata code only)
 
 # restd: upstream builds a private libmysqlrouter_mysqlclient here, merging
-# clientlib, vio and mysys and re-exporting internal symbols. mrsd links the
-# stock libmysqlclient from MYSQL_PACKAGE_DIR instead; the few internal symbols
+# clientlib, vio and mysys and re-exporting internal symbols. mrsd links
+# MariaDB Connector/C (MARIADB_CONNECTOR_DIR) instead; the few internal symbols
 # that are needed come from mrsd_compat (see docs/phase0-inventory.md).
 ADD_LIBRARY(router_mysqlclient INTERFACE)
 TARGET_LINK_LIBRARIES(router_mysqlclient INTERFACE MySQL::client mrsd_compat)

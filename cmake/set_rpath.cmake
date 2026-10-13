@@ -92,7 +92,7 @@ SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 # directories outside the project that are in the linker search path or
 # contain linked library files. 
 # restd: FALSE, the installed tree must not point into the build machine (the
-# MySQL package's lib dir); the libraries the packages need are bundled
+# Connector/C package's lib dir); the libraries the packages need are bundled
 # (cmake/bundle_runtime_libraries.cmake)
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 
