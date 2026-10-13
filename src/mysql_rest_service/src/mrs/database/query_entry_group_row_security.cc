@@ -36,8 +36,8 @@ bool QueryEntryGroupRowSecurity::query_group_row_security(
   query_ = {
       metadata_query("SELECT group_hierarchy_type_id, row_group_ownership_column, level, "
       "match_level + 0 FROM "
-      "mysql_rest_service_metadata.mrs_db_object_row_group_security WHERE "
-      "db_object_id=?")};
+      "mariadb_rest_service.mrs_rest_object_row_group_security WHERE "
+      "rest_object_id=?")};
   query_ << db_object_id;
   execute(session);
 

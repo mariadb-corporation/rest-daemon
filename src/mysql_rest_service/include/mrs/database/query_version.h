@@ -40,10 +40,12 @@ struct MrsSchemaVersion {
   int minor{0};
   int patch{0};
 
+  // restd: the major and the minor must match (upstream: the major only); a
+  // newer minor may add what this daemon does not know
   bool is_compatible(
       std::initializer_list<MrsSchemaVersion> accepted_versions) const {
     for (const auto &other : accepted_versions) {
-      if (major == other.major) {
+      if (major == other.major && minor == other.minor) {
         return true;
       }
     }
@@ -85,12 +87,19 @@ class QueryVersion : private Query {
   MrsSchemaVersion v_;
 };
 
-constexpr MrsSchemaVersion kCurrentMrsMetadataVersion{4, 0, 0};
+constexpr MrsSchemaVersion kCurrentMrsMetadataVersion{5, 0, 0};
 
 constexpr MrsSchemaVersion kSchemaUpgradeMrsMetadataVersion{0, 0, 0};
 
 constexpr std::initializer_list<MrsSchemaVersion>
     kCompatibleMrsMetadataVersions{mrs::database::kCurrentMrsMetadataVersion};
+
+/**
+ * Why `version` is refused: names the supported versions and this daemon's
+ * version, and what to do (deploy 5.0 or upgrade the daemon).
+ */
+std::string unsupported_metadata_version_message(
+    const MrsSchemaVersion &version);
 
 }  // namespace database
 }  // namespace mrs

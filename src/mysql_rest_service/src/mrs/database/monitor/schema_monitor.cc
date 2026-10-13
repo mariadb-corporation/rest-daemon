@@ -85,8 +85,7 @@ void check_supported_mrs_version(
     error_message << "MRS metadata schema upgrade detected: stopping the "
                      "service until it's finished";
   } else {
-    error_message << "Unsupported MRS version detected: " << mrs_version.major
-                  << "." << mrs_version.minor << "." << mrs_version.patch;
+    error_message << unsupported_metadata_version_message(mrs_version);
   }
 
   throw std::runtime_error(error_message.str());
@@ -109,7 +108,7 @@ void update_router_attributes_on_start(mysqlrouter::MySQLSession *session,
                                        const std::string &developer) {
   if (!router_id_) return;
 
-  std::string sql = metadata_sql("UPDATE mysql_rest_service_metadata.router SET attributes=");
+  std::string sql = metadata_sql("UPDATE mariadb_rest_service.rest_daemon SET attributes=");
   if (developer.empty()) {
     sql += "JSON_REMOVE(attributes, '$.developer')";
   } else {
@@ -328,11 +327,11 @@ void SchemaMonitor::run() {
 
         if (fetcher.get_state().service_enabled) {
           mysqlrouter::sqlstring update{
-              metadata_query("INSERT INTO mysql_rest_service_metadata.router"
-              " (id, router_name, address, product_name, version, attributes, "
+              metadata_query("INSERT INTO mariadb_rest_service.rest_daemon"
+              " (id, name, address, product_name, version, attributes, "
               "options)"
               " VALUES (?,?,?,?,?,?,'{}') ON DUPLICATE KEY UPDATE "
-              "version=?, router_name=?, last_check_in=NOW()")};
+              "version=?, name=?, last_check_in=NOW()")};
 
           const auto [name, address] = get_router_name_and_address();
           update << configuration_.router_id_ << name << address

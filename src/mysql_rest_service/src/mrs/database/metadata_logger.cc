@@ -49,7 +49,7 @@ constexpr std::string_view kSinkName = "mysql_rest_service";
 mysqlrouter::sqlstring get_insert_sql(size_t records_num) {
   const std::string values = "(?, ?, ?, ?, ?, ?)";
   std::string result =
-      metadata_sql("INSERT INTO mysql_rest_service_metadata.router_general_log(router_id, "
+      metadata_sql("INSERT INTO mariadb_rest_service.rest_daemon_general_log(rest_daemon_id, "
       "log_time, log_type, domain, message, thread_id) VALUES ");
 
   for (size_t i = 0; i < records_num; ++i) {
@@ -296,9 +296,9 @@ void MetadataLogger::check_dynamic_config(mysqlrouter::MySQLSession *session) {
   mysqlrouter::sqlstring query{
       metadata_query("SELECT JSON_MERGE_PATCH("
       "  IFNULL((select JSON_EXTRACT(data, '$.mrsMetadataLogger') from "
-      "mysql_rest_service_metadata.config), JSON_OBJECT()),"
+      "mariadb_rest_service.config), JSON_OBJECT()),"
       "  IFNULL((select JSON_EXTRACT(options, '$.mrsMetadataLogger') from "
-      "mysql_rest_service_metadata.router where id = ?), JSON_OBJECT())"
+      "mariadb_rest_service.rest_daemon where id = ?), JSON_OBJECT())"
       ") as mrsMetadataLoggerOptions")};
 
   query << configuration_->router_id_;
@@ -326,9 +326,9 @@ void MetadataLogger::reconfigure(const Options &options) {
 
 bool MetadataLogger::check_metadata_version_supported(
     const mrs::database::MrsSchemaVersion &schema_ver) {
-  if (schema_ver < MrsSchemaVersion{4, 0, 2}) {
+  if (!schema_ver.is_compatible({kCurrentMrsMetadataVersion})) {
     log_warning(
-        metadata_sql("Logging to mysql_rest_service_metadata metadata was configured but "
+        metadata_sql("Logging to mariadb_rest_service metadata was configured but "
         "MRS metadata version %s does not support metadata logging").c_str(),
         schema_ver.str().c_str());
     return false;

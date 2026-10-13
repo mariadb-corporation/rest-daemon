@@ -41,8 +41,8 @@ QueryEntriesUrlHost::QueryEntriesUrlHost() {
   query_ =
       metadata_query("SELECT * FROM (SELECT h.id as url_host_id, h.name, GROUP_CONCAT(a.alias "
       "SEPARATOR ',')"
-      "    FROM mysql_rest_service_metadata.`url_host` as h LEFT JOIN"
-      "    mysql_rest_service_metadata.`url_host_alias` as a"
+      "    FROM mariadb_rest_service.`url_host` as h LEFT JOIN"
+      "    mariadb_rest_service.`url_host_alias` as a"
       "    on h.id = a.url_host_id"
       "    GROUP BY h.id) as parent ");
 }

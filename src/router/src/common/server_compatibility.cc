@@ -32,17 +32,17 @@
 
 void check_version_compatibility(mysqlrouter::MySQLSession *session) {
   bool ok = true;
-  // restd: a MariaDB server, 10.11 (the oldest supported LTS) or later;
-  // upstream accepted MySQL 8+ here
+  // restd: a MariaDB server, 11.7 or later (the 5.0 metadata schema uses
+  // UUID_v7()); upstream accepted MySQL 8+ here
   if (!session->is_mariadb()) {
     std::cout << "Unsupported server: "
               << (*session->query_one("SELECT @@version"))[0]
-              << " (a MariaDB server, 10.11 or later, is required)\n";
+              << " (a MariaDB server, 11.7 or later, is required)\n";
     ok = false;
-  } else if (session->server_version() < 101100) {  // e.g. 101106
+  } else if (session->server_version() < 110700) {  // e.g. 110809
     std::cout << "Unsupported MariaDB server version: "
               << (*session->query_one("SELECT @@version"))[0]
-              << " (10.11 or later is required)\n";
+              << " (11.7 or later is required)\n";
     ok = false;
   }
 

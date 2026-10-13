@@ -39,8 +39,8 @@ std::optional<uint64_t> QueryRouterInfo::find_existing_router_instances(
     const std::string &address) {
   try {
     mysqlrouter::sqlstring sql_query{
-        metadata_query("SELECT `id` FROM mysql_rest_service_metadata.router WHERE"
-        " router_name = ? AND address = ?")};
+        metadata_query("SELECT `id` FROM mariadb_rest_service.rest_daemon WHERE"
+        " name = ? AND address = ?")};
     sql_query << router_name << address;
     query(session, sql_query);
   } catch (const mysqlrouter::MySQLSession::Error &error) {
@@ -56,7 +56,7 @@ void QueryRouterInfo::on_row(const ResultRow &r) {
   if (r.size() != 1) {
     throw std::runtime_error(
         metadata_sql("Could not fetch router information from "
-        "`mysql_rest_service_metadata`.`router`"));
+        "`mariadb_rest_service`.`rest_daemon`"));
   }
 
   try {

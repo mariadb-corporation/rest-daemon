@@ -40,7 +40,7 @@ QueryEntriesContentSet::QueryEntriesContentSet() {
       metadata_query("SELECT * FROM (SELECT s.id as content_set_id, s.service_id as "
       "service_id, s.request_path, "
       "   s.requires_auth, s.enabled, s.options !"
-      " FROM mysql_rest_service_metadata.content_set as s) as cs");
+      " FROM mariadb_rest_service.content_set as s) as cs");
   query_ << k_field_internal;
 }
 

@@ -31,7 +31,7 @@ namespace mrs {
 namespace database {
 
 QueryAuditLogMaxId::QueryAuditLogMaxId() {
-  query_ = metadata_query("SELECT max(id) FROM mysql_rest_service_metadata.audit_log");
+  query_ = metadata_query("SELECT max(id) FROM mariadb_rest_service.audit_log");
 }
 
 uint64_t QueryAuditLogMaxId::query_max_id(MySQLSession *session) {

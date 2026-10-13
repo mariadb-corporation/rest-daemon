@@ -64,8 +64,8 @@ bool QueryEntryFields::query_parameters(MySQLSession *session,
   output_result_ = &result_.parameters;
 
   query_ = {
-      metadata_query("SELECT o.id, o.name FROM mysql_rest_service_metadata.object as o "
-      "        WHERE o.kind='PARAMETERS' and o.db_object_id=?")};
+      metadata_query("SELECT o.id, o.name FROM mariadb_rest_service.data_mapping as o "
+      "        WHERE o.kind='PARAMETERS' and o.rest_object_id=?")};
 
   query_ << db_object_id;
   execute(session);
@@ -75,9 +75,9 @@ bool QueryEntryFields::query_parameters(MySQLSession *session,
       metadata_query("SELECT ofx.id, ofx.represents_reference_id, ofx.name,"
       "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.in')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.out')),"
       "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.name')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.datatype'))"
-      "   FROM mysql_rest_service_metadata.object_field as ofx"
-      "   JOIN mysql_rest_service_metadata.object as o on ofx.object_id=o.id"
-      "        WHERE o.kind='PARAMETERS' and o.db_object_id=? ORDER BY "
+      "   FROM mariadb_rest_service.data_mapping_field as ofx"
+      "   JOIN mariadb_rest_service.data_mapping as o on ofx.data_mapping_id=o.id"
+      "        WHERE o.kind='PARAMETERS' and o.rest_object_id=? ORDER BY "
       "ofx.position")};
 
   query_ << db_object_id;
@@ -86,8 +86,8 @@ bool QueryEntryFields::query_parameters(MySQLSession *session,
 
   processing_ = OnRow::k_output_name;
   query_ = {
-      metadata_query("SELECT o.id, o.name FROM mysql_rest_service_metadata.object as o "
-      "        WHERE o.kind='RESULT' and o.db_object_id=?")};
+      metadata_query("SELECT o.id, o.name FROM mariadb_rest_service.data_mapping as o "
+      "        WHERE o.kind='RESULT' and o.rest_object_id=?")};
 
   query_ << db_object_id;
   execute(session);
@@ -99,8 +99,8 @@ bool QueryEntryFields::query_parameters(MySQLSession *session,
         metadata_query("SELECT ofx.id, ofx.represents_reference_id, ofx.name,"
         "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.in')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.out')),"
         "       JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.name')), JSON_UNQUOTE(JSON_EXTRACT(ofx.db_column,'$.datatype'))"
-        "   FROM mysql_rest_service_metadata.object_field as ofx"
-        "   JOIN mysql_rest_service_metadata.object as o on ofx.object_id=o.id"
+        "   FROM mariadb_rest_service.data_mapping_field as ofx"
+        "   JOIN mariadb_rest_service.data_mapping as o on ofx.data_mapping_id=o.id"
         "        WHERE o.kind='RESULT' and o.id=? ORDER BY ofx.position")};
 
     query_ << item.id;

@@ -38,8 +38,8 @@ namespace entry {
  * MRS schema global state aggregation.
  *
  * This class aggregates state from:
- * `mysql_rest_service_metadata`.`config`,
- * `mysql_rest_service_metadata`.`router`.
+ * `mariadb_rest_service`.`config`,
+ * `mariadb_rest_service`.`rest_daemon`.
  */
 class DbState {
  public:

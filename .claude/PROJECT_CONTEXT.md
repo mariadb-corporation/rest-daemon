@@ -36,7 +36,7 @@
 
 ## Next steps
 
-1. **M3.4: switch to 5.0.0 (atomic):** renames (tables/columns/roles, `mariadb_rest_service` default name), audit dispatch, gate 5.0.x only + MariaDB 11.7+, `rest_daemon_id` as a UUID (config, `--setup`, keyring, JWT), status columns; test assets (the 5.0.0 deployment script from the shell's `main`, includes, conftest, mocks, live-test fixtures), a full re-record, smoke test. Then M3.5 (wire formats/texts: user ids as UUID text, the raw-bytes role id bug, counters + `statusVariables`, README) and M3.6 (Galera-safe audit polling).
+1. **M3.4: switch to 5.0.0 (atomic), plan approved 2026-10-13 (PLAN.md phase M3.4, 6 steps), work on branch `m3.4` (created, no commits yet), fast-forward to `main` when green.** Summary: renames (tables/columns/roles, `mariadb_rest_service` default name), audit dispatch, gate 5.0.x only + MariaDB 11.7+, `rest_daemon_id` as a UUID (config, `--setup`, keyring, JWT), status columns; test assets (the 5.0.0 deployment script from the shell's `main`, includes, conftest, mocks, live-test fixtures), a full re-record, smoke test. Then M3.5 (wire formats/texts: user ids as UUID text, the raw-bytes role id bug, counters + `statusVariables`, README) and M3.6 (Galera-safe audit polling).
    Spike facts to lean on (PLAN.md M3.3): `UUID` columns = text with the connection charset, `BINARY(16)` = charset 63; `X'…'` in canonical order matches `UUID`; `LAST_INSERT_ID()` is 0 for UUID keys.
 2. After Milestone 3: the JSON-columns open point; then Milestone 4 (GTID), 5 (packaging, CI).
 3. M2 final state verified: Ubuntu 110 passed / 0 failed / 6 skipped / 5 xfailed / 1 xpassed; Windows 109 / 0 / 7 / 5 / 1 (it skips `destination_socket`); ctest 113/113, live 102/104 on both.

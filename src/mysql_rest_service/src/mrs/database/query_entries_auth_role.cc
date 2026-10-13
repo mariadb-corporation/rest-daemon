@@ -37,8 +37,8 @@ void QueryEntriesAuthRole::query_role(MySQLSession *session,
                                       const entry::AuthUser::UserId user_id) {
   query_ = {
       metadata_query("SELECT id, caption, derived_from_role_id, specific_to_service_id "
-      " FROM mysql_rest_service_metadata.mrs_user_has_role as h "
-      " JOIN mysql_rest_service_metadata.mrs_role as r ON r.id=h.role_id "
+      " FROM mariadb_rest_service.mrs_user_has_role as h "
+      " JOIN mariadb_rest_service.mrs_role as r ON r.id=h.role_id "
       " WHERE h.user_id = ?")};
 
   query_ << to_sqlstring(user_id);

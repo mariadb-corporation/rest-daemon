@@ -39,7 +39,7 @@
  * Follows the MRS part of MySQL Router's bootstrap
  * (BootstrapConfigurator::configure_mrs() and the directory deployment of
  * ConfigGenerator): checks the MRS metadata, registers the instance in
- * `mysql_rest_service_metadata.router`, creates the MRS accounts, stores their
+ * `mariadb_rest_service.rest_daemon`, creates the MRS accounts, stores their
  * passwords and the JWT secret in the keyring, creates TLS certificates for
  * the HTTPS server and writes the configuration file and start/stop scripts.
  * There is no router account and there are no routing sections: the server is

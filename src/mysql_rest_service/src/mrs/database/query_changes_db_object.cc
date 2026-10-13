@@ -43,9 +43,10 @@ IMPORT_LOG_FUNCTIONS()
 namespace mrs {
 namespace database {
 
-const std::string kObjTableName = "object";
-const std::string kObjRefTableName = "object_reference";
-const std::string kObjFieldTableName = "object_field";
+const std::string kDbObjectTableName = "rest_object";
+const std::string kObjTableName = "data_mapping";
+const std::string kObjRefTableName = "data_mapping_reference";
+const std::string kObjFieldTableName = "data_mapping_field";
 
 QueryChangesDbObject::QueryChangesDbObject(QueryFactory *query_factory,
                                            const uint64_t last_audit_id)
@@ -62,7 +63,7 @@ void QueryChangesDbObject::query_entries(MySQLSession *session) {
   uint64_t max_audit_log_id = audit_log_id_;
   audit_entries.query_entries(
       session,
-      {"db_object", kObjTableName, kObjRefTableName, kObjFieldTableName},
+      {kDbObjectTableName, kObjTableName, kObjRefTableName, kObjFieldTableName},
       audit_log_id_);
 
   for (const auto &audit_entry : audit_entries.entries) {
@@ -113,7 +114,7 @@ void QueryChangesDbObject::query_path_entries(
     path_entries_fetched.insert(entry.id);
   }
 
-  if (entries_.empty() && table_name == "db_object") {
+  if (entries_.empty() && table_name == kDbObjectTableName) {
     DbObject pe;
     pe.id = id;
     pe.deleted = true;
@@ -128,26 +129,26 @@ std::string QueryChangesDbObject::build_query(const std::string &table_name,
 
   if (kObjTableName == table_name) {
     mysqlrouter::sqlstring where =
-        metadata_query(" WHERE db_object_id in (select db_object_id from "
-        "mysql_rest_service_metadata.object as f where f.id=? GROUP BY "
-        "db_object_id)");
+        metadata_query(" WHERE rest_object_id in (select rest_object_id from "
+        "mariadb_rest_service.data_mapping as f where f.id=? GROUP BY "
+        "rest_object_id)");
     where << id;
     return query.str() + where.str();
   } else if (kObjRefTableName == table_name) {
     mysqlrouter::sqlstring where =
-        metadata_query(" WHERE db_object_id in (SELECT o.db_object_id FROM "
-        "mysql_rest_service_metadata.object_field AS f JOIN "
-        "mysql_rest_service_metadata.object AS o ON o.id=f.object_id WHERE "
+        metadata_query(" WHERE rest_object_id in (SELECT o.rest_object_id FROM "
+        "mariadb_rest_service.data_mapping_field AS f JOIN "
+        "mariadb_rest_service.data_mapping AS o ON o.id=f.data_mapping_id WHERE "
         "(f.parent_reference_id=? or f.represents_reference_id=?) GROUP BY "
-        "db_object_id)");
+        "rest_object_id)");
     where << id << id;
     return query.str() + where.str();
   } else if (kObjFieldTableName == table_name) {
     mysqlrouter::sqlstring where =
-        metadata_query(" WHERE db_object_id in (SELECT o.db_object_id FROM "
-        "mysql_rest_service_metadata.object_field AS f  JOIN "
-        "mysql_rest_service_metadata.object AS o ON o.id=f.object_id WHERE "
-        "f.id=? GROUP BY db_object_id)");
+        metadata_query(" WHERE rest_object_id in (SELECT o.rest_object_id FROM "
+        "mariadb_rest_service.data_mapping_field AS f  JOIN "
+        "mariadb_rest_service.data_mapping AS o ON o.id=f.data_mapping_id WHERE "
+        "f.id=? GROUP BY rest_object_id)");
     where << id;
     return query.str() + where.str();
   }

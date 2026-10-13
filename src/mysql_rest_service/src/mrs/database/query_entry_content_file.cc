@@ -40,7 +40,7 @@ void QueryEntryContentFile::query_file(MySQLSession *session,
                                        const entry::UniversalId &file_id) {
   file_id_ = file_id;
   query_ = {
-      metadata_query("SELECT size,content FROM mysql_rest_service_metadata.content_file WHERE "
+      metadata_query("SELECT size,content FROM mariadb_rest_service.content_file WHERE "
       "id=?")};
 
   query_ << file_id;

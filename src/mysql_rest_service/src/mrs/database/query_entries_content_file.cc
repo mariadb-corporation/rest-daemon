@@ -43,7 +43,7 @@ QueryEntriesContentFile::QueryEntriesContentFile() {
       "    f.requires_auth,"
       "    f.enabled,"
       "    f.size !"
-      " FROM mysql_rest_service_metadata.content_file as f) as cf");
+      " FROM mariadb_rest_service.content_file as f) as cf");
   query_ << k_option_field;
 }
 

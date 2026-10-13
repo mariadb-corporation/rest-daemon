@@ -43,7 +43,7 @@ void QueryChangesDbSchema::query_entries(MySQLSession *session) {
 
   entries_fetched.clear();
 
-  audit_entries.query_entries(session, {"db_schema"}, audit_log_id_);
+  audit_entries.query_entries(session, {"rest_schema"}, audit_log_id_);
 
   for (const auto &audit_entry : audit_entries.entries) {
     if (audit_entry.old_table_id.has_value())
@@ -77,7 +77,7 @@ void QueryChangesDbSchema::query_schema_entries(MySQLSession *session,
     entries_fetched.insert(entry.id);
   }
 
-  if (entries.empty() && table_name == "db_schema") {
+  if (entries.empty() && table_name == "rest_schema") {
     entry::DbSchema se;
     se.id = id;
     se.deleted = true;

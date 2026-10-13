@@ -95,7 +95,7 @@ QueryEntriesAuthAppImpl::QueryEntriesAuthAppImpl() {
       metadata_query("(SELECT GROUP_CONCAT(DISTINCT HEX(`shaa`.`service_id`) ORDER BY "
       "auth_app_id ASC "
       "SEPARATOR ',')  FROM "
-      "`mysql_rest_service_metadata`.`service_has_auth_app` as `shaa` "
+      "`mariadb_rest_service`.`service_has_auth_app` as `shaa` "
       " WHERE `shaa`.`auth_app_id`=a.id "
       " GROUP BY `shaa`.`auth_app_id`)")};
 
@@ -108,8 +108,8 @@ QueryEntriesAuthAppImpl::QueryEntriesAuthAppImpl() {
       "  a.url_direct_auth,"
       "  a.limit_to_registered_users, a.default_role_id,"
       "  a.id as auth_app_id, auth_vendor_id"
-      " FROM mysql_rest_service_metadata.auth_app as a "
-      "JOIN mysql_rest_service_metadata.`auth_vendor` as v on a.auth_vendor_id "
+      " FROM mariadb_rest_service.auth_app as a "
+      "JOIN mariadb_rest_service.`auth_vendor` as v on a.auth_vendor_id "
       "= v.id "
       ") as subtable ");
 

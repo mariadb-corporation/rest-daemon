@@ -36,13 +36,13 @@ namespace mrs {
 namespace database {
 
 QueryEntriesDbSchema::QueryEntriesDbSchema() {
-  // Alias `db_schema_id`, used in QueryChangesDbSchema.
+  // Alias `rest_schema_id`, used in QueryChangesDbSchema.
   query_ =
       metadata_query("SELECT * FROM (SELECT"
-      "  s.id as db_schema_id, s.service_id, s.name, s.request_path, "
+      "  s.id as rest_schema_id, s.service_id, s.name, s.request_path, "
       "s.requires_auth,"
       "  s.enabled, s.items_per_page,s.options !"
-      " FROM mysql_rest_service_metadata.`db_schema` as s ) as parent ");
+      " FROM mariadb_rest_service.`rest_schema` as s ) as parent ");
 
   query_ << mysqlrouter::sqlstring{", s.metadata"};
 }

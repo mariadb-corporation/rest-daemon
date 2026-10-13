@@ -52,17 +52,17 @@ QueryEntriesDbService::QueryEntriesDbService(
       "  s.auth_path, s.auth_completed_url, s.auth_completed_url_validation,"
       "  s.auth_completed_page_content, s.enable_sql_endpoint,"
       "  s.custom_metadata_schema !"
-      " FROM mysql_rest_service_metadata.`service` as s ) as parent ");
+      " FROM mariadb_rest_service.`service` as s ) as parent ");
 
   if (!router_id) {
     query_ << k_s_enabled_and_published;
   } else {
     mysqlrouter::sqlstring service_is_enabled{
         metadata_query("IF(s.id in (select rs.service_id "
-        " from mysql_rest_service_metadata.router_services rs"
-        " WHERE rs.router_id = ?),true, (s.published = 1 AND s.enabled = 1 "
+        " from mariadb_rest_service.rest_daemon_services rs"
+        " WHERE rs.rest_daemon_id = ?),true, (s.published = 1 AND s.enabled = 1 "
         "AND"
-        " (SELECT 0=COUNT(r.id) from mysql_rest_service_metadata.router r"
+        " (SELECT 0=COUNT(r.id) from mariadb_rest_service.rest_daemon r"
         " WHERE r.id=?))) ")};
     service_is_enabled << router_id.value() << router_id.value();
 

@@ -49,7 +49,7 @@ class QueryUserGroups : private Query {
     set_ = out_group_ids;
     query_.reset(
         metadata_sql("SELECT user_group_id FROM "
-        "mysql_rest_service_metadata.mrs_user_has_group "
+        "mariadb_rest_service.mrs_user_has_group "
         "WHERE user_id=?;").c_str());
     query_ << to_sqlstring(user_id);
     execute(session);

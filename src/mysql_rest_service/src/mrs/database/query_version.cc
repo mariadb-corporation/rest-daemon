@@ -31,13 +31,14 @@
 #include "mrs/database/metadata_schema.h"
 
 #include "mysqld_error.h"
+#include "router_config.h"
 
 namespace mrs {
 namespace database {
 
 static void throw_invalid_function_result() {
   throw std::runtime_error(
-      metadata_sql("View `mysql_rest_service_metadata`.`msm_schema_version` returned "
+      metadata_sql("View `mariadb_rest_service`.`msm_schema_version` returned "
       "invalid data."));
 }
 
@@ -46,8 +47,24 @@ MrsSchemaVersion QueryVersion::query_version(MySQLSession *session) {
   // versions before 4.0, first)
   query(session,
         metadata_sql("SELECT `major`,`minor`,`patch` FROM "
-        "mysql_rest_service_metadata.msm_schema_version;"));
+        "mariadb_rest_service.msm_schema_version;"));
   return v_;
+}
+
+std::string unsupported_metadata_version_message(
+    const MrsSchemaVersion &version) {
+  const auto supported = std::to_string(kCurrentMrsMetadataVersion.major) +
+                         "." + std::to_string(kCurrentMrsMetadataVersion.minor) +
+                         ".x";
+  const auto daemon =
+      std::string(MRSD_PROGRAM_NAME) + " " + MYSQL_ROUTER_VERSION;
+  if (kCurrentMrsMetadataVersion < version)
+    return "The REST metadata schema version " + version.str() +
+           " is newer than " + daemon + " supports (" + supported +
+           "): upgrade " + MRSD_PROGRAM_NAME;
+  return "The REST metadata schema version " + version.str() +
+         " is not supported: " + daemon + " needs version " + supported +
+         " (deploy it with MariaDB Shell's CONFIGURE REST METADATA)";
 }
 
 void QueryVersion::on_metadata(unsigned number, MYSQL_FIELD *) {

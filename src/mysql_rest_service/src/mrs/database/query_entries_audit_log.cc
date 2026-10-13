@@ -62,7 +62,7 @@ void QueryAuditLogEntries::build_query(
                      : "count(*)"};
   query_ = {
       metadata_query("SELECT ! FROM "
-      "mysql_rest_service_metadata.audit_log WHERE ID > ? AND table_name in "
+      "mariadb_rest_service.audit_log WHERE ID > ? AND table_name in "
       "(?) ORDER BY id")};
 
   query_ << columns;

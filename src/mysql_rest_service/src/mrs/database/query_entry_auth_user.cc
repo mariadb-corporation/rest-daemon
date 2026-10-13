@@ -61,7 +61,7 @@ bool QueryEntryAuthUser::query_user(MySQLSession *session,
   loaded_ = 0;
   query_ = {
       metadata_query("SELECT id, auth_app_id, name, email, vendor_user_id, login_permitted, "
-      "app_options, auth_string FROM mysql_rest_service_metadata.mrs_user "
+      "app_options, auth_string FROM mariadb_rest_service.mrs_user "
       "WHERE !=? ?")};
 
   query_ << (user_data->has_user_id ? "id" : "auth_app_id");
@@ -117,7 +117,7 @@ AuthUser::UserId QueryEntryAuthUser::insert_user(
   query_uuid.generate_uuid(session);
   auto uuid = query_uuid.get_result();
   query_ = {
-      metadata_query("INSERT INTO mysql_rest_service_metadata.mrs_user(id, auth_app_id, "
+      metadata_query("INSERT INTO mariadb_rest_service.mrs_user(id, auth_app_id, "
       "name, "
       "email, vendor_user_id, login_permitted) VALUES(?, ?, ?, ?, ?, ?)")};
 
@@ -131,7 +131,7 @@ AuthUser::UserId QueryEntryAuthUser::insert_user(
 
   if (default_role_id) {
     query_ = {
-        metadata_query("INSERT INTO mysql_rest_service_metadata.mrs_user_has_role(user_id, "
+        metadata_query("INSERT INTO mariadb_rest_service.mrs_user_has_role(user_id, "
         "role_id, comments) VALUES(?, ?, \"Default role.\")")};
     query_ << to_sqlstring(uuid) << default_role_id.value();
     execute(session);
@@ -145,7 +145,7 @@ bool QueryEntryAuthUser::update_email(MySQLSession *session,
                                       const std::optional<std::string> &email) {
   const static mysqlrouter::sqlstring k_null{"NULL"};
   query_ = {
-      metadata_query("UPDATE mysql_rest_service_metadata.mrs_user SET "
+      metadata_query("UPDATE mariadb_rest_service.mrs_user SET "
       "email=? WHERE id=?")};
 
   query_ << (email.has_value() ? email.value() : k_null)
@@ -160,7 +160,7 @@ bool QueryEntryAuthUser::update_user(MySQLSession *session,
   assert(user->has_user_id);
 
   query_ = {
-      metadata_query("UPDATE mysql_rest_service_metadata.mrs_user SET auth_app_id=?,name=?, "
+      metadata_query("UPDATE mariadb_rest_service.mrs_user SET auth_app_id=?,name=?, "
       "email=?, vendor_user_id=? WHERE id=?")};
 
   query_ << user->app_id << value_or_empty_is_null(user->name)

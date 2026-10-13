@@ -36,7 +36,7 @@ namespace database {
 using UserId = QueryUuid::UserId;
 
 QueryUuid::QueryUuid() {
-  query_ = metadata_query("SELECT `mysql_rest_service_metadata`.`get_sequence_id`();");
+  query_ = metadata_query("SELECT `mariadb_rest_service`.`get_sequence_id`();");
 }
 
 void QueryUuid::generate_uuid(MySQLSession *session) { execute(session); }
@@ -50,7 +50,7 @@ UserId QueryUuid::get_result() {
 void QueryUuid::on_metadata(unsigned number, MYSQL_FIELD *) {
   if (1 != number)
     throw std::runtime_error(
-        metadata_sql("Function `mysql_rest_service_metadata`.`get_sequence_id`, returned "
+        metadata_sql("Function `mariadb_rest_service`.`get_sequence_id`, returned "
         "invalid data."));
 }
 

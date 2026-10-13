@@ -61,14 +61,14 @@ QueryEntriesDbObject::QueryEntriesDbObject(
     : query_factory_{query_factory} {
   query_ =
       metadata_query("SELECT * FROM (SELECT "
-      "  o.id as db_object_id, db.id as db_schema_id, o.requires_auth,"
+      "  o.id as rest_object_id, db.id as rest_schema_id, o.requires_auth,"
       "  o.auth_stored_procedure, o.enabled, o.request_path,"
       "  COALESCE(o.items_per_page, db.items_per_page) as `on_page`, "
       "  o.name, db.name as `schema_name`, o.crud_operations + 0, o.format,"
       "  o.media_type, o.auto_detect_media_type, o.object_type, o.options !"
-      " FROM mysql_rest_service_metadata.`db_object` as o"
-      "  JOIN mysql_rest_service_metadata.`db_schema` as db on"
-      "   o.db_schema_id = db.id !"
+      " FROM mariadb_rest_service.`rest_object` as o"
+      "  JOIN mariadb_rest_service.`rest_schema` as db on"
+      "   o.rest_schema_id = db.id !"
       ") as parent ");
 
   query_ << mysqlrouter::sqlstring{
@@ -77,9 +77,9 @@ QueryEntriesDbObject::QueryEntriesDbObject(
       "cso.name as method_name, cso.options as cset_options"};
 
   query_ << mysqlrouter::sqlstring{
-      metadata_query(" LEFT JOIN mysql_rest_service_metadata.`content_set_has_obj_def` as "
+      metadata_query(" LEFT JOIN mariadb_rest_service.`content_set_has_rest_object` as "
       "cso "
-      "ON o.id = cso.db_object_id")};
+      "ON o.id = cso.rest_object_id")};
 }
 
 uint64_t QueryEntriesDbObject::get_last_update() { return audit_log_id_; }

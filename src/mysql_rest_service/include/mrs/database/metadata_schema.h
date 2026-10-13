@@ -32,8 +32,8 @@ namespace database {
 // follow the same prefix and postfix. One daemon serves one schema.
 
 // the base name, and the base of the role names (`<base>_meta_provider`, ...)
-constexpr std::string_view kMetadataSchemaBaseName = "mysql_rest_service_metadata";
-constexpr std::string_view kMetadataRoleBaseName = "mysql_rest_service";
+constexpr std::string_view kMetadataSchemaBaseName = "mariadb_rest_service";
+constexpr std::string_view kMetadataRoleBaseName = "mariadb_rest_service";
 
 struct MetadataSchemaName {
   std::string prefix;   // empty, or a letter or `_` followed by [A-Za-z0-9_]*

@@ -108,7 +108,7 @@ class QueryChangesAuthApp : public QueryEntriesAuthAppImpl {
     if ("service_has_auth_app" == table_name) {
       mysqlrouter::sqlstring where{
           metadata_query(" WHERE subtable.auth_app_id in (SELECT shaa.`auth_app_id`  FROM "
-          "`mysql_rest_service_metadata`.`service_has_auth_app` as shaa "
+          "`mariadb_rest_service`.`service_has_auth_app` as shaa "
           " WHERE `shaa`.`service_id`=? ) ")};
       where << id;
       return Parent::query_.str() + where.str();

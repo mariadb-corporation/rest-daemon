@@ -42,11 +42,11 @@ void QueryStatistics::update_statistics(MySQLSession *session,
                                         const Snapshot &snap) {
   query_.reset(
       metadata_sql("INSERT INTO "
-      "mysql_rest_service_metadata.router_status("
-      "router_id, timespan, mysql_connections, mysql_queries, "
+      "mariadb_rest_service.rest_daemon_status("
+      "rest_daemon_id, timespan, mariadb_connections, mariadb_queries, "
       "http_requests_get, "
       "http_requests_post, "
-      "http_requests_put, http_requests_delete, active_mysql_connections, "
+      "http_requests_put, http_requests_delete, active_mariadb_connections, "
       "details) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").c_str());
 
   std::vector<uint32_t> direct_ids{

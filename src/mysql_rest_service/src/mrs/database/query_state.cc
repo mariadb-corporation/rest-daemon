@@ -64,7 +64,7 @@ const DbState &QueryState::get_state() const { return state_; }
 void QueryState::query_state_impl(MySQLSession *session,
                                   MySQLSession::Transaction *) {
   query_ =
-      metadata_query("SELECT service_enabled, data FROM mysql_rest_service_metadata.config;");
+      metadata_query("SELECT service_enabled, data FROM mariadb_rest_service.config;");
   has_rows_ = false;
   execute(session);
   if (!has_rows_) {

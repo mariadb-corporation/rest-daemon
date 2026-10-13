@@ -285,8 +285,8 @@ void MrsdSetup::prepare_command_options() {
   arg_handler_.add_option(
       OptionNames({"--metadata-schema"}),
       "Name of the REST metadata schema on the server "
-      "(<prefix>mysql_rest_service_metadata<postfix>); the roles follow it. "
-      "Default: mysql_rest_service_metadata.",
+      "(<prefix>mariadb_rest_service<postfix>); the roles follow it. "
+      "Default: mariadb_rest_service.",
       CmdOptionValueReq::required, "schema", [](const std::string &value) {
         try {
           mrs::database::set_metadata_schema(value);
@@ -638,8 +638,8 @@ void MrsdSetup::check_mrs_metadata() {
 
   // the version the MRS plugin accepts at runtime
   if (!version.is_compatible({mrs::database::kCurrentMrsMetadataVersion})) {
-    throw std::runtime_error("Unsupported MRS metadata version " +
-                             version.str());
+    throw std::runtime_error(
+        mrs::database::unsupported_metadata_version_message(version));
   }
 
   check_version_compatibility(mysql_.get());
@@ -824,19 +824,21 @@ uint64_t MrsdSetup::register_instance() {
 
   const std::string name = router_name();
   mysql_->execute(
-      "INSERT INTO mysql_rest_service_metadata.router"
-      " (router_name, address, product_name, version, attributes, options)"
-      " VALUES (" +
+      mrs::database::metadata_sql(
+          "INSERT INTO mariadb_rest_service.rest_daemon"
+          " (name, address, product_name, version, attributes, options)"
+          " VALUES (") +
       mysql_->quote(name) + ", " + mysql_->quote(report_host) + ", " +
       mysql_->quote(MYSQL_ROUTER_PACKAGE_NAME) + ", " +
       mysql_->quote(MYSQL_ROUTER_VERSION) +
       ", '{}', '{}') ON DUPLICATE KEY UPDATE version=" +
       mysql_->quote(MYSQL_ROUTER_VERSION) +
-      ", router_name=" + mysql_->quote(name) + ", last_check_in=NOW()");
+      ", name=" + mysql_->quote(name) + ", last_check_in=NOW()");
 
   // id of the row just inserted or updated
   const auto row = mysql_->query_one(
-      "SELECT id FROM mysql_rest_service_metadata.router WHERE router_name = " +
+      mrs::database::metadata_sql(
+          "SELECT id FROM mariadb_rest_service.rest_daemon WHERE name = ") +
       mysql_->quote(name) + " AND address = " + mysql_->quote(report_host));
   if (row && (*row)[0]) {
     try {
@@ -849,7 +851,8 @@ uint64_t MrsdSetup::register_instance() {
 }
 
 void MrsdSetup::store_developer(uint64_t router_id) {
-  std::string sql = "UPDATE mysql_rest_service_metadata.router SET attributes=";
+  std::string sql = mrs::database::metadata_sql(
+      "UPDATE mariadb_rest_service.rest_daemon SET attributes=");
   if (developer_.empty()) {
     sql += "JSON_REMOVE(attributes, '$.developer')";
   } else {
@@ -864,8 +867,9 @@ void MrsdSetup::store_account_metadata(uint64_t router_id,
                                        const std::string &key,
                                        const std::string &user) {
   mysql_->execute(
-      "UPDATE mysql_rest_service_metadata.router SET attributes = "
-      "JSON_MERGE_PRESERVE(attributes, JSON_OBJECT(" +
+      mrs::database::metadata_sql(
+          "UPDATE mariadb_rest_service.rest_daemon SET attributes = "
+          "JSON_MERGE_PRESERVE(attributes, JSON_OBJECT(") +
       mysql_->quote(key) + ", JSON_ARRAY(" + mysql_->quote(user + "@%") +
       "))) WHERE id = " + std::to_string(router_id));
 }

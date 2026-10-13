@@ -112,29 +112,29 @@ void QueryEntryObjectImpl::query_entries(MySQLSession *session,
 
   m_loading_references = false;
   query_ =
-      metadata_query("SELECT object_field.id,"
-      " object_field.parent_reference_id,"
-      " object_field.represents_reference_id,"
-      " object_field.name,"
-      " object_field.position,"
-      " object_field.enabled,"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_field.db_column,'$.name')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_field.db_column,'$.datatype')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_field.db_column,'$.id_generation')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_field.db_column,'$.not_null')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_field.db_column,'$.is_primary')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_field.db_column,'$.is_unique')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_field.db_column,'$.is_generated')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_field.db_column,'$.in')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_field.db_column,'$.out')),"
-      " JSON_VALUE(object_field.db_column, '$.srid'),"
-      " object_field.allow_filtering,"
-      " object_field.allow_sorting,"
-      " object_field.no_check,"
-      " object_field.no_update"
-      " FROM mysql_rest_service_metadata.object_field"
-      " WHERE object_field.object_id = ?"
-      " ORDER BY object_field.represents_reference_id, object_field.position");
+      metadata_query("SELECT data_mapping_field.id,"
+      " data_mapping_field.parent_reference_id,"
+      " data_mapping_field.represents_reference_id,"
+      " data_mapping_field.name,"
+      " data_mapping_field.position,"
+      " data_mapping_field.enabled,"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping_field.db_column,'$.name')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping_field.db_column,'$.datatype')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping_field.db_column,'$.id_generation')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping_field.db_column,'$.not_null')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping_field.db_column,'$.is_primary')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping_field.db_column,'$.is_unique')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping_field.db_column,'$.is_generated')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping_field.db_column,'$.in')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping_field.db_column,'$.out')),"
+      " JSON_VALUE(data_mapping_field.db_column, '$.srid'),"
+      " data_mapping_field.allow_filtering,"
+      " data_mapping_field.allow_sorting,"
+      " data_mapping_field.no_check,"
+      " data_mapping_field.no_update"
+      " FROM mariadb_rest_service.data_mapping_field"
+      " WHERE data_mapping_field.data_mapping_id = ?"
+      " ORDER BY data_mapping_field.represents_reference_id, data_mapping_field.position");
   query_ << object_id;
 
   execute(session);
@@ -302,20 +302,20 @@ QueryEntryObjectImpl::UniversalId QueryEntryObjectImpl::query_object(
   entry::UniversalId object_id;
 
   mysqlrouter::sqlstring q{
-      metadata_query("SELECT object.id, object.kind,"
+      metadata_query("SELECT data_mapping.id, data_mapping.kind,"
       " row_ownership_field_id,"
-      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(object.options,'$.dataMappingViewInsert')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object.options,'$.duality_view_insert'))) = 'true',"
-      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(object.options,'$.dataMappingViewUpdate')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object.options,'$.duality_view_update'))) = 'true',"
-      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(object.options,'$.dataMappingViewDelete')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object.options,'$.duality_view_delete'))) = 'true',"
-      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(object.options,'$.dataMappingViewNoCheck')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object.options,'$.duality_view_no_check'))) = 'true'"
-      "  FROM mysql_rest_service_metadata.object"
-      "  JOIN mysql_rest_service_metadata.db_object"
-      "    ON object.db_object_id = db_object.id"
-      "  WHERE object.db_object_id=? ORDER by kind DESC")};
+      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(data_mapping.options,'$.dataMappingViewInsert')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping.options,'$.duality_view_insert'))) = 'true',"
+      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(data_mapping.options,'$.dataMappingViewUpdate')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping.options,'$.duality_view_update'))) = 'true',"
+      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(data_mapping.options,'$.dataMappingViewDelete')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping.options,'$.duality_view_delete'))) = 'true',"
+      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(data_mapping.options,'$.dataMappingViewNoCheck')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping.options,'$.duality_view_no_check'))) = 'true'"
+      "  FROM mariadb_rest_service.data_mapping"
+      "  JOIN mariadb_rest_service.rest_object"
+      "    ON data_mapping.rest_object_id = rest_object.id"
+      "  WHERE data_mapping.rest_object_id=? ORDER by kind DESC")};
   q << db_object_id;
 
   auto res = query_one(session, q.str());
@@ -357,26 +357,26 @@ void QueryEntryObjectImpl::set_query_object_reference(
     const entry::UniversalId &object_id) {
   query_ =
       metadata_query("SELECT"
-      " object_reference.id,"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_reference.reference_mapping,'$.referenced_schema')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_reference.reference_mapping,'$.referenced_table')),"
-      " JSON_EXTRACT(object_reference.reference_mapping,'$.to_many'),"
-      " JSON_EXTRACT(object_reference.reference_mapping,'$.column_mapping'),"
-      " object_reference.unnest OR "
-      "   object_reference.reduce_to_value_of_field_id IS NOT NULL,"
-      " object_reference.row_ownership_field_id,"
-      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(object_reference.options,'$.dataMappingViewInsert')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_reference.options,'$.duality_view_insert'))) = 'true',"
-      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(object_reference.options,'$.dataMappingViewUpdate')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_reference.options,'$.duality_view_update'))) = 'true',"
-      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(object_reference.options,'$.dataMappingViewDelete')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_reference.options,'$.duality_view_delete'))) = 'true',"
-      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(object_reference.options,'$.dataMappingViewNoCheck')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_reference.options,'$.duality_view_no_check'))) = 'true'"
-      " FROM mysql_rest_service_metadata.object_field"
-      " JOIN mysql_rest_service_metadata.object_reference"
-      "  ON object_field.represents_reference_id = object_reference.id"
-      " WHERE object_field.object_id = ?");
+      " data_mapping_reference.id,"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping_reference.reference_mapping,'$.referenced_schema')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping_reference.reference_mapping,'$.referenced_table')),"
+      " JSON_EXTRACT(data_mapping_reference.reference_mapping,'$.to_many'),"
+      " JSON_EXTRACT(data_mapping_reference.reference_mapping,'$.column_mapping'),"
+      " data_mapping_reference.unnest OR "
+      "   data_mapping_reference.reduce_to_value_of_field_id IS NOT NULL,"
+      " data_mapping_reference.row_ownership_field_id,"
+      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(data_mapping_reference.options,'$.dataMappingViewInsert')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping_reference.options,'$.duality_view_insert'))) = 'true',"
+      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(data_mapping_reference.options,'$.dataMappingViewUpdate')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping_reference.options,'$.duality_view_update'))) = 'true',"
+      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(data_mapping_reference.options,'$.dataMappingViewDelete')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping_reference.options,'$.duality_view_delete'))) = 'true',"
+      " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(data_mapping_reference.options,'$.dataMappingViewNoCheck')),"
+      " JSON_UNQUOTE(JSON_EXTRACT(data_mapping_reference.options,'$.duality_view_no_check'))) = 'true'"
+      " FROM mariadb_rest_service.data_mapping_field"
+      " JOIN mariadb_rest_service.data_mapping_reference"
+      "  ON data_mapping_field.represents_reference_id = data_mapping_reference.id"
+      " WHERE data_mapping_field.data_mapping_id = ?");
   query_ << object_id;
 }
 
