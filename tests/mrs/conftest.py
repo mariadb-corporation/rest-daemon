@@ -170,32 +170,50 @@ class Mysqld:
             self.stop()
             self.start(extra)
 
+    def initialize(self) -> None:
+        """create the datadir; MariaDB's bootstrap is retried once (it failed
+        sporadically when several workers initialise at the same time) and
+        its output is shown when it fails"""
+        mariadb = self.paths.is_mariadb
+        for attempt in (1, 2):
+            try:
+                if mariadb and self.paths.mariadb_package and IS_WINDOWS:
+                    # root reachable over TCP (-R), no anonymous accounts
+                    subprocess.run([str(self.paths.install_db), "-d", str(self.datadir), "-R"],
+                                   check=True, capture_output=True)
+                elif mariadb and self.paths.mariadb_package:
+                    subprocess.run([str(self.paths.install_db), "--no-defaults",
+                                    f"--basedir={self.paths.package}",
+                                    f"--datadir={self.datadir}",
+                                    "--auth-root-authentication-method=normal"],
+                                   check=True, capture_output=True)
+                elif mariadb:
+                    subprocess.run([str(self.paths.install_db), "--no-defaults",
+                                    f"--srcdir={self.paths.mariadb_source}",
+                                    f"--builddir={self.paths.package}",
+                                    f"--datadir={self.datadir}",
+                                    "--auth-root-authentication-method=normal"],
+                                   check=True, capture_output=True)
+                else:
+                    subprocess.run([str(self.paths.mysqld), "--no-defaults",
+                                    "--initialize-insecure", f"--datadir={self.datadir}",
+                                    f"--basedir={self.paths.package}"],
+                                   check=True, capture_output=True)
+                return
+            except subprocess.CalledProcessError as e:
+                out = (e.stdout or b"").decode(errors="replace") + \
+                      (e.stderr or b"").decode(errors="replace")
+                if attempt == 2 or not mariadb:
+                    raise RuntimeError(f"initialising {self.datadir} failed:\n"
+                                       + out[-3000:]) from e
+                print(f"initialising {self.datadir} failed, retrying:\n{out[-1500:]}")
+                shutil.rmtree(self.datadir, ignore_errors=True)
+
     def start(self, extra: list[str] | None = None) -> None:
         mariadb = self.paths.is_mariadb
         first_start = not self.datadir.exists()
         if first_start:
-            if mariadb and self.paths.mariadb_package and IS_WINDOWS:
-                # root reachable over TCP (-R), no anonymous accounts
-                subprocess.run([str(self.paths.install_db), "-d", str(self.datadir), "-R"],
-                               check=True, capture_output=True)
-            elif mariadb and self.paths.mariadb_package:
-                subprocess.run([str(self.paths.install_db), "--no-defaults",
-                                f"--basedir={self.paths.package}",
-                                f"--datadir={self.datadir}",
-                                "--auth-root-authentication-method=normal"],
-                               check=True, capture_output=True)
-            elif mariadb:
-                subprocess.run([str(self.paths.install_db), "--no-defaults",
-                                f"--srcdir={self.paths.mariadb_source}",
-                                f"--builddir={self.paths.package}",
-                                f"--datadir={self.datadir}",
-                                "--auth-root-authentication-method=normal"],
-                               check=True, capture_output=True)
-            else:
-                subprocess.run([str(self.paths.mysqld), "--no-defaults",
-                                "--initialize-insecure", f"--datadir={self.datadir}",
-                                f"--basedir={self.paths.package}"],
-                               check=True, capture_output=True)
+            self.initialize()
         args = [str(self.paths.mysqld),
                 f"--defaults-file={SUITE_DIR / 'mysqld.cnf'}",
                 f"--datadir={self.datadir}",
