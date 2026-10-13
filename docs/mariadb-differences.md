@@ -5,12 +5,13 @@ with MySQL. Found while porting the MRS functional suite (Milestone 2, see
 [PROGRESS.md](PROGRESS.md)); the test-suite entries are in
 `tests/mrs/disabled.mariadb.def` and `tests/mrs/known_failures.mariadb.def`.
 
-## Not available in Milestone 2 (planned for Milestone 3)
+## Not available
 
-- **GTID based `asof` requests** (read-your-writes): MariaDB has no
+- **GTID based `asof` requests** (read-your-writes, planned for Milestone 4): MariaDB has no
   `session_track_gtids`, `gtid_executed` or `WAIT_FOR_EXECUTED_GTID_SET`. Such
   requests fail with a clear error; responses carry no `_metadata.gtid`.
-- **REST async tasks** (`mysql_tasks`): the schema is not deployed on MariaDB.
+- **REST async tasks** (`mysql_tasks`) are not part of the MariaDB REST Service;
+  routines are always called directly.
 
 ## Server behaviour
 

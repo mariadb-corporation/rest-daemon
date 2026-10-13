@@ -1,6 +1,6 @@
 # Tests disabled on MariaDB (Milestone 2): <test name>: <reason>
 destination_offline: MariaDB has no offline_mode
-errors: toggles gtid_mode (MySQL GTID machinery; asof is Milestone 3)
+errors: toggles gtid_mode (MySQL GTID machinery; asof is Milestone 4)
 table_type_vector: MariaDB VECTOR(n) has a fixed dimension; the tests store vectors of different lengths (the suite maps VECTOR to BLOB)
 procedure_param_out: VECTOR procedure parameters (see table_type_vector)
 procedure_param_inout: VECTOR procedure parameters (see table_type_vector)

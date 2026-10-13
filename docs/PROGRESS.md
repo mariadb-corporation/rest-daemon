@@ -11,7 +11,7 @@ tick tasks, add a session entry, and rewrite "Next steps".
 | 1: new repo that builds | ✅ done 2026-09-30: macOS, Linux, Windows (x64), with JIT; smoke test incl. MRS scripts passes on all three |
 | 2: tests and ecosystem validation | ✅ done 2026-10-05: unit + component tests (116/116) and MRS functional suite pass on Linux, macOS, Windows; CI moved to the end (Phase 4) |
 | 3: MRS setup and cleanup | ✅ done 2026-10-05: branding (`mariadb-restd`), `--setup`, routing/cluster cleanup; tests pass on all three platforms |
-| 4: packaging and CI | ⏸ moved to Milestone 4 (2026-10-07): tar.gz (Linux, macOS), deb, rpm, Windows ZIP done and verified (unpacked); real deb/rpm installs need root; MSI deferred; CI last |
+| 4: packaging and CI | ⏸ moved to Milestone 5 (2026-10-07): tar.gz (Linux, macOS), deb, rpm, Windows ZIP done and verified (unpacked); real deb/rpm installs need root; MSI deferred; CI last |
 
 **Milestone 1 (standalone daemon) is complete (2026-10-07).** Milestone 2 (MariaDB) is current.
 
@@ -312,7 +312,7 @@ make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
    `libmariadb/libmariadb/libmariadbclient.a` with `CONC_WITH_SSL=OPENSSL`), built shell in
    `<dev>/shell/bld/bin/mariadb-shell`, MRS plugins in `<dev>/mariadb-shell-plugins`.
    A Connector/C package build (shared `libmariadb`, OpenSSL) is still needed.
-3. Open items from Milestone 1 (now Milestone 4, packaging and CI):
+3. Open items from Milestone 1 (now Milestone 5, packaging and CI):
    - Rename (`mariadb-restd`): Ubuntu passed (ctest 113/113, deb, smoke incl. MRS scripts,
      MRS suite 117 passed/4 skipped/1 xpassed); Windows passed (ctest 113/113, ZIP smoke
      incl. MRS scripts with a clean PATH, MRS suite 116 passed/5 skipped/1 xpassed);

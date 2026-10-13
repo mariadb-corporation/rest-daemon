@@ -156,7 +156,7 @@ import json
 _CONTENT_LENGTH = re.compile(r"(Content-Length  ->  )\d+")
 _ETAG = re.compile(r'("etag": ")[0-9A-F]{64}(")')
 # the GTID of a write (session_track_gtids), not available on MariaDB until
-# Milestone 3; the tests print it as "GTID" (a replace_regex)
+# Milestone 4; the tests print it as "GTID" (a replace_regex)
 _GTID_LINE = re.compile(r'^\s*"gtid": "[^"]*",?\n', re.M)
 
 
