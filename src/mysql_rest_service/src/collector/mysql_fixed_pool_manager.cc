@@ -35,6 +35,7 @@
 
 #include "mysql/harness/logging/logging.h"
 #include "mysqlrouter/mysql_session.h"
+#include "mysqlrouter/utils_sqlstring.h"
 
 IMPORT_LOG_FUNCTIONS()
 
@@ -106,6 +107,43 @@ MysqlFixedPoolManager::ConnectionParameters new_connection_params(
   return result;
 }
 
+// restd: upstream enabled all the account's roles on each pooled connection
+// (SET ROLE ALL). MariaDB activates one role at a time: when none is active
+// (no default role) and the account has exactly one granted role, activate
+// that one; with several, the default role is the only choice, so say so.
+void activate_role(mysqlrouter::MySQLSession *session) {
+  try {
+    auto current = session->query_one("SELECT CURRENT_ROLE()");
+    if (current && (*current)[0]) return;  // the default role is active
+
+    // GRANTEE is 'user'@'host', CURRENT_USER() is user@host
+    std::vector<std::string> roles;
+    const mysqlrouter::MySQLSession::ResultRowProcessor collect =
+        [&roles](const mysqlrouter::MySQLSession::ResultRow &row) {
+          if (row[0]) roles.emplace_back(row[0]);
+          return true;
+        };
+    const mysqlrouter::MySQLSession::FieldValidator no_check =
+        [](unsigned, MYSQL_FIELD *) {};
+    session->query(
+        "SELECT ROLE_NAME FROM information_schema.APPLICABLE_ROLES"
+        " WHERE GRANTEE IN (CURRENT_USER(),"
+        " CONCAT('\\'', REPLACE(CURRENT_USER(), '@', '\\'@\\''), '\\''))",
+        collect, no_check);
+
+    if (roles.size() == 1) {
+      session->execute(mysqlrouter::sqlstring("SET ROLE !") << roles[0]);
+    } else if (roles.size() > 1) {
+      log_warning(
+          "Pass-through account '%s' has %zu roles and no default role; only "
+          "one role can be active on MariaDB, set one with SET DEFAULT ROLE",
+          (*session->query_one("SELECT CURRENT_USER()"))[0], roles.size());
+    }
+  } catch (const mysqlrouter::MySQLSession::Error &e) {
+    log_debug("activate_role: %s", e.what());
+  }
+}
+
 }  // namespace
 
 void MysqlFixedPoolManager::init(DestinationProvider *destination,
@@ -118,8 +156,7 @@ void MysqlFixedPoolManager::init(DestinationProvider *destination,
     obj->connect(conn_params);
     mrs::Counter<kEntityCounterMySQLConnectionsCreated>::increment();
 
-    // restd: upstream enabled all roles here (SET ROLE ALL); MariaDB
-    // activates one role at a time, the account's default role applies.
+    activate_role(obj.get());  // restd: see above
 
     CachedObject cached{&cache_manager_, false, obj.release()};
 
