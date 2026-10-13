@@ -32,9 +32,8 @@ namespace mrs {
 namespace database {
 
 QueryChangesDbService::QueryChangesDbService(
-    SupportedMrsMetadataVersion v, const uint64_t last_audit_log_id,
-    const std::optional<uint64_t> &router_id)
-    : QueryEntriesDbService(v, router_id) {
+    const uint64_t last_audit_log_id, const std::optional<uint64_t> &router_id)
+    : QueryEntriesDbService(router_id) {
   audit_log_id_ = last_audit_log_id;
 }
 

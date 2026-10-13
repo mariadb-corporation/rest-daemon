@@ -40,8 +40,7 @@ class QueryChangesDbObject : public QueryEntriesDbObject {
   using QueryFactory = mrs::interface::QueryFactory;
 
  public:
-  QueryChangesDbObject(SupportedMrsMetadataVersion v,
-                       QueryFactory *query_factory,
+  QueryChangesDbObject(QueryFactory *query_factory,
                        const uint64_t last_audit_id);
 
   /**
@@ -56,7 +55,7 @@ class QueryChangesDbObject : public QueryEntriesDbObject {
   uint64_t query_length_;
 
   void query_path_entries(MySQLSession *session,
-                          std::vector<DbObjectCompatible> *out,
+                          std::vector<DbObject> *out,
                           const std::string &table_name,
                           const entry::UniversalId &id);
   std::string build_query(const std::string &table_name,

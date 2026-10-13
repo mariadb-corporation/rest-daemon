@@ -88,8 +88,7 @@ class QueryEntriesDbObjectTests : public Test {
   MakeSharedPtr<StrictMock<MockQueryEntryFields>> mock_query_fields;
   StrictMock<MockQueryFactory> mock_query_factory;
   StrictMock<MockMySQLSession> mock_session;
-  QueryEntriesDbObject sut_{mrs::interface::kSupportedMrsMetadataVersion_2,
-                            &mock_query_factory};
+  QueryEntriesDbObject sut_{&mock_query_factory};
 };
 
 TEST_F(QueryEntriesDbObjectTests, returns_audit_id_one_without_entires) {

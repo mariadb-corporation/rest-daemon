@@ -255,6 +255,59 @@ document generation, GTID tracking, `mysql_tasks`, account setup, tests.
   OUT ones rendered as base64) and the malformed-base64 500.
 - ✅ 2026-10-13: the `restd:` markers reworded for the MariaDB-only tree.
 
+## Milestone 3: metadata schema 5.0.0
+
+Goal: `mariadb-restd` serves the MariaDB REST Service metadata schema 5.0.0
+(`mariadb_rest_service`, with a prefix/postfix per deployment), as deployed by the
+MariaDB shell's `CONFIGURE REST METADATA`. No 4.x compatibility: nothing of 5.0.0 was
+released before. Spec: the shell repo's `.claude/context/rest-daemon-5.0.md`; findings:
+[milestone3-inventory.md](milestone3-inventory.md).
+
+Decisions (2026-10-13, see the decision log):
+
+| Topic | Decision |
+|---|---|
+| Minimum server | **MariaDB 11.7+**: the 5.0.0 schema uses `UUID_v7()` defaults (11.7). Tested on 11.8 LTS and 13.2; the gate says so |
+| Version gate | **5.0.x only**; a newer minor is refused with a message naming the daemon version it needs (the shell's `required_rest_daemon_version` is 26.10.0) |
+| Daemon id | `router_id` becomes **`rest_daemon_id`, a UUID** (config, `--setup`, the keyring's reader variable, JWT `instance_id`); `--setup` account names drop the id (`mariadb_restd_<random>`, 32-character limit) |
+| Ids on the wire | user ids as **canonical UUID text** (`/authentication/status`, the script API, routine ownership parameters); `vendorId` keeps `0x…` (the SDKs and the landing page compare it) |
+| Status counters | renamed to the spec's `mariadb…` names **and** `statusVariables` published in `rest_daemon.attributes` |
+| Schema name | a plugin option and a `--setup` option, default `mariadb_rest_service`, prefix/postfix validated; roles derived from it; no auto-discovery |
+
+### Phase M3.0: delete v2/v3 schema support (still on 4.1.6) ✅ done (2026-10-13)
+- The v2/v3 query variants, factories and `SupportedMrsMetadataVersion` 2/3; the
+  `schema_version` fallback; the version-specific tests. Fix `WHEREa.id` in the
+  row-ownership SQL on the way.
+
+### Phase M3.1: bake the suite's SQL rewrites into the tests (still on 4.1.6)
+- The MySQL-only SQL of the upstream scripts and fixtures rewritten in the files
+  (`mrstest/mariadb_sql.py`'s rules), results re-recorded on MariaDB, the rewrite and
+  most of the normaliser retired. A clean baseline for the 5.0.0 diff.
+
+### Phase M3.2: central schema and role names (still on 4.1.6)
+- The options, the validation, one accessor used by every statement; default still the
+  old name.
+
+### Phase M3.3: UUID spike, then type-driven id reading (still on 4.1.6)
+- Spike on a live server: `BINARY(16)` owner columns vs `UUID` user ids (byte order of a
+  16-byte literal), `HEX()`/`GROUP_CONCAT` on `UUID`, `get_sequence_id()`, binding as text.
+- `UniversalId` read from 16 bytes or 36-character text by field type (`UUID` columns
+  carry a type name in the extended metadata); metadata binding split from owner
+  rendering.
+
+### Phase M3.4: switch to 5.0.0 (atomic)
+- Renames, audit dispatch, default name, gate, `rest_daemon_id`, status columns; the
+  test assets (schema script, includes, conftest, mocks, live-test fixtures) and a full
+  re-record; smoke test on the shell repo's deployment script.
+
+### Phase M3.5: wire formats and texts
+- User ids on the wire, the raw-bytes role id bug, counters + `statusVariables`,
+  messages, README.
+
+### Phase M3.6: Galera-safe audit polling
+- An overlap window by id and `changed_at` (clock-skew margin), a set of processed ids,
+  best-effort `wsrep_sync_wait`.
+
 ## Open point: GTID read-your-writes on MariaDB (Milestone 4)
 
 `readOwnWrites`, `_metadata.gtid` and the `$asof` filter are built on MySQL's GTIDs
@@ -414,3 +467,7 @@ mrsd/
   Mac's shell build already targets 5.0.0; Ubuntu passed after the MySQL removal).
   Milestone 3 (schema 5.0.0) starts: 5.0.0 is on the main branches of the MariaDB shell
   (deployment script `mariadb_rest_service_deployment_5.0.0.sql`) and plugins.
+- 2026-10-13: Milestone 3 plan reviewed and approved: a UUID spike before the id work; the
+  suite's SQL rewrites baked in before the schema switch; `rest_daemon_id` (UUID), user
+  ids on the wire as UUID text, `vendorId` as `0x…`, counters renamed + `statusVariables`,
+  gate 5.0.x only. Minimum server for 5.0.0 is MariaDB 11.7 (`UUID_v7()`).

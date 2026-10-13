@@ -46,10 +46,9 @@ const std::string kObjTableName = "object";
 const std::string kObjRefTableName = "object_reference";
 const std::string kObjFieldTableName = "object_field";
 
-QueryChangesDbObject::QueryChangesDbObject(SupportedMrsMetadataVersion v,
-                                           QueryFactory *query_factory,
+QueryChangesDbObject::QueryChangesDbObject(QueryFactory *query_factory,
                                            const uint64_t last_audit_id)
-    : QueryEntriesDbObject(v, query_factory) {
+    : QueryEntriesDbObject(query_factory) {
   audit_log_id_ = last_audit_id;
   query_length_ = query_.str().length();
 }
@@ -58,7 +57,7 @@ void QueryChangesDbObject::query_entries(MySQLSession *session) {
   path_entries_fetched.clear();
 
   QueryAuditLogEntries audit_entries;
-  std::vector<DbObjectCompatible> local_path_entries;
+  std::vector<DbObject> local_path_entries;
   uint64_t max_audit_log_id = audit_log_id_;
   audit_entries.query_entries(
       session,
@@ -92,18 +91,6 @@ void QueryChangesDbObject::query_entries(MySQLSession *session) {
                            skip_starting_slash(e.name), e.id);
     e.object_description = qobject->object;
 
-    if (db_version_ == mrs::interface::kSupportedMrsMetadataVersion_2) {
-      if (e.user_ownership_v2.has_value()) {
-        auto &value = e.user_ownership_v2.value();
-        auto field = e.object_description->get_column(value);
-
-        if (field) {
-          e.object_description->user_ownership_field.emplace();
-          e.object_description->user_ownership_field->field = field;
-          e.object_description->user_ownership_field->uid = field->id;
-        }
-      }
-    }
   }
 
   entries_.swap(local_path_entries);
@@ -112,7 +99,7 @@ void QueryChangesDbObject::query_entries(MySQLSession *session) {
 }
 
 void QueryChangesDbObject::query_path_entries(
-    MySQLSession *session, std::vector<DbObjectCompatible> *out,
+    MySQLSession *session, std::vector<DbObject> *out,
     const std::string &table_name, const entry::UniversalId &id) {
   entries_.clear();
 
@@ -126,7 +113,7 @@ void QueryChangesDbObject::query_path_entries(
   }
 
   if (entries_.empty() && table_name == "db_object") {
-    DbObjectCompatible pe;
+    DbObject pe;
     pe.id = id;
     pe.deleted = true;
     path_entries_fetched.insert(id);

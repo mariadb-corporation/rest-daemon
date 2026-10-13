@@ -34,8 +34,7 @@
 namespace mrs {
 namespace database {
 
-QueryEntriesDbSchema::QueryEntriesDbSchema(SupportedMrsMetadataVersion version)
-    : db_version_{version} {
+QueryEntriesDbSchema::QueryEntriesDbSchema() {
   // Alias `db_schema_id`, used in QueryChangesDbSchema.
   query_ =
       "SELECT * FROM (SELECT"
@@ -44,11 +43,7 @@ QueryEntriesDbSchema::QueryEntriesDbSchema(SupportedMrsMetadataVersion version)
       "  s.enabled, s.items_per_page,s.options !"
       " FROM mysql_rest_service_metadata.`db_schema` as s ) as parent ";
 
-  if (db_version_ == mrs::interface::kSupportedMrsMetadataVersion_2)
-    query_ << mysqlrouter::sqlstring{""};
-  else {
-    query_ << mysqlrouter::sqlstring{", s.metadata"};
-  }
+  query_ << mysqlrouter::sqlstring{", s.metadata"};
 }
 
 uint64_t QueryEntriesDbSchema::get_last_update() { return audit_log_id_; }
@@ -81,9 +76,7 @@ void QueryEntriesDbSchema::on_row(const ResultRow &row) {
   mysql_row.unserialize(&entry.items_per_page);
   mysql_row.unserialize(&entry.options);
 
-  if (db_version_ >= mrs::interface::kSupportedMrsMetadataVersion_3) {
-    mysql_row.unserialize(&entry.metadata);
-  }
+  mysql_row.unserialize(&entry.metadata);
 
   entry.deleted = false;
 }

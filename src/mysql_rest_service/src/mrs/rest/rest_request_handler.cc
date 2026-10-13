@@ -113,47 +113,7 @@ using WwwAuthenticationHandler = mrs::authentication::WwwAuthenticationHandler;
 using Parameters = mrs::interface::RestHandler::Parameters;
 using HttpHeaders = ::http::base::Headers;
 using HttpBuffer = ::http::base::IOBuffer;
-using ApplyToV3 = mrs::database::entry::AuthPrivilege::ApplyToV3;
 using ApplyToV4 = mrs::database::entry::AuthPrivilege::ApplyToV4;
-
-template <typename T>
-std::string to_string(const std::optional<T> &v) {
-  using std::to_string;
-  if (!v.has_value()) return "null";
-
-  return to_string(v.value());
-}
-
-static bool check_privileges_v3(const ApplyToV3 &p,
-                                const UniversalId &service_id,
-                                const UniversalId &schema_id,
-                                const UniversalId &db_object_id) {
-  const bool log_level_is_debug = mysql_harness::logging::log_level_is_handled(
-      mysql_harness::logging::LogLevel::kDebug);
-
-  if (log_level_is_debug) {
-    log_debug("RestRequestHandler: object_id:%s",
-              to_string(p.object_id).c_str());
-    log_debug("RestRequestHandler: schema_id:%s",
-              to_string(p.schema_id).c_str());
-    log_debug("RestRequestHandler: service_id:%s",
-              to_string(p.service_id).c_str());
-  }
-
-  if (!p.object_id && !p.schema_id && !p.service_id) {
-    return true;
-  }
-
-  if (p.object_id.has_value() && db_object_id == *p.object_id) {
-    return true;
-  }
-
-  if (p.schema_id.has_value() && schema_id == *p.schema_id) {
-    return true;
-  }
-
-  return (p.service_id.has_value() && service_id == *p.service_id);
-}
 
 static bool check_privileges_v4(const ApplyToV4 &p,
                                 const std::string &service_path,
@@ -173,9 +133,9 @@ static bool check_privileges_v4(const ApplyToV4 &p,
 
 uint32_t do_privilege_check(
     const std::vector<database::entry::AuthPrivilege> &privileges,
-    const UniversalId &service_id, const std::string &service_path,
-    const UniversalId &schema_id, const std::string &schema_path,
-    const UniversalId &db_object_id, const std::string &db_object_path) {
+    const UniversalId & /*service_id*/, const std::string &service_path,
+    const UniversalId & /*schema_id*/, const std::string &schema_path,
+    const UniversalId & /*db_object_id*/, const std::string &db_object_path) {
   uint32_t aggregated_privileges = 0;
 
   const bool log_level_is_debug = mysql_harness::logging::log_level_is_handled(
@@ -190,13 +150,10 @@ uint32_t do_privilege_check(
   for (const auto &p : privileges) {
     bool matches = false;
 
-    if (std::holds_alternative<ApplyToV3>(p.select_by)) {
-      matches = check_privileges_v3(std::get<ApplyToV3>(p.select_by),
-                                    service_id, schema_id, db_object_id);
-    } else {
-      matches = check_privileges_v4(std::get<ApplyToV4>(p.select_by),
-                                    service_path, schema_path, db_object_path);
-    }
+    // restd: schema-4 privileges only (paths); upstream also matched the
+    // schema-2/3 ones by id, hence the id parameters, unused now
+    matches = check_privileges_v4(p.select_by, service_path, schema_path,
+                                  db_object_path);
 
     if (matches) {
       if (log_level_is_debug) {

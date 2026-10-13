@@ -31,7 +31,6 @@
 
 #include "mrs/database/entry/content_file.h"
 #include "mrs/database/helper/query.h"
-#include "mrs/interface/supported_mrs_schema_version.h"
 
 namespace mrs {
 namespace database {
@@ -39,10 +38,9 @@ namespace database {
 class QueryEntriesContentFile : protected Query {
  public:
   using VectorOfPaths = std::vector<database::entry::ContentFile>;
-  using Version = mrs::interface::SupportedMrsMetadataVersion;
 
  public:
-  QueryEntriesContentFile(const Version version);
+  QueryEntriesContentFile();
 
   virtual uint64_t get_last_update();
   virtual void query_entries(MySQLSession *session);
@@ -53,7 +51,6 @@ class QueryEntriesContentFile : protected Query {
   void on_row(const ResultRow &row) override;
 
   uint64_t audit_log_id_;
-  Version version_;
 };
 
 }  // namespace database

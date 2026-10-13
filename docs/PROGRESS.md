@@ -701,3 +701,17 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   base64 and malformed base64 giving 500 (now NULL, as MRS); upstream's `" INTEGER"` typo.
   Suite on Ubuntu: 110 passed, 0 failed, 6 skipped, 5 xfailed, 1 xpassed.
 - `restd:` marker pass; Milestone 2 closed. The final smoke tests were skipped by decision.
+
+### 2026-10-13: session 7, continued (Milestone 3 starts)
+- Inventory for schema 5.0.0 in `docs/milestone3-inventory.md`; plan reviewed: UUID spike
+  before the id work, the suite's SQL rewrites baked in before the switch, `rest_daemon_id`
+  (UUID), user ids on the wire as UUID text, gate 5.0.x only; the 5.0.0 schema needs
+  MariaDB 11.7 (`UUID_v7()`).
+- M3.0: the v2/v3 schema support deleted (query variants, factories,
+  `SupportedMrsMetadataVersion`, the `schema_version` fallback, `ApplyToV3` privileges,
+  the version-specific tests and schema dumps); `WHEREa.id` fixed in the row-ownership
+  SQL. Unit 389/389, ctest 113/113, live 102/104, suite 107 passed (one transient failure
+  of `openapi_db_object_basic` under `-n 4`, passes alone).
+- A MariaDB 11.8.9 macOS server package is available on the Mac:
+  `MARIADB_PACKAGE_DIR=<downloads>/mariadb-11.8.9-macos26-arm-64bit-sandbox` (the
+  5.0.0 floor; the live tests and the suite can run against it with that variable).

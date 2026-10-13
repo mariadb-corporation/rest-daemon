@@ -32,10 +32,8 @@
 namespace mrs {
 namespace database {
 const mysqlrouter::sqlstring k_option_field{",f.options "};
-const mysqlrouter::sqlstring k_empty;
 
-QueryEntriesContentFile::QueryEntriesContentFile(const Version version)
-    : version_{version} {
+QueryEntriesContentFile::QueryEntriesContentFile() {
   query_ =
       "SELECT * FROM (SELECT "
       "    f.id as content_file_id,"
@@ -45,8 +43,7 @@ QueryEntriesContentFile::QueryEntriesContentFile(const Version version)
       "    f.enabled,"
       "    f.size !"
       " FROM mysql_rest_service_metadata.content_file as f) as cf";
-  query_ << (version == Version::kSupportedMrsMetadataVersion_3 ? k_option_field
-                                                                : k_empty);
+  query_ << k_option_field;
 }
 
 uint64_t QueryEntriesContentFile::get_last_update() { return audit_log_id_; }
@@ -76,9 +73,7 @@ void QueryEntriesContentFile::on_row(const ResultRow &row) {
   mysql_row.unserialize(&entry.enabled);
   mysql_row.unserialize(&entry.size);
 
-  if (version_ == Version::kSupportedMrsMetadataVersion_3) {
-    mysql_row.unserialize(&entry.options);
-  }
+  mysql_row.unserialize(&entry.options);
 
   entry.deleted = false;
 }

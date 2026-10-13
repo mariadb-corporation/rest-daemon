@@ -33,18 +33,14 @@ namespace mrs {
 namespace database {
 
 const mysqlrouter::sqlstring k_field_internal{",s.internal"};
-const mysqlrouter::sqlstring k_empty;
 
-QueryEntriesContentSet::QueryEntriesContentSet(const Version version)
-    : version_{version} {
+QueryEntriesContentSet::QueryEntriesContentSet() {
   query_ =
       "SELECT * FROM (SELECT s.id as content_set_id, s.service_id as "
       "service_id, s.request_path, "
       "   s.requires_auth, s.enabled, s.options !"
       " FROM mysql_rest_service_metadata.content_set as s) as cs";
-  query_ << (version == Version::kSupportedMrsMetadataVersion_3
-                 ? k_field_internal
-                 : k_empty);
+  query_ << k_field_internal;
 }
 
 uint64_t QueryEntriesContentSet::get_last_update() { return audit_log_id_; }
@@ -74,9 +70,7 @@ void QueryEntriesContentSet::on_row(const ResultRow &row) {
   mysql_row.unserialize(&entry.enabled);
   mysql_row.unserialize(&entry.options);
 
-  if (Version::kSupportedMrsMetadataVersion_3 == version_) {
-    mysql_row.unserialize(&entry.internal);
-  }
+  mysql_row.unserialize(&entry.internal);
 
   entry.deleted = false;
 }

@@ -196,7 +196,7 @@ const sqlstring &QueryRestTable::build_where(
 
   std::string query{
       "WHERE (! IN (WITH RECURSIVE cte As ("
-      "SELECT a.id as id FROM mysql_rest_service_metadata.mrs_user a WHERE"
+      "SELECT a.id as id FROM mysql_rest_service_metadata.mrs_user a WHERE "
       "a.id = ? "
       "UNION ALL "
       "SELECT h.user_id as id FROM "
@@ -323,7 +323,7 @@ const sqlstring &QueryRestTable::build_where(
 
   std::string query{
       "WHERE (! IN (WITH RECURSIVE cte As ("
-      "SELECT a.id as id FROM mysql_rest_service_metadata.mrs_user a WHERE"
+      "SELECT a.id as id FROM mysql_rest_service_metadata.mrs_user a WHERE "
       "a.id = ? "
       "UNION ALL "
       "SELECT h.user_id as id FROM "

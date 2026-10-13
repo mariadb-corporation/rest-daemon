@@ -29,17 +29,14 @@
 
 #include "mrs/interface/query_factory.h"
 #include "mrs/interface/query_monitor_factory.h"
-#include "mrs/interface/supported_mrs_schema_version.h"
 
 namespace mrs {
 namespace database {
 
 std::unique_ptr<mrs::interface::QueryMonitorFactory>
-create_schema_monitor_factory(
-    mrs::interface::SupportedMrsMetadataVersion scheme_version);
+create_schema_monitor_factory();
 
-std::unique_ptr<mrs::interface::QueryFactory> create_query_factory(
-    mrs::interface::SupportedMrsMetadataVersion scheme_version);
+std::unique_ptr<mrs::interface::QueryFactory> create_query_factory();
 
 using SchemaMonitorFactoryMethod = decltype(&create_schema_monitor_factory);
 

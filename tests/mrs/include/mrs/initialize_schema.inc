@@ -20,18 +20,6 @@ if ($mrs_schema_version == 4)
 }
 
 
-if ($mrs_schema_version == 3)
-{
-  --source ../schema/mrs_metadata_schema-version3.sql
-  --let $_mrs_schema_version_supported=1
-}
-
-if ($mrs_schema_version == 2)
-{
-  --source ../schema/mrs_metadata_schema-version2.sql
-  --let $_mrs_schema_version_supported=1
-}
-
 if (!$_mrs_schema_version_supported)
 {
   --die MRS test-suite executed with unsupported schema version $mrs_schema_version.

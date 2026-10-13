@@ -31,7 +31,6 @@
 
 #include "mrs/database/entry/content_set.h"
 #include "mrs/database/helper/query.h"
-#include "mrs/interface/supported_mrs_schema_version.h"
 
 namespace mrs {
 namespace database {
@@ -39,10 +38,9 @@ namespace database {
 class QueryEntriesContentSet : protected Query {
  public:
   using VectorOfContentSets = std::vector<database::entry::ContentSet>;
-  using Version = mrs::interface::SupportedMrsMetadataVersion;
 
  public:
-  QueryEntriesContentSet(const Version version);
+  QueryEntriesContentSet();
 
   virtual uint64_t get_last_update();
   virtual void query_entries(MySQLSession *session);
@@ -53,7 +51,6 @@ class QueryEntriesContentSet : protected Query {
   void on_row(const ResultRow &row) override;
 
   uint64_t audit_log_id_;
-  Version version_;
 };
 
 }  // namespace database

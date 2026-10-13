@@ -37,8 +37,7 @@ namespace database {
 
 class QueryChangesDbService : public QueryEntriesDbService {
  public:
-  QueryChangesDbService(SupportedMrsMetadataVersion v,
-                        const uint64_t last_audit_log_id,
+  QueryChangesDbService(const uint64_t last_audit_log_id,
                         const std::optional<uint64_t> &router_id);
 
   void query_entries(MySQLSession *session) override;

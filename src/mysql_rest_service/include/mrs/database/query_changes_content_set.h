@@ -37,8 +37,7 @@ namespace database {
 
 class QueryChangesContentSet : public QueryEntriesContentSet {
  public:
-  QueryChangesContentSet(const uint64_t last_audit_log_id,
-                         const Version version);
+  QueryChangesContentSet(const uint64_t last_audit_log_id);
   void query_entries(MySQLSession *session) override;
 
  private:

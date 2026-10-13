@@ -30,7 +30,6 @@
 #include "mrs/database/entry/url_host.h"
 #include "mrs/database/helper/query.h"
 #include "mrs/interface/query_factory.h"
-#include "mrs/interface/supported_mrs_schema_version.h"
 
 namespace mrs {
 namespace database {
@@ -39,8 +38,6 @@ class QueryEntriesUrlHost : protected Query {
  public:
   using UrlHost = entry::UrlHost;
   using VectorOfEntries = std::vector<UrlHost>;
-  using SupportedMrsMetadataVersion =
-      mrs::interface::SupportedMrsMetadataVersion;
 
  public:
   QueryEntriesUrlHost();

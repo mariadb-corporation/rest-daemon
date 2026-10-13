@@ -31,9 +31,8 @@
 namespace mrs {
 namespace database {
 
-QueryChangesDbSchema::QueryChangesDbSchema(SupportedMrsMetadataVersion v,
-                                           const uint64_t last_audit_log_id)
-    : QueryEntriesDbSchema(v) {
+QueryChangesDbSchema::QueryChangesDbSchema(const uint64_t last_audit_log_id)
+    : QueryEntriesDbSchema() {
   audit_log_id_ = last_audit_log_id;
 }
 

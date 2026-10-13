@@ -36,10 +36,9 @@
 namespace mrs {
 namespace database {
 
-template <typename QueryForAuthApps = v2::QueryEntriesAuthApp, int version = 2>
-class QueryChangesAuthApp : public QueryForAuthApps {
+class QueryChangesAuthApp : public QueryEntriesAuthAppImpl {
  public:
-  using Parent = QueryForAuthApps;
+  using Parent = QueryEntriesAuthAppImpl;
   using MySQLSession = mysqlrouter::MySQLSession;
   using Entries = typename Parent::Entries;
 
@@ -57,8 +56,6 @@ class QueryChangesAuthApp : public QueryForAuthApps {
 
     std::vector<std::string> allowed_changes{"auth_app", "auth_vendor",
                                              "service_has_auth_app"};
-
-    if (version == 3) allowed_changes.push_back("service_has_auth_app");
 
     audit_entries.query_entries(session, allowed_changes,
                                 Parent::audit_log_id_);

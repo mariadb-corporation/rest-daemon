@@ -36,27 +36,9 @@ namespace database {
 
 using Entries = QueryEntriesAuthApp::Entries;
 
-namespace v2 {
+uint64_t QueryEntriesAuthAppImpl::get_last_update() { return audit_log_id_; }
 
-uint64_t QueryEntriesAuthApp::get_last_update() { return audit_log_id_; }
-
-QueryEntriesAuthApp::QueryEntriesAuthApp() {
-  query_ =
-      "SELECT * FROM (SELECT a.id, HEX(service_id),"
-      "v.name, "
-      "a.name as app_name, "
-      "  a.enabled and "
-      "    v.enabled, a.url, v.validation_url,  a.access_token, a.app_id, "
-      "  a.url_direct_auth,"
-      "  a.limit_to_registered_users, a.default_role_id,"
-      "  a.id as auth_app_id, auth_vendor_id "
-      " FROM mysql_rest_service_metadata.auth_app as a "
-      "JOIN mysql_rest_service_metadata.`auth_vendor` as v on a.auth_vendor_id "
-      "= v.id "
-      ") as subtable ";
-}
-
-void QueryEntriesAuthApp::query_entries(MySQLSession *session) {
+void QueryEntriesAuthAppImpl::query_entries(MySQLSession *session) {
   QueryAuditLogMaxId query_audit_id;
   query(session, "START TRANSACTION");
   auto audit_log_id = query_audit_id.query_max_id(session);
@@ -66,7 +48,7 @@ void QueryEntriesAuthApp::query_entries(MySQLSession *session) {
   audit_log_id_ = audit_log_id;
 }
 
-void QueryEntriesAuthApp::on_row(const ResultRow &row) {
+void QueryEntriesAuthAppImpl::on_row(const ResultRow &row) {
   entries_.emplace_back();
 
   helper::MySQLRow mysql_row(row, metadata_, num_of_metadata_);
@@ -107,13 +89,9 @@ void QueryEntriesAuthApp::on_row(const ResultRow &row) {
   entry.deleted = false;
 }
 
-const Entries &QueryEntriesAuthApp::get_entries() { return entries_; }
+const Entries &QueryEntriesAuthAppImpl::get_entries() { return entries_; }
 
-}  // namespace v2
-
-namespace v3 {
-
-QueryEntriesAuthApp::QueryEntriesAuthApp() {
+QueryEntriesAuthAppImpl::QueryEntriesAuthAppImpl() {
   mysqlrouter::sqlstring select_services{
       "(SELECT GROUP_CONCAT(DISTINCT HEX(`shaa`.`service_id`) ORDER BY "
       "auth_app_id ASC "
@@ -139,6 +117,5 @@ QueryEntriesAuthApp::QueryEntriesAuthApp() {
   query_ << select_services;
 }
 
-}  // namespace v3
 }  // namespace database
 }  // namespace mrs

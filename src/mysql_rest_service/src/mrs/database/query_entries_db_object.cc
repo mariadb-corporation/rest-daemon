@@ -56,8 +56,8 @@ auto get_map_converter(Map *map, const typename Map::mapped_type value) {
 }
 
 QueryEntriesDbObject::QueryEntriesDbObject(
-    SupportedMrsMetadataVersion version, interface::QueryFactory *query_factory)
-    : db_version_{version}, query_factory_{query_factory} {
+    interface::QueryFactory *query_factory)
+    : query_factory_{query_factory} {
   query_ =
       "SELECT * FROM (SELECT "
       "  o.id as db_object_id, db.id as db_schema_id, o.requires_auth,"
@@ -70,21 +70,15 @@ QueryEntriesDbObject::QueryEntriesDbObject(
       "   o.db_schema_id = db.id !"
       ") as parent ";
 
-  if (db_version_ == mrs::interface::kSupportedMrsMetadataVersion_2) {
-    query_ << mysqlrouter::sqlstring{
-        ", o.row_user_ownership_enforced, o.row_user_ownership_column "};
-    query_ << mysqlrouter::sqlstring{};
-  } else {
-    query_ << mysqlrouter::sqlstring{
-        ", o.metadata, cso.content_set_id, cso.priority, cso.language, "
-        "cso.class_name, "
-        "cso.name as method_name, cso.options as cset_options"};
+  query_ << mysqlrouter::sqlstring{
+      ", o.metadata, cso.content_set_id, cso.priority, cso.language, "
+      "cso.class_name, "
+      "cso.name as method_name, cso.options as cset_options"};
 
-    query_ << mysqlrouter::sqlstring{
-        " LEFT JOIN mysql_rest_service_metadata.`content_set_has_obj_def` as "
-        "cso "
-        "ON o.id = cso.db_object_id"};
-  }
+  query_ << mysqlrouter::sqlstring{
+      " LEFT JOIN mysql_rest_service_metadata.`content_set_has_obj_def` as "
+      "cso "
+      "ON o.id = cso.db_object_id"};
 }
 
 uint64_t QueryEntriesDbObject::get_last_update() { return audit_log_id_; }
@@ -113,18 +107,6 @@ void QueryEntriesDbObject::query_entries(MySQLSession *session) {
     qobject->query_entries(session, skip_starting_slash(e.schema_name),
                            skip_starting_slash(e.name), e.id);
     e.object_description = qobject->object;
-
-    if (db_version_ == mrs::interface::kSupportedMrsMetadataVersion_2) {
-      if (e.user_ownership_v2.has_value()) {
-        auto &value = e.user_ownership_v2.value();
-        auto field = e.object_description->get_column(value);
-        if (field) {
-          e.object_description->user_ownership_field.emplace();
-          e.object_description->user_ownership_field->field = field;
-          e.object_description->user_ownership_field->uid = field->id;
-        }
-      }
-    }
   }
 
   audit_log_id_ = audit_log_id;
@@ -170,34 +152,22 @@ void QueryEntriesDbObject::on_row(const ResultRow &row) {
   mysql_row.unserialize_with_converter(&entry.type, path_type_converter);
   mysql_row.unserialize(&entry.options);
 
-  if (db_version_ == mrs::interface::kSupportedMrsMetadataVersion_2) {
-    bool user_ownership_enforced{false};
-    std::string user_ownership_column;
+  mysql_row.unserialize(&entry.metadata);
+  helper::Optional<entry::UniversalId> cset_id;
+  mysql_row.unserialize_with_converter(&cset_id,
+                                       entry::UniversalId::from_raw);
 
-    mysql_row.unserialize(&user_ownership_enforced);
-    mysql_row.unserialize(&user_ownership_column);
-
-    if (user_ownership_enforced && !user_ownership_column.empty()) {
-      entry.user_ownership_v2 = user_ownership_column;
-    }
+  if (cset_id) {
+    entry::ContentSetHasObjectDef cset_def;
+    cset_def.content_set_id = std::move(*cset_id);
+    mysql_row.unserialize(&cset_def.priority);
+    mysql_row.unserialize(&cset_def.language);
+    mysql_row.unserialize(&cset_def.class_name);
+    mysql_row.unserialize(&cset_def.name);
+    mysql_row.unserialize(&cset_def.options);
+    entry.content_set_def = std::move(cset_def);
   } else {
-    mysql_row.unserialize(&entry.metadata);
-    helper::Optional<entry::UniversalId> cset_id;
-    mysql_row.unserialize_with_converter(&cset_id,
-                                         entry::UniversalId::from_raw);
-
-    if (cset_id) {
-      entry::ContentSetHasObjectDef cset_def;
-      cset_def.content_set_id = std::move(*cset_id);
-      mysql_row.unserialize(&cset_def.priority);
-      mysql_row.unserialize(&cset_def.language);
-      mysql_row.unserialize(&cset_def.class_name);
-      mysql_row.unserialize(&cset_def.name);
-      mysql_row.unserialize(&cset_def.options);
-      entry.content_set_def = std::move(cset_def);
-    } else {
-      mysql_row.skip(5);
-    }
+    mysql_row.skip(5);
   }
 
   entry.deleted = false;

@@ -31,9 +31,8 @@
 namespace mrs {
 namespace database {
 
-QueryChangesContentSet::QueryChangesContentSet(const uint64_t last_audit_log_id,
-                                               const Version version)
-    : QueryEntriesContentSet(version) {
+QueryChangesContentSet::QueryChangesContentSet(
+    const uint64_t last_audit_log_id) {
   audit_log_id_ = last_audit_log_id;
 }
 

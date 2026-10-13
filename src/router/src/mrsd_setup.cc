@@ -622,10 +622,8 @@ void MrsdSetup::check_mrs_metadata() {
                              e.what());
   }
 
-  // the versions the MRS plugin accepts at runtime
-  if (!version.is_compatible({mrs::database::kCurrentMrsMetadataVersion,
-                              {3, 0, 2},
-                              {2, 2, 0}})) {
+  // the version the MRS plugin accepts at runtime
+  if (!version.is_compatible({mrs::database::kCurrentMrsMetadataVersion})) {
     throw std::runtime_error("Unsupported MRS metadata version " +
                              version.str());
   }

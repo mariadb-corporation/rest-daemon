@@ -47,11 +47,10 @@ class QueryEntriesAuthApp : protected Query {
   virtual void query_entries(MySQLSession *session) = 0;
 };
 
-namespace v2 {
-
-class QueryEntriesAuthApp : public mrs::database::QueryEntriesAuthApp {
+// restd: one implementation (upstream kept one per schema version 2/3)
+class QueryEntriesAuthAppImpl : public mrs::database::QueryEntriesAuthApp {
  public:
-  QueryEntriesAuthApp();
+  QueryEntriesAuthAppImpl();
 
   uint64_t get_last_update() override;
   void query_entries(MySQLSession *session) override;
@@ -63,16 +62,6 @@ class QueryEntriesAuthApp : public mrs::database::QueryEntriesAuthApp {
   void on_row(const ResultRow &r) override;
 };
 
-}  // namespace v2
-
-namespace v3 {
-
-class QueryEntriesAuthApp : public mrs::database::v2::QueryEntriesAuthApp {
- public:
-  QueryEntriesAuthApp();
-};
-
-}  // namespace v3
 
 }  // namespace database
 }  // namespace mrs

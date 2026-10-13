@@ -37,8 +37,7 @@ namespace database {
 
 class QueryChangesDbSchema : public QueryEntriesDbSchema {
  public:
-  QueryChangesDbSchema(SupportedMrsMetadataVersion v,
-                       const uint64_t last_audit_log_id);
+  QueryChangesDbSchema(const uint64_t last_audit_log_id);
   void query_entries(MySQLSession *session) override;
 
  private:

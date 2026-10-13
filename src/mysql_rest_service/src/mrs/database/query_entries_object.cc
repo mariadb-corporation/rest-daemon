@@ -99,48 +99,11 @@ void from_user_ownership_field_id(entry::OwnerUserField *out,
 
 }  // namespace
 
-namespace v2 {
-
-QueryEntryObject::UniversalId QueryEntryObject::query_object(
-    MySQLSession *session, const UniversalId &db_object_id, Object *obj) {
-  log_debug("Loading Object_v2::query_object");
-  entry::UniversalId object_id;
-
-  mysqlrouter::sqlstring q{
-      "SELECT object.id, object.kind,"
-      " CAST(db_object.crud_operations AS UNSIGNED),"
-      " (SELECT objf.id FROM mysql_rest_service_metadata.object_field objf"
-      "   WHERE objf.object_id = object.id AND objf.parent_reference_id IS NULL"
-      "    AND db_object.row_user_ownership_column = JSON_UNQUOTE(JSON_EXTRACT(objf.db_column,'$.name')))"
-      "  FROM mysql_rest_service_metadata.object"
-      "  JOIN mysql_rest_service_metadata.db_object"
-      "    ON object.db_object_id = db_object.id"
-      "  WHERE object.db_object_id=? ORDER by kind DESC"};
-  q << db_object_id;
-  auto res = query_one(session, q.str());
-
-  if (nullptr == res.get()) return {};
-
-  entry::UniversalId::from_raw(&object_id, (*res)[0]);
-  obj->crud_operations = std::stoi((*res)[2]);
-
-  obj->user_ownership_field.reset();
-  if ((*res)[3]) {
-    mrs::database::entry::OwnerUserField value;
-    from_user_ownership_field_id(&value, (*res)[3]);
-    obj->user_ownership_field = value;
-  }
-
-  KindTypeConverter()(&obj->kind, (*res)[1]);
-
-  return object_id;
-}
-
-void QueryEntryObject::query_entries(MySQLSession *session,
+void QueryEntryObjectImpl::query_entries(MySQLSession *session,
                                      const std::string &schema_name,
                                      const std::string &object_name,
                                      const UniversalId &db_object_id) {
-  log_debug("Loading Object_v2::query_entries");
+  log_debug("Loading Object::query_entries");
   // Cleanup
   m_alias_count = 0;
   m_references.clear();
@@ -208,26 +171,7 @@ void QueryEntryObject::query_entries(MySQLSession *session,
   }
 }
 
-void QueryEntryObject::set_query_object_reference(
-    const entry::UniversalId &object_id) {
-  query_ =
-      "SELECT"
-      " object_reference.id,"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_reference.reference_mapping,'$.referenced_schema')),"
-      " JSON_UNQUOTE(JSON_EXTRACT(object_reference.reference_mapping,'$.referenced_table')),"
-      " JSON_EXTRACT(object_reference.reference_mapping,'$.to_many'),"
-      " JSON_EXTRACT(object_reference.reference_mapping,'$.column_mapping'),"
-      " object_reference.unnest OR "
-      "   object_reference.reduce_to_value_of_field_id IS NOT NULL,"
-      " CAST(object_reference.crud_operations AS UNSIGNED)"
-      " FROM mysql_rest_service_metadata.object_field"
-      " JOIN mysql_rest_service_metadata.object_reference"
-      "  ON object_field.represents_reference_id = object_reference.id"
-      " WHERE object_field.object_id = ?";
-  query_ << object_id;
-}
-
-void QueryEntryObject::on_row(const ResultRow &r) {
+void QueryEntryObjectImpl::on_row(const ResultRow &r) {
   try {
     if (m_loading_references)
       on_reference_row(r);
@@ -246,30 +190,8 @@ void QueryEntryObject::on_row(const ResultRow &r) {
   }
 }
 
-void QueryEntryObject::on_reference_row(const ResultRow &r) {
-  log_debug("Loading Object_v2::on_reference_row");
-  auto reference = std::make_shared<ForeignKeyReference>();
-  reference->ref_table = std::make_shared<Table>();
-
-  entry::UniversalId reference_id;
-
-  helper::MySQLRow row(r, metadata_, num_of_metadata_);
-  row.unserialize_with_converter(&reference_id, entry::UniversalId::from_raw);
-  row.unserialize(&reference->ref_table->schema);
-  row.unserialize(&reference->ref_table->table);
-  row.unserialize(&reference->to_many);
-  row.unserialize_with_converter(&reference->column_mapping,
-                                 ColumnMappingConverter{});
-  row.unserialize(&reference->unnest);
-  row.unserialize(&reference->ref_table->crud_operations);
-
-  reference->ref_table->table_alias = "t" + std::to_string(++m_alias_count);
-
-  m_references[reference_id] = reference;
-}
-
-void QueryEntryObject::on_field_row(const ResultRow &r) {
-  log_debug("Loading Object_v2::on_field_row");
+void QueryEntryObjectImpl::on_field_row(const ResultRow &r) {
+  log_debug("Loading Object::on_field_row");
   helper::MySQLRow row(r, metadata_, num_of_metadata_,
                        helper::MySQLRow::kEndCallRequired);
   entry::UniversalId field_id;
@@ -389,13 +311,9 @@ void QueryEntryObject::on_field_row(const ResultRow &r) {
   row.end();
 }
 
-}  // namespace v2
-
-namespace v3 {
-
-QueryEntryObject::UniversalId QueryEntryObject::query_object(
+QueryEntryObjectImpl::UniversalId QueryEntryObjectImpl::query_object(
     MySQLSession *session, const UniversalId &db_object_id, Object *obj) {
-  log_debug("Loading Object_v3::query_object");
+  log_debug("Loading Object::query_object");
   entry::UniversalId object_id;
 
   mysqlrouter::sqlstring q{
@@ -442,7 +360,7 @@ QueryEntryObject::UniversalId QueryEntryObject::query_object(
   return object_id;
 }
 
-void QueryEntryObject::set_query_object_reference(
+void QueryEntryObjectImpl::set_query_object_reference(
     const entry::UniversalId &object_id) {
   query_ =
       "SELECT"
@@ -469,8 +387,8 @@ void QueryEntryObject::set_query_object_reference(
   query_ << object_id;
 }
 
-void QueryEntryObject::on_reference_row(const ResultRow &r) {
-  log_debug("Loading Object_v3::on_reference_row");
+void QueryEntryObjectImpl::on_reference_row(const ResultRow &r) {
+  log_debug("Loading Object::on_reference_row");
   auto reference = std::make_shared<ForeignKeyReference>();
   reference->ref_table = std::make_shared<Table>();
 
@@ -511,8 +429,6 @@ void QueryEntryObject::on_reference_row(const ResultRow &r) {
   reference->ref_table->table_alias = "t" + std::to_string(++m_alias_count);
   m_references[reference_id] = reference;
 }
-
-}  // namespace v3
 
 }  // namespace database
 }  // namespace mrs

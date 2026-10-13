@@ -45,9 +45,9 @@ class QueryEntriesAuthPrivileges : public Query {
                           Privileges *out_privileges) = 0;
 };
 
-namespace v_2_3 {
 
-class QueryEntriesAuthPrivileges
+// restd: one implementation (upstream kept one for schema 2/3 and one for 4)
+class QueryEntriesAuthPrivilegesImpl
     : public mrs::database::QueryEntriesAuthPrivileges {
  public:
   void query_user(MySQLSession *session, const entry::AuthUser::UserId &user_id,
@@ -59,23 +59,6 @@ class QueryEntriesAuthPrivileges
   Privileges *privileges_{nullptr};
 };
 
-}  // namespace v_2_3
-
-namespace v4 {
-
-class QueryEntriesAuthPrivileges
-    : public mrs::database::QueryEntriesAuthPrivileges {
- public:
-  void query_user(MySQLSession *session, const entry::AuthUser::UserId &user_id,
-                  Privileges *out_privileges) override;
-
- private:
-  void on_row(const ResultRow &r) override;
-
-  Privileges *privileges_{nullptr};
-};
-
-}  // namespace v4
 }  // namespace database
 }  // namespace mrs
 

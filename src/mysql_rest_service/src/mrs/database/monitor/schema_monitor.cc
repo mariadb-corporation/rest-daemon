@@ -67,31 +67,17 @@ std::vector<mrs::rest::entry::AppUrlHost> make_app_url_host(
   return result;
 }
 
-const std::string &to_string(
-    mrs::interface::SupportedMrsMetadataVersion version) {
-  const static std::string k_version2{"2"};
-  const static std::string k_version3{"3"};
-  return (version == mrs::interface::kSupportedMrsMetadataVersion_2
-              ? k_version2
-              : k_version3);
-}
-
 mrs::database::MrsSchemaVersion query_schema_version(
     mysqlrouter::MySQLSession *session) {
   QueryVersion q;
   return q.query_version(session);
 }
 
-mrs::interface::SupportedMrsMetadataVersion check_supported_mrs_version(
+// restd: one supported schema version (upstream also served 2.x and 3.x)
+void check_supported_mrs_version(
     const mrs::database::MrsSchemaVersion &mrs_version) {
   if (mrs_version.is_compatible({mrs::database::kCurrentMrsMetadataVersion}))
-    return mrs::interface::kSupportedMrsMetadataVersion_4;
-
-  if (mrs_version.is_compatible({{3, 0, 2}}))
-    return mrs::interface::kSupportedMrsMetadataVersion_3;
-
-  if (mrs_version.is_compatible({{2, 2, 0}}))
-    return mrs::interface::kSupportedMrsMetadataVersion_2;
+    return;
 
   std::stringstream error_message;
   if (mrs_version == mrs::database::kSchemaUpgradeMrsMetadataVersion) {
@@ -224,19 +210,17 @@ void SchemaMonitor::run() {
 
       current_schema_version =
           query_schema_version((*session_check_version).get());
-      auto supported_schema_version =
-          check_supported_mrs_version(current_schema_version);
+      check_supported_mrs_version(current_schema_version);
 
-      auto factory{create_schema_monitor_factory(supported_schema_version)};
+      auto factory{create_schema_monitor_factory()};
 
-      proxy_query_factory_->change_subject(
-          create_query_factory(supported_schema_version));
+      proxy_query_factory_->change_subject(create_query_factory());
 
       DbAccess fetcher(proxy_query_factory_, factory.get(),
                        configuration_.router_id_);
 
       log_system("Monitoring MySQL REST metadata (version: %s)",
-                 to_string(supported_schema_version).c_str());
+                 current_schema_version.str().c_str());
 
       auto last_stored_time = std::chrono::system_clock::now();
       bool initial_run = true;

@@ -29,7 +29,6 @@
 
 #include <cstdint>
 #include <string>
-#include <variant>
 
 #include "mrs/database/entry/set_operation.h"
 #include "mrs/database/entry/universal_id.h"
@@ -46,13 +45,6 @@ namespace entry {
  */
 class AuthPrivilege {
  public:
-  class ApplyToV3 {
-   public:
-    std::optional<UniversalId> service_id;
-    std::optional<UniversalId> schema_id;
-    std::optional<UniversalId> object_id;
-  };
-
   class ApplyToV4 {
    public:
     std::string service_name;
@@ -60,7 +52,7 @@ class AuthPrivilege {
     std::string object_name;
   };
 
-  std::variant<ApplyToV4, ApplyToV3> select_by;
+  ApplyToV4 select_by;  // restd: schema 4 only (upstream: a variant with 2/3)
 
   Operation::ValueType crud;
 };

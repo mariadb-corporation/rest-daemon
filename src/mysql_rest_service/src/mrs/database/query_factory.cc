@@ -50,15 +50,13 @@
 
 namespace mrs {
 namespace database {
-namespace v2 {
-
 std::shared_ptr<QueryAuditLogEntries> QueryFactory::create_query_audit_log() {
   return std::make_shared<QueryAuditLogEntries>();
 }
 
 std::shared_ptr<QueryEntriesAuthPrivileges>
 QueryFactory::create_query_auth_privileges() {
-  return std::make_shared<v_2_3::QueryEntriesAuthPrivileges>();
+  return std::make_shared<QueryEntriesAuthPrivilegesImpl>();
 }
 
 std::shared_ptr<QueryRestSPMedia> QueryFactory::create_query_sp_media() {
@@ -80,7 +78,7 @@ std::shared_ptr<QueryEntryAuthUser> QueryFactory::create_query_auth_user() {
 }
 
 std::shared_ptr<QueryEntryObjectBase> QueryFactory::create_query_object() {
-  return std::make_shared<mrs::database::v2::QueryEntryObject>();
+  return std::make_shared<QueryEntryObjectImpl>();
 }
 
 std::shared_ptr<QueryUserGroups> QueryFactory::create_query_user_groups() {
@@ -106,32 +104,6 @@ QueryFactory::create_query_fields() {
   return std::make_shared<QueryEntryFields>();
 }
 
-}  // namespace v2
-
-namespace v3 {
-
-std::shared_ptr<QueryEntryObjectBase> QueryFactory::create_query_object() {
-  return std::make_shared<QueryEntryObject>();
-}
-
-std::shared_ptr<QueryEntryAuthUser> QueryFactory::create_query_auth_user() {
-  return std::make_shared<QueryEntryAuthUser>(std::make_shared<QueryFactory>());
-}
-
-}  // namespace v3
-
-namespace v4 {
-
-std::shared_ptr<mrs::database::QueryEntriesAuthPrivileges>
-QueryFactory::create_query_auth_privileges() {
-  return std::make_shared<v4::QueryEntriesAuthPrivileges>();
-}
-
-std::shared_ptr<QueryEntryAuthUser> QueryFactory::create_query_auth_user() {
-  return std::make_shared<QueryEntryAuthUser>(std::make_shared<QueryFactory>());
-}
-
-}  // namespace v4
 
 }  // namespace database
 }  // namespace mrs

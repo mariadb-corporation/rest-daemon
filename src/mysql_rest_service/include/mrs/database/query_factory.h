@@ -34,8 +34,7 @@ namespace database {
 
 using QueryEntryObjectBase = mrs::database::QueryEntryObject;
 
-namespace v2 {
-
+// restd: one factory (upstream kept one per schema version 2/3/4)
 class QueryFactory : public mrs::interface::QueryFactory {
  public:
   std::shared_ptr<QueryAuditLogEntries> create_query_audit_log() override;
@@ -56,29 +55,6 @@ class QueryFactory : public mrs::interface::QueryFactory {
   std::shared_ptr<database::QueryEntryFields> create_query_fields() override;
 };
 
-}  // namespace v2
-
-namespace v3 {
-
-class QueryFactory : public v2::QueryFactory {
- public:
-  std::shared_ptr<QueryEntryObjectBase> create_query_object() override;
-  std::shared_ptr<QueryEntryAuthUser> create_query_auth_user() override;
-};
-
-}  // namespace v3
-
-namespace v4 {
-
-class QueryFactory : public v3::QueryFactory {
- public:
-  std::shared_ptr<mrs::database::QueryEntriesAuthPrivileges>
-  create_query_auth_privileges() override;
-
-  std::shared_ptr<QueryEntryAuthUser> create_query_auth_user() override;
-};
-
-}  // namespace v4
 }  // namespace database
 }  // namespace mrs
 

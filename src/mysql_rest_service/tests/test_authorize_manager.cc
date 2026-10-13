@@ -61,7 +61,7 @@ class RouteManagerTests : public Test {
   }
 
   std::string jwt_secret_{"Sshhhh do not tell anyone !"};
-  mrs::database::v3::QueryFactory qf_;
+  mrs::database::QueryFactory qf_;
   StrictMock<MockMysqlCacheManager> mock_mysqlcache_;
   MakeSharedPtr<StrictMock<MockAuthHandlerFactory>> mock_factory_;
   std::unique_ptr<mrs::interface::AuthorizeManager> sut_;

@@ -225,7 +225,7 @@ class MrsModule {
       std::make_shared<mrs::EndpointConfiguration>(configuration)};
   const std::string jwt_secret;
   mrs::database::QueryFactoryProxy query_factory{
-      std::make_shared<mrs::database::v2::QueryFactory>()};
+      std::make_shared<mrs::database::QueryFactory>()};
   collector::MysqlCacheManager mysql_connection_cache{configuration};
   mrs::GtidManager gtid_manager;
   std::shared_ptr<AuthHandlerFactory> auth_handler_factory{

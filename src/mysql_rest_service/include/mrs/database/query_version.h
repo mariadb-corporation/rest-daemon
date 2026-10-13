@@ -90,8 +90,7 @@ constexpr MrsSchemaVersion kCurrentMrsMetadataVersion{4, 0, 0};
 constexpr MrsSchemaVersion kSchemaUpgradeMrsMetadataVersion{0, 0, 0};
 
 constexpr std::initializer_list<MrsSchemaVersion>
-    kCompatibleMrsMetadataVersions{mrs::database::kCurrentMrsMetadataVersion,
-                                   {2, 2}};
+    kCompatibleMrsMetadataVersions{mrs::database::kCurrentMrsMetadataVersion};
 
 }  // namespace database
 }  // namespace mrs

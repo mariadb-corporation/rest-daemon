@@ -36,26 +36,16 @@ namespace database {
 
 static void throw_invalid_function_result() {
   throw std::runtime_error(
-      "Function/view `mysql_rest_service_metadata`.`schema_version`, returned "
+      "View `mysql_rest_service_metadata`.`msm_schema_version` returned "
       "invalid data.");
 }
 
 MrsSchemaVersion QueryVersion::query_version(MySQLSession *session) {
-  // Todo change order
-  try {
-    query(session,
-          "SELECT `major`,`minor`,`patch` FROM "
-          "mysql_rest_service_metadata.schema_version;");
-  } catch (const mysqlrouter::MySQLSession::Error &error) {
-    if (error.code() != ER_NO_SUCH_TABLE &&
-        error.code() != ER_TABLEACCESS_DENIED_ERROR) {
-      throw;
-    }
-    // Lets try the old name for version view.
-    query(session,
-          "SELECT `major`,`minor`,`patch` FROM "
-          "mysql_rest_service_metadata.msm_schema_version;");
-  }
+  // restd: only the msm view (upstream tried `schema_version`, the name of
+  // versions before 4.0, first)
+  query(session,
+        "SELECT `major`,`minor`,`patch` FROM "
+        "mysql_rest_service_metadata.msm_schema_version;");
   return v_;
 }
 

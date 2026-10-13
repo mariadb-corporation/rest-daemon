@@ -32,7 +32,6 @@
 #include "mrs/database/entry/db_service.h"
 #include "mrs/database/helper/query.h"
 #include "mrs/interface/query_factory.h"
-#include "mrs/interface/supported_mrs_schema_version.h"
 
 namespace mrs {
 namespace database {
@@ -41,12 +40,9 @@ class QueryEntriesDbService : protected Query {
  public:
   using DbService = entry::DbService;
   using VectorOfEntries = std::vector<DbService>;
-  using SupportedMrsMetadataVersion =
-      mrs::interface::SupportedMrsMetadataVersion;
 
  public:
-  QueryEntriesDbService(SupportedMrsMetadataVersion v,
-                        std::optional<uint64_t> router_id);
+  QueryEntriesDbService(std::optional<uint64_t> router_id);
 
   void force_query_all();
   virtual uint64_t get_last_update();
@@ -63,7 +59,6 @@ class QueryEntriesDbService : protected Query {
   void on_row(const ResultRow &r) override;
 
   bool query_all_{false};
-  SupportedMrsMetadataVersion db_version_;
   uint64_t audit_log_id_{0};
 };
 
