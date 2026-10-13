@@ -67,10 +67,6 @@ TARGET_LINK_LIBRARIES(routertest_helpers
   router_mysql
   mock_server_rest_client
   )
-# restd: shared_server starts mysqld from the MySQL server package
-TARGET_COMPILE_DEFINITIONS(routertest_helpers PRIVATE
-  MRSD_MYSQL_PACKAGE_DIR="${MYSQL_PACKAGE_DIR}")
-
 TARGET_INCLUDE_DIRECTORIES(routertest_helpers
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/helpers

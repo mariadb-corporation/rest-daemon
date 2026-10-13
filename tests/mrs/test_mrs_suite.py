@@ -46,9 +46,6 @@ def read_def(filename: str) -> dict[str, str]:
 TESTS = sorted(p.stem for p in (SUITE_DIR / "t").glob("*.test"))
 DISABLED = read_def("disabled.def")
 KNOWN_FAILURES = read_def("known_failures.def")
-# MariaDB mode: more disabled tests and known failures (reasons in the files)
-MARIADB_DISABLED = read_def("disabled.mariadb.def")
-MARIADB_KNOWN_FAILURES = read_def("known_failures.mariadb.def")
 
 
 def printable(text: str) -> str:
@@ -66,26 +63,20 @@ def shell() -> list[str]:
 
 @pytest.mark.parametrize("name", TESTS)
 def test_mrs(name, paths, mysqld, tmp_path, request):
-    disabled = {**DISABLED, **MARIADB_DISABLED} if paths.is_mariadb else DISABLED
-    known = {**KNOWN_FAILURES, **MARIADB_KNOWN_FAILURES} if paths.is_mariadb else KNOWN_FAILURES
-    if name in disabled:
-        pytest.skip(disabled[name])
-    if name in known:
-        request.applymarker(pytest.mark.xfail(reason=known[name], strict=False))
+    if name in DISABLED:
+        pytest.skip(DISABLED[name])
+    if name in KNOWN_FAILURES:
+        request.applymarker(pytest.mark.xfail(reason=KNOWN_FAILURES[name], strict=False))
 
     test_file = SUITE_DIR / "t" / f"{name}.test"
-    result_file = SUITE_DIR / "r" / f"{name}.result"
-    if paths.is_mariadb:
-        # a MariaDB-specific expected result, where the output legitimately
-        # differs (error texts, server-specific values)
-        mariadb_result = SUITE_DIR / "r" / f"{name}.mariadb.result"
-        if mariadb_result.exists() or request.config.getoption("--record-mariadb"):
-            result_file = mariadb_result
+    # a result recorded on MariaDB (where the output legitimately differs:
+    # error texts, server-specific values), else upstream's
+    result_file = SUITE_DIR / "r" / f"{name}.mariadb.result"
+    if not result_file.exists() and not request.config.getoption("--record"):
+        result_file = SUITE_DIR / "r" / f"{name}.result"
     router_cnf = SUITE_DIR / "t" / f"{name}-router.cnf"
 
-    options = server_options_for(SUITE_DIR / "t" / f"{name}.cnf")
-    if paths.is_mariadb:
-        options = mariadb_sql.server_options(options)
+    options = mariadb_sql.server_options(server_options_for(SUITE_DIR / "t" / f"{name}.cnf"))
     mysqld.ensure_options(options)
     mrsd = Mrsd(paths, mysqld, tmp_path / "router",
                 router_cnf if router_cnf.exists() else None)
@@ -111,8 +102,6 @@ def test_mrs(name, paths, mysqld, tmp_path, request):
         "_MRS_CONTROL_START": "1",
         "USER": os.environ.get("USER", os.environ.get("USERNAME", "")),
     }
-    if paths.is_mariadb:
-        env["MARIADB"] = "1"  # for the .inc files
 
     def require_jit(_arg):
         if not paths.has_jit:
@@ -127,7 +116,7 @@ def test_mrs(name, paths, mysqld, tmp_path, request):
                "mrsd_wait_stopped": mrsd.hook_wait_stopped,
                "mrsd_restart": mrsd.hook_restart,
                "mrsd_require_jit": require_jit},
-        sql_rewrite=mariadb_sql.rewrite if paths.is_mariadb else None)
+        sql_rewrite=mariadb_sql.rewrite)
 
     interp = Interpreter(envn)
     try:
@@ -144,15 +133,14 @@ def test_mrs(name, paths, mysqld, tmp_path, request):
         mysqld.reset()
 
     actual = interp.output()
-    if request.config.getoption("--record") or request.config.getoption("--record-mariadb"):
+    if request.config.getoption("--record"):
         result_file.write_text(actual, encoding="utf-8",
                                errors="surrogateescape", newline="")
         return
     # binary data in responses: compare the bytes (surrogateescape round-trips)
     expected = (result_file.read_text(encoding="utf-8", errors="surrogateescape")
                 if result_file.exists() else "")
-    if paths.is_mariadb:
-        expected, actual = mariadb_sql.normalize_output(expected), mariadb_sql.normalize_output(actual)
+    expected, actual = mariadb_sql.normalize_output(expected), mariadb_sql.normalize_output(actual)
     if actual != expected:
         reject = tmp_path / f"{name}.reject"
         reject.write_text(actual, encoding="utf-8", errors="surrogateescape",

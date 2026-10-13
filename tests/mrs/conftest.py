@@ -15,27 +15,31 @@
 
 """pytest harness for the MRS functional tests (tests/mrs/t/*.test).
 
-Starts one mysqld from a MySQL server package per session and one mrsd per
-test, provides the environment mtr provided (MRS_CLIENT, HTTP_SERVER_PORT,
-MYSQLROUTER_LOGFILE, ...) and runs the .test scripts with the mysqltest
-interpreter in mrstest/mysqltest.py.
+Starts one mariadbd from a MariaDB server build tree or package per session
+and one mrsd per test, provides the environment mtr provided (MRS_CLIENT,
+HTTP_SERVER_PORT, MYSQLROUTER_LOGFILE, ...) and runs the .test scripts with
+the mysqltest interpreter in mrstest/mysqltest.py.
 
 Options (or environment variables):
   --mrsd-build       MRSD_BUILD         mrsd build directory (built with
                                         -DWITH_UNIT_TESTS=ON for mrs_client)
-  --mysql-package    MYSQL_PACKAGE_DIR  extracted MySQL server package
-  --mariadb-build    MARIADB_BUILD_DIR  a MariaDB server build tree instead
+  --mariadb-build    MARIADB_BUILD_DIR  a MariaDB server build tree
                                         (sql/mariadbd, scripts/mariadb-install-db)
   --mariadb-source   MARIADB_SOURCE_DIR its source tree (mariadb-install-db)
   --mariadb-package  MARIADB_PACKAGE_DIR or a MariaDB server package
                                         (bin/mariadbd, bin/mariadb-install-db.exe
                                         on Windows, scripts/mariadb-install-db)
-  --record                              write the output as the new .result
+  --record                              write the output as the new
+                                        r/<name>.mariadb.result
 
-MariaDB mode (Milestone 2): the metadata schema is the MariaDB shell plugins'
-deployment script (include/schema/*-mariadb.sql, $MARIADB is set for the
-.inc files), results are compared with r/<name>.mariadb.result where one
-exists, and disabled.mariadb.def adds to disabled.def.
+The tests are upstream's (the MySQL REST Service suite). Their SQL is
+translated for MariaDB at run time (mrstest/mariadb_sql.py), the metadata
+schema is the MariaDB shell plugins' deployment script
+(include/schema/*-mariadb.sql), and the output is compared, normalised
+(JSON member order, etags, ...), with r/<name>.mariadb.result where one was
+recorded on MariaDB, else with upstream's r/<name>.result. Until the results
+are re-recorded (Milestone 3), --record always writes the .mariadb.result
+file, never upstream's.
 """
 
 from __future__ import annotations
@@ -62,14 +66,11 @@ EXE = ".exe" if IS_WINDOWS else ""
 
 def pytest_addoption(parser):
     parser.addoption("--mrsd-build", default=os.environ.get("MRSD_BUILD"))
-    parser.addoption("--mysql-package", default=os.environ.get("MYSQL_PACKAGE_DIR"))
     parser.addoption("--mariadb-build", default=os.environ.get("MARIADB_BUILD_DIR"))
     parser.addoption("--mariadb-source", default=os.environ.get("MARIADB_SOURCE_DIR"))
     parser.addoption("--mariadb-package", default=os.environ.get("MARIADB_PACKAGE_DIR"))
     parser.addoption("--record", action="store_true",
-                     help="write the test output as the new .result file")
-    parser.addoption("--record-mariadb", action="store_true",
-                     help="MariaDB mode: write the output as r/<name>.mariadb.result")
+                     help="write the test output as the new r/<name>.mariadb.result")
 
 
 def free_port() -> int:
@@ -94,15 +95,13 @@ def wait_port(port: int, timeout: float, proc: subprocess.Popen | None = None) -
 class Paths:
     def __init__(self, config):
         build = config.getoption("--mrsd-build")
-        pkg = config.getoption("--mysql-package")
         mariadb = config.getoption("--mariadb-build")
         mariadb_pkg = config.getoption("--mariadb-package")
-        if not build or not (pkg or mariadb or mariadb_pkg):
-            pytest.exit("need --mrsd-build and --mysql-package, --mariadb-build or "
-                        "--mariadb-package (or MRSD_BUILD / MYSQL_PACKAGE_DIR / "
-                        "MARIADB_BUILD_DIR / MARIADB_PACKAGE_DIR)", returncode=4)
+        if not build or not (mariadb or mariadb_pkg):
+            pytest.exit("need --mrsd-build and --mariadb-build or --mariadb-package "
+                        "(or MRSD_BUILD / MARIADB_BUILD_DIR / MARIADB_PACKAGE_DIR)",
+                        returncode=4)
         self.build = Path(build).resolve()
-        self.is_mariadb = bool(mariadb or mariadb_pkg)
         # a MariaDB server package rather than a build tree
         self.mariadb_package = bool(mariadb_pkg) and not mariadb
         if mariadb:
@@ -112,10 +111,8 @@ class Paths:
                             "--mariadb-build", returncode=4)
             self.package = Path(mariadb).resolve()
             self.mariadb_source = Path(source).resolve()
-        elif mariadb_pkg:
-            self.package = Path(mariadb_pkg).resolve()
         else:
-            self.package = Path(pkg).resolve()
+            self.package = Path(mariadb_pkg).resolve()
         self.bin = self.build / "runtime_output_directory"
         self.plugins = self.build / "plugin_output_directory"
         # the program name is set in cmake/settings.cmake
@@ -131,11 +128,9 @@ class Paths:
             self.install_db = (self.package / "bin" / "mariadb-install-db.exe"
                                if IS_WINDOWS else
                                self.package / "scripts" / "mariadb-install-db")
-        elif self.is_mariadb:
+        else:
             self.mysqld = self.package / "sql" / f"mariadbd{EXE}"
             self.install_db = self.package / "scripts" / "mariadb-install-db"
-        else:
-            self.mysqld = self.package / "bin" / f"mysqld{EXE}"
         for p in (self.mrsd, self.keyring, self.mrs_client, self.mysqld):
             if not p.exists():
                 pytest.exit(f"missing {p}", returncode=4)
@@ -174,43 +169,36 @@ class Mysqld:
         """create the datadir; MariaDB's bootstrap is retried once (it failed
         sporadically when several workers initialise at the same time) and
         its output is shown when it fails"""
-        mariadb = self.paths.is_mariadb
         for attempt in (1, 2):
             try:
-                if mariadb and self.paths.mariadb_package and IS_WINDOWS:
+                if self.paths.mariadb_package and IS_WINDOWS:
                     # root reachable over TCP (-R), no anonymous accounts
                     subprocess.run([str(self.paths.install_db), "-d", str(self.datadir), "-R"],
                                    check=True, capture_output=True)
-                elif mariadb and self.paths.mariadb_package:
+                elif self.paths.mariadb_package:
                     subprocess.run([str(self.paths.install_db), "--no-defaults",
                                     f"--basedir={self.paths.package}",
                                     f"--datadir={self.datadir}",
                                     "--auth-root-authentication-method=normal"],
                                    check=True, capture_output=True)
-                elif mariadb:
+                else:
                     subprocess.run([str(self.paths.install_db), "--no-defaults",
                                     f"--srcdir={self.paths.mariadb_source}",
                                     f"--builddir={self.paths.package}",
                                     f"--datadir={self.datadir}",
                                     "--auth-root-authentication-method=normal"],
                                    check=True, capture_output=True)
-                else:
-                    subprocess.run([str(self.paths.mysqld), "--no-defaults",
-                                    "--initialize-insecure", f"--datadir={self.datadir}",
-                                    f"--basedir={self.paths.package}"],
-                                   check=True, capture_output=True)
                 return
             except subprocess.CalledProcessError as e:
                 out = (e.stdout or b"").decode(errors="replace") + \
                       (e.stderr or b"").decode(errors="replace")
-                if attempt == 2 or not mariadb:
+                if attempt == 2:
                     raise RuntimeError(f"initialising {self.datadir} failed:\n"
                                        + out[-3000:]) from e
                 print(f"initialising {self.datadir} failed, retrying:\n{out[-1500:]}")
                 shutil.rmtree(self.datadir, ignore_errors=True)
 
     def start(self, extra: list[str] | None = None) -> None:
-        mariadb = self.paths.is_mariadb
         first_start = not self.datadir.exists()
         if first_start:
             self.initialize()
@@ -222,13 +210,10 @@ class Mysqld:
                 "--socket=m.sock",
                 f"--log-error={self.base / 'mysqld.err'}",
                 "--secure-file-priv="]
-        if mariadb and self.paths.mariadb_package:
+        if self.paths.mariadb_package:
             args += [f"--basedir={self.paths.package}"]
-        elif mariadb:
-            args += [f"--lc-messages-dir={self.paths.package / 'sql' / 'share'}"]
         else:
-            args += [f"--basedir={self.paths.package}", "--mysqlx=OFF",
-                     "--gtid-mode=ON", "--enforce-gtid-consistency=ON"]
+            args += [f"--lc-messages-dir={self.paths.package / 'sql' / 'share'}"]
         if os.environ.get("MRS_TEST_GENERAL_LOG"):
             # debugging aid: the server's general log, written to that path
             # (the base dir is removed at the end of the session)
@@ -243,7 +228,7 @@ class Mysqld:
             try:
                 c = pymysql.connect(host="127.0.0.1", port=self.port, user="root")
                 with c.cursor() as cur:
-                    if first_start and mariadb:
+                    if first_start:
                         # mariadb-install-db's anonymous accounts (''@localhost,
                         # ''@<host>) shadow every '%' account for local
                         # connections, so they go. root@localhost matches TCP
@@ -264,19 +249,18 @@ class Mysqld:
 
     def stop(self) -> None:
         if self.proc and self.proc.poll() is None:
-            if self.paths.is_mariadb:
-                # MariaDB's system tables are Aria: a killed server (on Windows
-                # terminate() is TerminateProcess) leaves them corrupted, and
-                # the role and grant tables break every following test
-                try:
-                    c = pymysql.connect(host="127.0.0.1", port=self.port, user="root")
-                    with c.cursor() as cur:
-                        cur.execute("SHUTDOWN")
-                    c.close()
-                    self.proc.wait(60)
-                    return
-                except (pymysql.err.MySQLError, subprocess.TimeoutExpired):
-                    pass
+            # MariaDB's system tables are Aria: a killed server (on Windows
+            # terminate() is TerminateProcess) leaves them corrupted, and
+            # the role and grant tables break every following test
+            try:
+                c = pymysql.connect(host="127.0.0.1", port=self.port, user="root")
+                with c.cursor() as cur:
+                    cur.execute("SHUTDOWN")
+                c.close()
+                self.proc.wait(60)
+                return
+            except (pymysql.err.MySQLError, subprocess.TimeoutExpired):
+                pass
             self.proc.terminate()
             try:
                 self.proc.wait(60)
@@ -284,9 +268,7 @@ class Mysqld:
                 self.proc.kill()
 
     # globals that change on their own; everything else must be as at startup
-    # (MariaDB: gtid_binlog_pos, gtid_current_pos, ... and more)
-    VOLATILE_GLOBALS = {"gtid_executed", "gtid_purged", "gtid_owned",
-                        "innodb_buffer_pool_size", "server_uuid",
+    VOLATILE_GLOBALS = {"innodb_buffer_pool_size",
                         "gtid_binlog_pos", "gtid_binlog_state", "gtid_current_pos",
                         "gtid_slave_pos", "gtid_cleanup_batch_size"}
 
@@ -333,12 +315,9 @@ class Mysqld:
                     cur.execute("DROP ROLE IF EXISTS %s", (user,))  # MariaDB roles
                 else:
                     cur.execute("DROP USER IF EXISTS %s@%s", (user, host))
-            if self.paths.is_mariadb:
-                cur.execute("SELECT @@log_bin")
-                if cur.fetchone()[0]:
-                    cur.execute("RESET MASTER")
-            else:
-                cur.execute("RESET BINARY LOGS AND GTIDS")
+            cur.execute("SELECT @@log_bin")
+            if cur.fetchone()[0]:
+                cur.execute("RESET MASTER")
         c.close()
 
 

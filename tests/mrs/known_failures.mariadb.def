@@ -1,8 +1,0 @@
-# Known failures on MariaDB (xfail): <test name>: <reason>
-timeout: max_statement_time does not interrupt a statement waiting for a table lock (LOCK TABLES), the request runs into the read timeout
-table_type_date: MariaDB accepts an invalid date literal in a comparison (no error, no match) where MySQL errors (400)
-table_type_datetime_and_timestamp: MariaDB accepts an invalid datetime literal in a comparison where MySQL errors (400)
-destination_read_only: MariaDB has no super_read_only; read_only does not apply to the test's root account, so the daemon never sees the write error that marks the destination read-only
-mrs_metadata_logger: same as destination_read_only (super_read_only)
-setup_mrs_errors: on MariaDB granting a role needs ADMIN OPTION on it, GRANT ALL ... WITH GRANT OPTION (the test's setup account) is not enough
-passthrough_db_user: MariaDB activates no role by default and has no SET ROLE ALL; the passthrough account needs a default role (SET DEFAULT ROLE), which the test does not set

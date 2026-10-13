@@ -776,6 +776,10 @@ void FilterObjectGenerator::parse_asof(Value *value) {
   log_debug2("Parser asof");
   if (!value->IsString())
     throw RestError("Wrong value for `asof`, requires string with GTID.");
+  // restd: the GTID implementation is MySQL's (gtid_executed,
+  // WAIT_FOR_EXECUTED_GTID_SET); refused here, before either path runs it
+  // (Milestone 4: MariaDB GTIDs, together with the shell and plugins)
+  throw RestError("GTID based 'asof' requests are not supported on MariaDB");
   asof_gtid_.reset("?");
   asof_gtid_ << value->GetString();
 }

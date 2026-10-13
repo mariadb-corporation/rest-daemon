@@ -41,8 +41,9 @@
  * - initializing a server
  * - copying data directories.
  * - stopping servers
- * - setting up accounts for testing
- * - closing all connections
+ *
+ * restd: a MariaDB server (MARIADB_BUILD_DIR or MARIADB_PACKAGE_DIR); the
+ * account and connection helpers of upstream's MySQL setup are gone.
  */
 class SharedServer {
  public:
@@ -105,77 +106,9 @@ class SharedServer {
                            const std::string &rights,
                            const std::string &schema);
 
-  static void create_account(MysqlClient &cli, Account account);
-
-  static void drop_account(MysqlClient &cli, Account account);
-
-  static void setup_mysqld_accounts(MysqlClient &cli);
-
-  // set the openid_connect specific configuration.
-  //
-  // local, not replicated.
-  static stdx::expected<void, MysqlError> local_set_openid_connect_config(
-      MysqlClient &cli);
-
-  static stdx::expected<void, MysqlError> local_set_openid_connect_config(
-      MysqlClient &cli, const std::string &openid_connect_config);
-
-  // installed a plugin in the server.
-  //
-  // local, not replicated.
-  static stdx::expected<void, MysqlError> local_install_plugin(
-      MysqlClient &cli, const std::string &plugin_name) {
-    return local_install_plugin(cli, plugin_name, plugin_name);
-  }
-
-  // installed a plugin in the server.
-  //
-  // local, not replicated.
-  static stdx::expected<void, MysqlError> local_install_plugin(
-      MysqlClient &cli, const std::string &plugin_name,
-      const std::string &so_name);
-
   void flush_privileges();
 
   static void flush_privileges(MysqlClient &cli);
-
-  // get all connections, but ignore internal connections and this
-  // connection.
-  static stdx::expected<std::vector<uint64_t>, MysqlError> user_connection_ids(
-      MysqlClient &cli) {
-    return user_connection_ids(cli, default_usernames());
-  }
-
-  static stdx::expected<std::vector<uint64_t>, MysqlError> user_connection_ids(
-      MysqlClient &cli, const std::vector<std::string> &usernames);
-
-  static std::vector<std::string> default_usernames() {
-    return {
-        admin_account().username,
-        caching_sha2_empty_password_account().username,
-        caching_sha2_password_account().username,
-        sha256_empty_password_account().username,
-        sha256_password_account().username,
-        sha256_short_password_account().username,
-        openid_connect_account().username,
-    };
-  }
-
-  // close all connections.
-  stdx::expected<void, MysqlError> close_all_connections() {
-    return close_all_connections(default_usernames());
-  }
-
-  stdx::expected<void, MysqlError> close_all_connections(
-      const std::vector<std::string> &usernames);
-
-  static stdx::expected<void, MysqlError> close_all_connections(
-      MysqlClient &cli) {
-    return close_all_connections(cli, default_usernames());
-  }
-
-  static stdx::expected<void, MysqlError> close_all_connections(
-      MysqlClient &cli, const std::vector<std::string> &usernames);
 
   // set some session-vars back to defaults.
   void reset_to_defaults();
@@ -195,68 +128,10 @@ class SharedServer {
     return classic_socket_dest_;
   }
 
-  [[nodiscard]] mysql_harness::TcpDestination x_tcp_destination() const {
-    return x_tcp_dest_;
-  }
-
-  [[nodiscard]] mysql_harness::LocalDestination x_socket_destination() const {
-    return x_socket_dest_;
-  }
-
-  static Account caching_sha2_password_account() {
-    constexpr const std::string_view pass("cachingpasswordlongerthan20chars");
-
-    static_assert(pass.size() > 20);
-
-    return {"caching_sha2", std::string(pass), "caching_sha2_password"};
-  }
-
-  static Account caching_sha2_empty_password_account() {
-    return {"caching_sha2_empty", "", "caching_sha2_password"};
-  }
-
-  static Account caching_sha2_single_use_password_account() {
-    return {"caching_sha2_single_use", "notusedyet", "caching_sha2_password"};
-  }
-
-  static Account sha256_password_account() {
-    constexpr const std::string_view pass("sha256passwordlongerthan20chars");
-
-    static_assert(pass.size() > 20);
-
-    return {"sha256_pass", std::string(pass), "sha256_password"};
-  }
-
-  static Account sha256_short_password_account() {
-    constexpr const std::string_view pass("sha256password");
-
-    static_assert(pass.size() < 20);
-
-    return {"sha256_short", std::string(pass), "sha256_password"};
-  }
-
-  static Account sha256_empty_password_account() {
-    return {"sha256_empty", "", "sha256_password"};
-  }
-
-  static Account admin_account() {
-    return {"root", "", "caching_sha2_password"};
-  }
-
-  static Account openid_connect_account() {
-    // - identity_provider must match the key of the
-    //   'authentication_openid_connect_configuration'
-    // - user must match the 'sub' of the id-token from the client.
-    return {"openid_connect", "", "authentication_openid_connect", R"({
-  "identity_provider": "myissuer",
-  "user": "openid_user1"
-})"};
-  }
+  static Account admin_account() { return {"root", "", ""}; }
 
   static void destroy_statics();
 
-  void has_openid_connect(bool val) { has_openid_connect_ = val; }
-  bool has_openid_connect() const { return has_openid_connect_; }
 
  private:
   static TempDirectory *mysqld_init_once_dir_;
@@ -268,17 +143,11 @@ class SharedServer {
   mysql_harness::TcpDestination classic_tcp_dest_{
       "127.0.0.1", port_pool_.get_next_available()};
 
-  mysql_harness::TcpDestination x_tcp_dest_{"127.0.0.1",
-                                            port_pool_.get_next_available()};
-
   mysql_harness::LocalDestination classic_socket_dest_;
-  mysql_harness::LocalDestination x_socket_dest_;
 
   bool mysqld_failed_to_start_{false};
 
   uint32_t starts_{};
-
-  bool has_openid_connect_{false};
 };
 
 #endif
