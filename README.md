@@ -256,11 +256,9 @@ MRSD_BUILD=$PWD/build MARIADB_PACKAGE_DIR=/path/to/mariadb-<version>-<platform> 
   venv/bin/python -m pytest tests/mrs -q
 ```
 
-The scripts' MySQL-specific SQL is translated at run time
-(`tests/mrs/mrstest/mariadb_sql.py`) and the output compared, normalised, with
-`r/<name>.mariadb.result` where one was recorded on MariaDB, else with
-upstream's `r/<name>.result`. `-k <test>` runs single tests and `--record`
-writes the `.mariadb.result` file. Disabled tests are listed in
+The scripts carry MariaDB's SQL (upstream's MySQL-only constructs were rewritten
+in the files) and the results are recorded on MariaDB. `-k <test>` runs single
+tests and `--record` rewrites the `.result` files. Disabled tests are listed in
 `tests/mrs/disabled.def`, expected failures in `tests/mrs/known_failures.def`.
 On Windows, use `venv\Scripts\python`, put the DLL directories and a `perl` on
 `PATH` (Git for Windows' `usr\bin` has one), and expect the tests' `exec`

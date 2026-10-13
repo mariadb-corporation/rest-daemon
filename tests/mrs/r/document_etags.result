@@ -1,4 +1,3 @@
-RESET BINARY LOGS AND GTIDS;
 # MySQL Rest Service schema created.
 # MySQL Rest Service, server accounts configured.
 # DB `basic_schema` - created
@@ -12,7 +11,8 @@ No fields filter used
 {
     "id": 1,
     "vec": [
-        0.0
+        0,
+        0
     ],
     "cbin": "MAAA",
     "cbit": false,
@@ -20,8 +20,8 @@ No fields filter used
     "geo0": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cbit1": false,
@@ -38,14 +38,14 @@ No fields filter used
         }
     ],
     "cbit10": "AAA=",
-    "cfloat": 0.0,
+    "cfloat": 0,
     "cbigint": 0,
-    "cdouble": 0.0,
+    "cdouble": 0,
     "geo4326": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cdecimal": 0.0,
@@ -56,7 +56,7 @@ No fields filter used
     "cmediumint": 0,
     "ctimestamp": "2020-12-01 12:01:50.000000",
     "_metadata": {
-        "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+        "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
     }
 }
 Single field selected with a filter
@@ -70,7 +70,7 @@ GET /svc/basic_schema/tab/1?f=cbin
         }
     ],
     "_metadata": {
-        "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+        "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
     }
 }
 OK
@@ -79,15 +79,16 @@ GET /svc/basic_schema/tab/1?f=!cbin
 {
     "id": 1,
     "vec": [
-        0.0
+        0,
+        0
     ],
     "cbit": false,
     "cset": "",
     "geo0": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cbit1": false,
@@ -104,14 +105,14 @@ GET /svc/basic_schema/tab/1?f=!cbin
         }
     ],
     "cbit10": "AAA=",
-    "cfloat": 0.0,
+    "cfloat": 0,
     "cbigint": 0,
-    "cdouble": 0.0,
+    "cdouble": 0,
     "geo4326": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cdecimal": 0.0,
@@ -122,7 +123,7 @@ GET /svc/basic_schema/tab/1?f=!cbin
     "cmediumint": 0,
     "ctimestamp": "2020-12-01 12:01:50.000000",
     "_metadata": {
-        "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+        "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
     }
 }
 OK
@@ -135,7 +136,8 @@ Check the initial etag for document id=1
 {
     "id": 1,
     "vec": [
-        0.0
+        0,
+        0
     ],
     "cbin": "MAAA",
     "cbit": false,
@@ -143,8 +145,8 @@ Check the initial etag for document id=1
     "geo0": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cbit1": false,
@@ -161,14 +163,14 @@ Check the initial etag for document id=1
         }
     ],
     "cbit10": "AAA=",
-    "cfloat": 0.0,
+    "cfloat": 0,
     "cbigint": 0,
-    "cdouble": 0.0,
+    "cdouble": 0,
     "geo4326": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cdecimal": 0.0,
@@ -179,7 +181,7 @@ Check the initial etag for document id=1
     "cmediumint": 0,
     "ctimestamp": "2020-12-01 12:01:50.000000",
     "_metadata": {
-        "etag": "86F0AFFBD066B34EBC30106442E69E1D939F37A9ECC823E05EDD54BDB54F68E9"
+        "etag": "69CE212E86B3C52BB9AAE3F2055E367742F7B1ADA90342BFDEEE594A8B07E2B7"
     }
 }
 Change the value of cvarchar in the document
@@ -188,7 +190,8 @@ Fetch the document again, the etag should not change
 {
     "id": 1,
     "vec": [
-        0.0
+        0,
+        0
     ],
     "cbin": "MAAA",
     "cbit": false,
@@ -196,8 +199,8 @@ Fetch the document again, the etag should not change
     "geo0": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cbit1": false,
@@ -214,14 +217,14 @@ Fetch the document again, the etag should not change
         }
     ],
     "cbit10": "AAA=",
-    "cfloat": 0.0,
+    "cfloat": 0,
     "cbigint": 0,
-    "cdouble": 0.0,
+    "cdouble": 0,
     "geo4326": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cdecimal": 0.0,
@@ -232,7 +235,7 @@ Fetch the document again, the etag should not change
     "cmediumint": 0,
     "ctimestamp": "2020-12-01 12:01:50.000000",
     "_metadata": {
-        "etag": "86F0AFFBD066B34EBC30106442E69E1D939F37A9ECC823E05EDD54BDB54F68E9"
+        "etag": "69CE212E86B3C52BB9AAE3F2055E367742F7B1ADA90342BFDEEE594A8B07E2B7"
     }
 }
 Change the value of 'cdouble' field that is not configure as no_check
@@ -241,7 +244,8 @@ Fetch the document again, the etag should change now
 {
     "id": 1,
     "vec": [
-        0.0
+        0,
+        0
     ],
     "cbin": "MAAA",
     "cbit": false,
@@ -249,8 +253,8 @@ Fetch the document again, the etag should change now
     "geo0": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cbit1": false,
@@ -267,14 +271,14 @@ Fetch the document again, the etag should change now
         }
     ],
     "cbit10": "AAA=",
-    "cfloat": 0.0,
+    "cfloat": 0,
     "cbigint": 0,
     "cdouble": 12.12,
     "geo4326": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cdecimal": 0.0,
@@ -285,7 +289,7 @@ Fetch the document again, the etag should change now
     "cmediumint": 0,
     "ctimestamp": "2020-12-01 12:01:50.000000",
     "_metadata": {
-        "etag": "CA79107DEC51CFEC4907CBFBDE947FB6A5A254EA85FBCEB0ECF6F02E69A3D52B"
+        "etag": "D127D31581DB8E378DD997485990FE3A64059E8BFDB52E7E921997FCBE2FADAA"
     }
 }
 
@@ -295,7 +299,8 @@ Get document id=1
 {
     "id": 1,
     "vec": [
-        0.0
+        0,
+        0
     ],
     "cbin": "MAAA",
     "cbit": false,
@@ -303,8 +308,8 @@ Get document id=1
     "geo0": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cbit1": false,
@@ -321,14 +326,14 @@ Get document id=1
         }
     ],
     "cbit10": "AAA=",
-    "cfloat": 0.0,
+    "cfloat": 0,
     "cbigint": 0,
     "cdouble": 12.12,
     "geo4326": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cdecimal": 0.0,
@@ -339,7 +344,7 @@ Get document id=1
     "cmediumint": 0,
     "ctimestamp": "2020-12-01 12:01:50.000000",
     "_metadata": {
-        "etag": "CA79107DEC51CFEC4907CBFBDE947FB6A5A254EA85FBCEB0ECF6F02E69A3D52B"
+        "etag": "D127D31581DB8E378DD997485990FE3A64059E8BFDB52E7E921997FCBE2FADAA"
     }
 }
 Modify the document using etag received in the previous step, that should be accepted
@@ -355,8 +360,8 @@ Modify the document using etag received in the previous step, that should be acc
     "geo0": {
         "type": "Point",
         "coordinates": [
-            1.0,
-            3.0
+            1,
+            3
         ]
     },
     "cbit1": false,
@@ -373,14 +378,14 @@ Modify the document using etag received in the previous step, that should be acc
         }
     ],
     "cbit10": "AAA=",
-    "cfloat": 0.0,
+    "cfloat": 0,
     "cbigint": 0,
     "cdouble": 12.1,
     "geo4326": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cdecimal": 0.0,
@@ -391,8 +396,7 @@ Modify the document using etag received in the previous step, that should be acc
     "cmediumint": 0,
     "ctimestamp": "2020-12-01 12:01:50.000000",
     "_metadata": {
-        "etag": "0B7B3C86CAEDD06538D988741273A932A5961C65C88A9F3C13A67DC2004CC31F",
-        "gtid": "GTID"
+        "etag": "343AB143B7BED53B1E71B2922B015223CC35A95EB3DBA41FEE2D2BE5CD838A36"
     }
 }
 Try that again, should be rejected as the checksum has changed due to the update in the previous step
@@ -417,8 +421,8 @@ IV. Verify that the PUT is accepted if the request does not contain etag
     "geo0": {
         "type": "Point",
         "coordinates": [
-            1.0,
-            3.0
+            1,
+            3
         ]
     },
     "cbit1": false,
@@ -435,14 +439,14 @@ IV. Verify that the PUT is accepted if the request does not contain etag
         }
     ],
     "cbit10": "AAA=",
-    "cfloat": 0.0,
+    "cfloat": 0,
     "cbigint": 0,
     "cdouble": 12.1,
     "geo4326": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cdecimal": 0.0,
@@ -453,8 +457,7 @@ IV. Verify that the PUT is accepted if the request does not contain etag
     "cmediumint": 0,
     "ctimestamp": "2020-12-01 12:01:50.000000",
     "_metadata": {
-        "etag": "C04F2D532D9348F07303BEBACAB421DDEDD33FADD2A0E806C10E1F2EA63496C5",
-        "gtid": "GTID"
+        "etag": "4B190A61E10188D4C46C119E1BE732D043B4A0E68775E9FDAFE1B55514951029"
     }
 }
 
@@ -472,8 +475,8 @@ V. Verify the POST will also have etag in response (GET and PUT checked before).
     "geo0": {
         "type": "Point",
         "coordinates": [
-            1.0,
-            3.0
+            1,
+            3
         ]
     },
     "cbit1": false,
@@ -490,14 +493,14 @@ V. Verify the POST will also have etag in response (GET and PUT checked before).
         }
     ],
     "cbit10": "AAA=",
-    "cfloat": 0.0,
+    "cfloat": 0,
     "cbigint": 0,
     "cdouble": 12.1,
     "geo4326": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cdecimal": 0.0,
@@ -508,8 +511,7 @@ V. Verify the POST will also have etag in response (GET and PUT checked before).
     "cmediumint": 0,
     "ctimestamp": "2020-12-01 12:01:50.000000",
     "_metadata": {
-        "etag": "9B3B05CB043E174E609B42550D38BE388CA980824064A9AC6EFAC98823009FA8",
-        "gtid": "GTID"
+        "etag": "26F167D90061791BC06E1B8FBE47A48913CC402AEE9EAF51F445D3C832F35C68"
     }
 }
 
@@ -527,8 +529,8 @@ VI. Verify the etag is ignored if PUT does an insert
     "geo0": {
         "type": "Point",
         "coordinates": [
-            1.0,
-            3.0
+            1,
+            3
         ]
     },
     "cbit1": false,
@@ -545,14 +547,14 @@ VI. Verify the etag is ignored if PUT does an insert
         }
     ],
     "cbit10": "AAA=",
-    "cfloat": 0.0,
+    "cfloat": 0,
     "cbigint": 0,
     "cdouble": 12.1,
     "geo4326": {
         "type": "Point",
         "coordinates": [
-            0.0,
-            0.0
+            0,
+            0
         ]
     },
     "cdecimal": 0.0,
@@ -563,8 +565,7 @@ VI. Verify the etag is ignored if PUT does an insert
     "cmediumint": 0,
     "ctimestamp": "2020-12-01 12:01:50.000000",
     "_metadata": {
-        "etag": "91A98B8B4E2EE2CB7FCDC311A05B55FAC3A7ED01F66AFA80813A3383E2A8693E",
-        "gtid": "GTID"
+        "etag": "A9AE2D2F0DCB33D30B359A72869CF6293575E3D0672C39D4ABF8F52DAA4A4DF5"
     }
 }
 

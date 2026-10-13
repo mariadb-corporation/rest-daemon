@@ -27,7 +27,7 @@ GET /svc/basic/proc_get
 Date -> %DATE%
 Access-Control-Allow-Methods  ->  GET, OPTIONS
 Content-Type  ->  application/json
-Content-Length  ->  129
+Content-Length  ->  128
 GET /svc/basic/t_create
 Date -> %DATE%
 Access-Control-Allow-Methods  ->  POST, OPTIONS
@@ -52,12 +52,12 @@ GET /svc/basic/proc_all
 Date -> %DATE%
 Access-Control-Allow-Methods  ->  GET, POST, PUT, DELETE, OPTIONS
 Content-Type  ->  application/json
-Content-Length  ->  129
+Content-Length  ->  128
 GET /svc/basic/proc_get
 Date -> %DATE%
 Access-Control-Allow-Methods  ->  GET, OPTIONS
 Content-Type  ->  application/json
-Content-Length  ->  129
+Content-Length  ->  128
 PUT /svc/functions/func_all (payload-size:15)
 Date -> %DATE%
 Access-Control-Allow-Methods  ->  GET, POST, PUT, DELETE, OPTIONS
@@ -99,12 +99,12 @@ GET /svc/basic/proc_all
 Date -> %DATE%
 Access-Control-Allow-Methods  ->  GET, POST, PUT, DELETE, OPTIONS
 Content-Type  ->  application/json
-Content-Length  ->  129
+Content-Length  ->  128
 GET /svc/basic/proc_get
 Date -> %DATE%
 Access-Control-Allow-Methods  ->  GET, POST, PUT, DELETE, OPTIONS
 Content-Type  ->  application/json
-Content-Length  ->  129
+Content-Length  ->  128
 PUT /svc/functions/func_all (payload-size:15)
 Date -> %DATE%
 Access-Control-Allow-Methods  ->  GET, POST, PUT, DELETE, OPTIONS

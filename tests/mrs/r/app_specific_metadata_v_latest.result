@@ -57,7 +57,7 @@ GET /svc_md/_metadata
 Date -> %DATE%
 Access-Control-Allow-Methods  ->  GET, OPTIONS
 Content-Type  ->  application/json
-Content-Length  ->  36
+Content-Length  ->  35
 {
     "app_specific_md": "service level"
 }
@@ -103,7 +103,7 @@ GET /svc_md/basic_schema_md/_metadata
 Date -> %DATE%
 Access-Control-Allow-Methods  ->  GET, OPTIONS
 Content-Type  ->  application/json
-Content-Length  ->  35
+Content-Length  ->  34
 {
     "app_specific_md": "schema level"
 }
@@ -143,7 +143,7 @@ GET /svc_md/func_schema_no_md/func_sum_md/_metadata
 Date -> %DATE%
 Access-Control-Allow-Methods  ->  GET, OPTIONS
 Content-Type  ->  application/json
-Content-Length  ->  37
+Content-Length  ->  36
 {
     "app_specific_md": "function level"
 }
@@ -159,7 +159,7 @@ GET /svc_md/basic_schema_md/tab_md/_metadata
 Date -> %DATE%
 Access-Control-Allow-Methods  ->  GET, OPTIONS
 Content-Type  ->  application/json
-Content-Length  ->  34
+Content-Length  ->  33
 {
     "app_specific_md": "table level"
 }
@@ -175,7 +175,7 @@ GET /svc_md/basic_schema_md/view_md/_metadata
 Date -> %DATE%
 Access-Control-Allow-Methods  ->  GET, OPTIONS
 Content-Type  ->  application/json
-Content-Length  ->  33
+Content-Length  ->  32
 {
     "app_specific_md": "view level"
 }
@@ -191,7 +191,7 @@ GET /svc_md/basic_schema_md/proc_int_md/_metadata
 Date -> %DATE%
 Access-Control-Allow-Methods  ->  GET, OPTIONS
 Content-Type  ->  application/json
-Content-Length  ->  38
+Content-Length  ->  37
 {
     "app_specific_md": "procedure level"
 }

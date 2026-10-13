@@ -245,13 +245,13 @@ GET /svc/basic/t3?f=cfloat
 {
     "items": [
         {
-            "cfloat": 0.0
+            "cfloat": 0
         },
         {
-            "cfloat": -999.9998779296876
+            "cfloat": -1000
         },
         {
-            "cfloat": 999.9998779296876
+            "cfloat": 1000
         }
     ]
 }
@@ -260,7 +260,7 @@ GET /svc/basic/t3?f=cdouble
 {
     "items": [
         {
-            "cdouble": 0.0
+            "cdouble": 0
         },
         {
             "cdouble": -999.9999
@@ -374,8 +374,8 @@ GET /svc/basic/t3?f=geo0
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             }
         },
@@ -383,8 +383,8 @@ GET /svc/basic/t3?f=geo0
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             }
         },
@@ -392,8 +392,8 @@ GET /svc/basic/t3?f=geo0
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             }
         }
@@ -407,8 +407,8 @@ GET /svc/basic/t3?f=geo4326
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             }
         },
@@ -416,8 +416,8 @@ GET /svc/basic/t3?f=geo4326
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             }
         },
@@ -425,8 +425,8 @@ GET /svc/basic/t3?f=geo4326
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             }
         }
@@ -441,19 +441,20 @@ GET /svc/basic/t3?f=vec
     "items": [
         {
             "vec": [
-                0.0
+                0,
+                0
             ]
         },
         {
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ]
         },
         {
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ]
         }
     ]

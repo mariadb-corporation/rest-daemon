@@ -103,9 +103,9 @@ drop schema basic_schema;
 # 500 with error
 GET /svc/basic/t1
 {
-    "message": "Unknown database 'basic_schema'",
-    "sqlcode": "1049",
-    "what": "Error executing MySQL query \"SELECT /*+ MAX_EXECUTION_TIME(60000) */ JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t1','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Unknown database 'basic_schema' (1049)",
+    "message": "Table 'basic_schema.table1' doesn't exist",
+    "sqlcode": "1146",
+    "what": "Error executing MySQL query \"SET STATEMENT max_statement_time=60.000000 FOR SELECT JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t1','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Table 'basic_schema.table1' doesn't exist (1146)",
     "status": 500
 }
 OK
@@ -113,7 +113,7 @@ POST /svc/basic/proc1 (payload-size:2)
 {
     "message": "PROCEDURE basic_schema.procedure1 does not exist",
     "sqlcode": "1305",
-    "what": "Error preparing MySQL query \"CALL `basic_schema`.`procedure1`()\": PROCEDURE basic_schema.procedure1 does not exist (1305)",
+    "what": "Error executing prepared statement with id:0\": PROCEDURE basic_schema.procedure1 does not exist (1305)",
     "status": 500
 }
 OK
@@ -128,9 +128,9 @@ OK
 # 500 with error
 GET /svc/basic/t2
 {
-    "message": "Unknown database 'basic_schema'",
-    "sqlcode": "1049",
-    "what": "Error executing MySQL query \"SELECT /*+ MAX_EXECUTION_TIME(60000) */ JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t2','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Unknown database 'basic_schema' (1049)",
+    "message": "Table 'basic_schema.table1' doesn't exist",
+    "sqlcode": "1146",
+    "what": "Error executing MySQL query \"SET STATEMENT max_statement_time=60.000000 FOR SELECT JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t2','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Table 'basic_schema.table1' doesn't exist (1146)",
     "status": 500
 }
 OK
@@ -138,7 +138,7 @@ POST /svc/basic/proc2 (payload-size:2)
 {
     "message": "PROCEDURE basic_schema.procedure1 does not exist",
     "sqlcode": "1305",
-    "what": "Error preparing MySQL query \"CALL `basic_schema`.`procedure1`()\": PROCEDURE basic_schema.procedure1 does not exist (1305)",
+    "what": "Error executing prepared statement with id:1\": PROCEDURE basic_schema.procedure1 does not exist (1305)",
     "status": 500
 }
 OK
@@ -173,9 +173,9 @@ OK
 # 500 with error
 GET /svc/basic/t1
 {
-    "message": "Unknown database 'basic_schema'",
-    "sqlcode": "1049",
-    "what": "Error executing MySQL query \"SELECT /*+ MAX_EXECUTION_TIME(60000) */ JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t1','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Unknown database 'basic_schema' (1049)",
+    "message": "Table 'basic_schema.table1' doesn't exist",
+    "sqlcode": "1146",
+    "what": "Error executing MySQL query \"SET STATEMENT max_statement_time=60.000000 FOR SELECT JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t1','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Table 'basic_schema.table1' doesn't exist (1146)",
     "status": 500
 }
 OK
@@ -183,7 +183,7 @@ POST /svc/basic/proc1 (payload-size:2)
 {
     "message": "PROCEDURE basic_schema.procedure1 does not exist",
     "sqlcode": "1305",
-    "what": "Error preparing MySQL query \"CALL `basic_schema`.`procedure1`()\": PROCEDURE basic_schema.procedure1 does not exist (1305)",
+    "what": "Error executing prepared statement with id:3\": PROCEDURE basic_schema.procedure1 does not exist (1305)",
     "status": 500
 }
 OK
@@ -198,9 +198,9 @@ OK
 # 500 with error
 GET /svc/basic/t2
 {
-    "message": "Unknown database 'basic_schema'",
-    "sqlcode": "1049",
-    "what": "Error executing MySQL query \"SELECT /*+ MAX_EXECUTION_TIME(60000) */ JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t2','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Unknown database 'basic_schema' (1049)",
+    "message": "Table 'basic_schema.table1' doesn't exist",
+    "sqlcode": "1146",
+    "what": "Error executing MySQL query \"SET STATEMENT max_statement_time=60.000000 FOR SELECT JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t2','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Table 'basic_schema.table1' doesn't exist (1146)",
     "status": 500
 }
 OK
@@ -208,7 +208,7 @@ POST /svc/basic/proc2 (payload-size:2)
 {
     "message": "PROCEDURE basic_schema.procedure1 does not exist",
     "sqlcode": "1305",
-    "what": "Error preparing MySQL query \"CALL `basic_schema`.`procedure1`()\": PROCEDURE basic_schema.procedure1 does not exist (1305)",
+    "what": "Error executing prepared statement with id:4\": PROCEDURE basic_schema.procedure1 does not exist (1305)",
     "status": 500
 }
 OK
@@ -339,9 +339,9 @@ OK
 # with error
 GET /svc/basic/t3
 {
-    "message": "Unknown database 'basic_schema'",
-    "sqlcode": "1049",
-    "what": "Error executing MySQL query \"SELECT /*+ MAX_EXECUTION_TIME(60000) */ JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t3','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Unknown database 'basic_schema' (1049)",
+    "message": "Table 'basic_schema.table1' doesn't exist",
+    "sqlcode": "1146",
+    "what": "Error executing MySQL query \"SET STATEMENT max_statement_time=60.000000 FOR SELECT JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t3','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Table 'basic_schema.table1' doesn't exist (1146)",
     "status": 500
 }
 OK
@@ -349,7 +349,7 @@ POST /svc/basic/proc3 (payload-size:2)
 {
     "message": "PROCEDURE basic_schema.procedure1 does not exist",
     "sqlcode": "1305",
-    "what": "Error preparing MySQL query \"CALL `basic_schema`.`procedure1`()\": PROCEDURE basic_schema.procedure1 does not exist (1305)",
+    "what": "Error executing prepared statement with id:11\": PROCEDURE basic_schema.procedure1 does not exist (1305)",
     "status": 500
 }
 OK

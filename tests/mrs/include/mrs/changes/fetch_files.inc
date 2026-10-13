@@ -7,7 +7,7 @@ if (!$mrs_sql_changes_variable)
 --disable_result_log
 
 eval SET $mrs_sql_changes_variable=(
-           SELECT IF(v is NULL,NULL,v+0) FROM (SELECT details->>"$.changesFiles" as v
+           SELECT IF(v is NULL,NULL,v+0) FROM (SELECT JSON_UNQUOTE(JSON_EXTRACT(details,"$.changesFiles")) as v
            FROM mysql_rest_service_metadata.router_status
            ORDER BY id DESC LIMIT 0,1)as sub);
 

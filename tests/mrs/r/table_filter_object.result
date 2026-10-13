@@ -132,7 +132,8 @@ Ok(200)
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -140,8 +141,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -158,14 +159,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -176,7 +177,7 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         }
     ],
@@ -197,8 +198,8 @@ Ok(200)
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -206,8 +207,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -224,14 +225,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -242,7 +243,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -263,8 +264,8 @@ Ok(200)
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -272,8 +273,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -290,14 +291,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -308,7 +309,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -329,8 +330,8 @@ Ok(200)
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -338,8 +339,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -356,14 +357,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -374,7 +375,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -395,8 +396,8 @@ Ok(200)
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -404,8 +405,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -422,14 +423,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -440,7 +441,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -461,8 +462,8 @@ Ok(200)
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -470,8 +471,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -488,14 +489,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -506,7 +507,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -528,7 +529,8 @@ Ok(200)
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -536,8 +538,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -554,14 +556,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -572,14 +574,14 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         },
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -587,8 +589,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -605,14 +607,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -623,7 +625,7 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         }
     ],
@@ -644,7 +646,8 @@ Ok(200)
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -652,8 +655,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -670,14 +673,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -688,14 +691,14 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         },
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -703,8 +706,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -721,14 +724,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -739,240 +742,7 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
-            }
-        }
-    ],
-    "limit": 25,
-    "offset": 0,
-    "hasMore": false,
-    "count": 2,
-    "links": [
-        {
-            "rel": "self",
-            "href": "/svc/basic/table3/"
-        }
-    ]
-}
-"Cases related to "
-Ok(200)
-{
-    "items": [
-        {
-            "id": 1,
-            "vec": [
-                0.0
-            ],
-            "cbin": "MAAA",
-            "cbit": false,
-            "cset": "",
-            "geo0": {
-                "type": "Point",
-                "coordinates": [
-                    0.0,
-                    0.0
-                ]
-            },
-            "cbit1": false,
-            "cblob": "",
-            "cdate": "2020-12-01",
-            "cenum": "value1",
-            "ctext": "numeric zeros",
-            "ctime": "12:01:50.000000",
-            "cyear": 2020,
-            "links": [
-                {
-                    "rel": "self",
-                    "href": "/svc/basic/table3/1"
-                }
-            ],
-            "cbit10": "AAA=",
-            "cfloat": 0.0,
-            "cbigint": 0,
-            "cdouble": 0.0,
-            "geo4326": {
-                "type": "Point",
-                "coordinates": [
-                    0.0,
-                    0.0
-                ]
-            },
-            "cdecimal": 0.0,
-            "ctinyint": 0,
-            "cvarchar": "first row",
-            "cdatetime": "2020-12-01 12:01:50.000000",
-            "csmallint": 0,
-            "cmediumint": 0,
-            "ctimestamp": "2020-12-01 12:01:50.000000",
-            "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
-            }
-        },
-        {
-            "id": 2,
-            "vec": [
-                1.0,
-                2.0
-            ],
-            "cbin": "MAAA",
-            "cbit": false,
-            "cset": "value1",
-            "geo0": {
-                "type": "Point",
-                "coordinates": [
-                    -100.0,
-                    -110.0
-                ]
-            },
-            "cbit1": false,
-            "cblob": "MQ==",
-            "cdate": "2020-12-02",
-            "cenum": "value1",
-            "ctext": "numeric min",
-            "ctime": "12:02:50.000000",
-            "cyear": 2021,
-            "links": [
-                {
-                    "rel": "self",
-                    "href": "/svc/basic/table3/2"
-                }
-            ],
-            "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
-            "cbigint": -9223372036854775808,
-            "cdouble": -999.9999,
-            "geo4326": {
-                "type": "Point",
-                "coordinates": [
-                    -90.0,
-                    -90.0
-                ]
-            },
-            "cdecimal": -999.99,
-            "ctinyint": -128,
-            "cvarchar": "second row",
-            "cdatetime": "2020-12-02 12:02:50.000000",
-            "csmallint": -32768,
-            "cmediumint": -8388608,
-            "ctimestamp": "2020-12-02 12:02:50.000000",
-            "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
-            }
-        }
-    ],
-    "limit": 25,
-    "offset": 0,
-    "hasMore": false,
-    "count": 2,
-    "links": [
-        {
-            "rel": "self",
-            "href": "/svc/basic/table3/"
-        }
-    ]
-}
-Ok(200)
-{
-    "items": [
-        {
-            "id": 1,
-            "vec": [
-                0.0
-            ],
-            "cbin": "MAAA",
-            "cbit": false,
-            "cset": "",
-            "geo0": {
-                "type": "Point",
-                "coordinates": [
-                    0.0,
-                    0.0
-                ]
-            },
-            "cbit1": false,
-            "cblob": "",
-            "cdate": "2020-12-01",
-            "cenum": "value1",
-            "ctext": "numeric zeros",
-            "ctime": "12:01:50.000000",
-            "cyear": 2020,
-            "links": [
-                {
-                    "rel": "self",
-                    "href": "/svc/basic/table3/1"
-                }
-            ],
-            "cbit10": "AAA=",
-            "cfloat": 0.0,
-            "cbigint": 0,
-            "cdouble": 0.0,
-            "geo4326": {
-                "type": "Point",
-                "coordinates": [
-                    0.0,
-                    0.0
-                ]
-            },
-            "cdecimal": 0.0,
-            "ctinyint": 0,
-            "cvarchar": "first row",
-            "cdatetime": "2020-12-01 12:01:50.000000",
-            "csmallint": 0,
-            "cmediumint": 0,
-            "ctimestamp": "2020-12-01 12:01:50.000000",
-            "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
-            }
-        },
-        {
-            "id": 2,
-            "vec": [
-                1.0,
-                2.0
-            ],
-            "cbin": "MAAA",
-            "cbit": false,
-            "cset": "value1",
-            "geo0": {
-                "type": "Point",
-                "coordinates": [
-                    -100.0,
-                    -110.0
-                ]
-            },
-            "cbit1": false,
-            "cblob": "MQ==",
-            "cdate": "2020-12-02",
-            "cenum": "value1",
-            "ctext": "numeric min",
-            "ctime": "12:02:50.000000",
-            "cyear": 2021,
-            "links": [
-                {
-                    "rel": "self",
-                    "href": "/svc/basic/table3/2"
-                }
-            ],
-            "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
-            "cbigint": -9223372036854775808,
-            "cdouble": -999.9999,
-            "geo4326": {
-                "type": "Point",
-                "coordinates": [
-                    -90.0,
-                    -90.0
-                ]
-            },
-            "cdecimal": -999.99,
-            "ctinyint": -128,
-            "cvarchar": "second row",
-            "cdatetime": "2020-12-02 12:02:50.000000",
-            "csmallint": -32768,
-            "cmediumint": -8388608,
-            "ctimestamp": "2020-12-02 12:02:50.000000",
-            "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         }
     ],
@@ -994,7 +764,8 @@ Ok(200)
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -1002,8 +773,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -1020,14 +791,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -1038,14 +809,14 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         },
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -1053,8 +824,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -1071,14 +842,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -1089,14 +860,249 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
+            }
+        }
+    ],
+    "limit": 25,
+    "offset": 0,
+    "hasMore": false,
+    "count": 2,
+    "links": [
+        {
+            "rel": "self",
+            "href": "/svc/basic/table3/"
+        }
+    ]
+}
+Ok(200)
+{
+    "items": [
+        {
+            "id": 1,
+            "vec": [
+                0,
+                0
+            ],
+            "cbin": "MAAA",
+            "cbit": false,
+            "cset": "",
+            "geo0": {
+                "type": "Point",
+                "coordinates": [
+                    0,
+                    0
+                ]
+            },
+            "cbit1": false,
+            "cblob": "",
+            "cdate": "2020-12-01",
+            "cenum": "value1",
+            "ctext": "numeric zeros",
+            "ctime": "12:01:50.000000",
+            "cyear": 2020,
+            "links": [
+                {
+                    "rel": "self",
+                    "href": "/svc/basic/table3/1"
+                }
+            ],
+            "cbit10": "AAA=",
+            "cfloat": 0,
+            "cbigint": 0,
+            "cdouble": 0,
+            "geo4326": {
+                "type": "Point",
+                "coordinates": [
+                    0,
+                    0
+                ]
+            },
+            "cdecimal": 0.0,
+            "ctinyint": 0,
+            "cvarchar": "first row",
+            "cdatetime": "2020-12-01 12:01:50.000000",
+            "csmallint": 0,
+            "cmediumint": 0,
+            "ctimestamp": "2020-12-01 12:01:50.000000",
+            "_metadata": {
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
+            }
+        },
+        {
+            "id": 2,
+            "vec": [
+                1,
+                2
+            ],
+            "cbin": "MAAA",
+            "cbit": false,
+            "cset": "value1",
+            "geo0": {
+                "type": "Point",
+                "coordinates": [
+                    -100,
+                    -110
+                ]
+            },
+            "cbit1": false,
+            "cblob": "MQ==",
+            "cdate": "2020-12-02",
+            "cenum": "value1",
+            "ctext": "numeric min",
+            "ctime": "12:02:50.000000",
+            "cyear": 2021,
+            "links": [
+                {
+                    "rel": "self",
+                    "href": "/svc/basic/table3/2"
+                }
+            ],
+            "cbit10": "AAA=",
+            "cfloat": -1000,
+            "cbigint": -9223372036854775808,
+            "cdouble": -999.9999,
+            "geo4326": {
+                "type": "Point",
+                "coordinates": [
+                    -90,
+                    -90
+                ]
+            },
+            "cdecimal": -999.99,
+            "ctinyint": -128,
+            "cvarchar": "second row",
+            "cdatetime": "2020-12-02 12:02:50.000000",
+            "csmallint": -32768,
+            "cmediumint": -8388608,
+            "ctimestamp": "2020-12-02 12:02:50.000000",
+            "_metadata": {
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
+            }
+        }
+    ],
+    "limit": 25,
+    "offset": 0,
+    "hasMore": false,
+    "count": 2,
+    "links": [
+        {
+            "rel": "self",
+            "href": "/svc/basic/table3/"
+        }
+    ]
+}
+"Cases related to "
+Ok(200)
+{
+    "items": [
+        {
+            "id": 1,
+            "vec": [
+                0,
+                0
+            ],
+            "cbin": "MAAA",
+            "cbit": false,
+            "cset": "",
+            "geo0": {
+                "type": "Point",
+                "coordinates": [
+                    0,
+                    0
+                ]
+            },
+            "cbit1": false,
+            "cblob": "",
+            "cdate": "2020-12-01",
+            "cenum": "value1",
+            "ctext": "numeric zeros",
+            "ctime": "12:01:50.000000",
+            "cyear": 2020,
+            "links": [
+                {
+                    "rel": "self",
+                    "href": "/svc/basic/table3/1"
+                }
+            ],
+            "cbit10": "AAA=",
+            "cfloat": 0,
+            "cbigint": 0,
+            "cdouble": 0,
+            "geo4326": {
+                "type": "Point",
+                "coordinates": [
+                    0,
+                    0
+                ]
+            },
+            "cdecimal": 0.0,
+            "ctinyint": 0,
+            "cvarchar": "first row",
+            "cdatetime": "2020-12-01 12:01:50.000000",
+            "csmallint": 0,
+            "cmediumint": 0,
+            "ctimestamp": "2020-12-01 12:01:50.000000",
+            "_metadata": {
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
+            }
+        },
+        {
+            "id": 2,
+            "vec": [
+                1,
+                2
+            ],
+            "cbin": "MAAA",
+            "cbit": false,
+            "cset": "value1",
+            "geo0": {
+                "type": "Point",
+                "coordinates": [
+                    -100,
+                    -110
+                ]
+            },
+            "cbit1": false,
+            "cblob": "MQ==",
+            "cdate": "2020-12-02",
+            "cenum": "value1",
+            "ctext": "numeric min",
+            "ctime": "12:02:50.000000",
+            "cyear": 2021,
+            "links": [
+                {
+                    "rel": "self",
+                    "href": "/svc/basic/table3/2"
+                }
+            ],
+            "cbit10": "AAA=",
+            "cfloat": -1000,
+            "cbigint": -9223372036854775808,
+            "cdouble": -999.9999,
+            "geo4326": {
+                "type": "Point",
+                "coordinates": [
+                    -90,
+                    -90
+                ]
+            },
+            "cdecimal": -999.99,
+            "ctinyint": -128,
+            "cvarchar": "second row",
+            "cdatetime": "2020-12-02 12:02:50.000000",
+            "csmallint": -32768,
+            "cmediumint": -8388608,
+            "ctimestamp": "2020-12-02 12:02:50.000000",
+            "_metadata": {
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         },
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -1104,8 +1110,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -1122,14 +1128,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -1140,7 +1146,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -1161,7 +1167,8 @@ Ok(200)
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -1169,8 +1176,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -1187,14 +1194,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -1205,14 +1212,14 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         },
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -1220,8 +1227,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -1238,14 +1245,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -1256,14 +1263,14 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         },
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -1271,8 +1278,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -1289,14 +1296,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -1307,7 +1314,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -1329,8 +1336,8 @@ Ok(200)
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -1338,8 +1345,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -1356,14 +1363,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -1374,7 +1381,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -1395,8 +1402,8 @@ Ok(200)
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -1404,8 +1411,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -1422,14 +1429,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -1440,7 +1447,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -1462,8 +1469,8 @@ Ok(200)
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -1471,8 +1478,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -1489,14 +1496,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -1507,7 +1514,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -1528,8 +1535,8 @@ Ok(200)
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -1537,8 +1544,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -1555,14 +1562,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -1573,14 +1580,14 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         },
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -1588,8 +1595,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -1606,14 +1613,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -1624,7 +1631,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -1646,8 +1653,8 @@ Ok(200)
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -1655,8 +1662,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -1673,14 +1680,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -1691,7 +1698,7 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         }
     ],
@@ -1714,8 +1721,8 @@ Ok(200)
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -1723,8 +1730,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -1741,14 +1748,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -1759,7 +1766,7 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         }
     ],
@@ -1796,7 +1803,8 @@ Ok(200)
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -1804,8 +1812,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -1822,14 +1830,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -1840,14 +1848,14 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         },
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -1855,8 +1863,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -1873,14 +1881,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -1891,14 +1899,14 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         },
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -1906,8 +1914,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -1924,14 +1932,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -1942,7 +1950,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -1964,8 +1972,8 @@ Ok(200)
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -1973,8 +1981,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -1991,14 +1999,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -2009,14 +2017,14 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         },
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -2024,8 +2032,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -2042,14 +2050,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -2060,7 +2068,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -2081,8 +2089,8 @@ Ok(200)
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -2090,8 +2098,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -2108,14 +2116,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -2126,7 +2134,7 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         }
     ],
@@ -2147,7 +2155,8 @@ Ok(200)
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -2155,8 +2164,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -2173,14 +2182,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -2191,14 +2200,14 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         },
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -2206,8 +2215,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -2224,14 +2233,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -2242,7 +2251,7 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         }
     ],
@@ -2263,7 +2272,8 @@ Ok(200)
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -2271,8 +2281,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -2289,14 +2299,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -2307,14 +2317,14 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         },
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -2322,8 +2332,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -2340,14 +2350,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -2358,7 +2368,7 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         }
     ],
@@ -2380,8 +2390,8 @@ Ok(200)
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -2389,8 +2399,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -2407,14 +2417,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -2425,13 +2435,14 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         },
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -2439,8 +2450,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -2457,14 +2468,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -2475,14 +2486,14 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         },
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -2490,8 +2501,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -2508,14 +2519,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -2526,7 +2537,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -2547,8 +2558,8 @@ Ok(200)
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -2556,8 +2567,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -2574,14 +2585,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -2592,7 +2603,7 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         }
     ],
@@ -2613,8 +2624,8 @@ Ok(200)
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -2622,8 +2633,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -2640,14 +2651,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -2658,7 +2669,7 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         }
     ],
@@ -2679,8 +2690,8 @@ Ok(200)
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -2688,8 +2699,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -2706,14 +2717,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -2724,13 +2735,14 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         },
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -2738,8 +2750,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -2756,14 +2768,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -2774,14 +2786,14 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         },
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -2789,8 +2801,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -2807,14 +2819,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -2825,7 +2837,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -2866,7 +2878,8 @@ Ok(200)
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -2874,8 +2887,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -2892,14 +2905,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -2910,14 +2923,14 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         },
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -2925,8 +2938,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -2943,14 +2956,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -2961,14 +2974,14 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         },
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -2976,8 +2989,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -2994,14 +3007,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -3012,7 +3025,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -3033,7 +3046,8 @@ Ok(200)
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -3041,8 +3055,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -3059,14 +3073,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -3077,14 +3091,14 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         },
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -3092,8 +3106,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -3110,14 +3124,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -3128,14 +3142,14 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         },
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -3143,8 +3157,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -3161,14 +3175,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -3179,7 +3193,7 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         }
     ],
@@ -3215,8 +3229,8 @@ Ok(200)
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -3224,8 +3238,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -3242,14 +3256,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -3260,13 +3274,14 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         },
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -3274,8 +3289,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -3292,14 +3307,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -3310,7 +3325,7 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         }
     ],
@@ -3331,7 +3346,8 @@ Ok(200)
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -3339,8 +3355,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -3357,14 +3373,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -3375,14 +3391,14 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         },
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -3390,8 +3406,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -3408,14 +3424,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -3426,7 +3442,7 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         }
     ],
@@ -3447,8 +3463,8 @@ Ok(200)
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -3456,8 +3472,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -3474,14 +3490,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -3492,14 +3508,14 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         },
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -3507,8 +3523,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -3525,14 +3541,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -3543,13 +3559,14 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         },
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -3557,8 +3574,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -3575,14 +3592,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -3593,7 +3610,7 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         }
     ],
@@ -3614,8 +3631,8 @@ Ok(200)
         {
             "id": 3,
             "vec": [
-                1.0,
-                0.0
+                1,
+                0
             ],
             "cbin": "BwAA",
             "cbit": true,
@@ -3623,8 +3640,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    110.0,
-                    100.0
+                    110,
+                    100
                 ]
             },
             "cbit1": true,
@@ -3641,14 +3658,14 @@ Ok(200)
                 }
             ],
             "cbit10": "A/8=",
-            "cfloat": 999.9998779296876,
+            "cfloat": 1000,
             "cbigint": 9223372036854775807,
             "cdouble": 999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    90.0,
-                    90.0
+                    90,
+                    90
                 ]
             },
             "cdecimal": 999.99,
@@ -3659,13 +3676,14 @@ Ok(200)
             "cmediumint": 8388607,
             "ctimestamp": "2020-12-03 12:03:50.000000",
             "_metadata": {
-                "etag": "18300ED03F315FAFC9F9B4D4C1C7A9804442EF4B7B3F15E3D8AAE957C0BE7CBA"
+                "etag": "EB92F38E28C13CF84E2BBC4E9519309F08181ED208BE3C681BA0B5BB07656C07"
             }
         },
         {
             "id": 1,
             "vec": [
-                0.0
+                0,
+                0
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -3673,8 +3691,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cbit1": false,
@@ -3691,14 +3709,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": 0.0,
+            "cfloat": 0,
             "cbigint": 0,
-            "cdouble": 0.0,
+            "cdouble": 0,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "cdecimal": 0.0,
@@ -3709,14 +3727,14 @@ Ok(200)
             "cmediumint": 0,
             "ctimestamp": "2020-12-01 12:01:50.000000",
             "_metadata": {
-                "etag": "BCA7CA369AF560DDC280B33A14F1AD164DE47441D149B7D1C748FEBF0D3BABA1"
+                "etag": "E12CDFE3D52179F0E2097486EB6908A4A937EC0860024CCD3148F93320361204"
             }
         },
         {
             "id": 2,
             "vec": [
-                1.0,
-                2.0
+                1,
+                2
             ],
             "cbin": "MAAA",
             "cbit": false,
@@ -3724,8 +3742,8 @@ Ok(200)
             "geo0": {
                 "type": "Point",
                 "coordinates": [
-                    -100.0,
-                    -110.0
+                    -100,
+                    -110
                 ]
             },
             "cbit1": false,
@@ -3742,14 +3760,14 @@ Ok(200)
                 }
             ],
             "cbit10": "AAA=",
-            "cfloat": -999.9998779296876,
+            "cfloat": -1000,
             "cbigint": -9223372036854775808,
             "cdouble": -999.9999,
             "geo4326": {
                 "type": "Point",
                 "coordinates": [
-                    -90.0,
-                    -90.0
+                    -90,
+                    -90
                 ]
             },
             "cdecimal": -999.99,
@@ -3760,7 +3778,7 @@ Ok(200)
             "cmediumint": -8388608,
             "ctimestamp": "2020-12-02 12:02:50.000000",
             "_metadata": {
-                "etag": "BF6EFC8D9A622E6DD3FC60BEC95A5DCF76E8BFEE00C83CB2D4A2218C5A436990"
+                "etag": "3F8664F189CF65B09F3FE75E4EFA21C34C330655D8A8D75146F71B20BEBE959C"
             }
         }
     ],

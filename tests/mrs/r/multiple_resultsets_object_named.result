@@ -200,7 +200,7 @@ PUT /svc/proc/one (payload-size:2)
                 "columns": [
                     {
                         "name": "my_id",
-                        "type": " INTEGER"
+                        "type": "INTEGER"
                     },
                     {
                         "name": "my_name",
@@ -252,7 +252,7 @@ GET /svc/proc/two
                 "columns": [
                     {
                         "name": "my_id",
-                        "type": " INTEGER"
+                        "type": "INTEGER"
                     },
                     {
                         "name": "my_name",
@@ -305,7 +305,7 @@ GET /svc/proc/three
                 "columns": [
                     {
                         "name": "first_id",
-                        "type": " INTEGER"
+                        "type": "INTEGER"
                     }
                 ]
             }
@@ -321,7 +321,7 @@ GET /svc/proc/three
                 "columns": [
                     {
                         "name": "last_id",
-                        "type": " INTEGER"
+                        "type": "INTEGER"
                     }
                 ]
             }
@@ -340,7 +340,7 @@ GET /svc/proc/three
                 "columns": [
                     {
                         "name": "id",
-                        "type": " INTEGER"
+                        "type": "INTEGER"
                     },
                     {
                         "name": "name",

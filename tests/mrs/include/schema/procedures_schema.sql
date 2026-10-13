@@ -296,7 +296,7 @@ END;$$
 # stays NULL
 CREATE PROCEDURE `proc_schema`.`set_vector` (INOUT result VECTOR(3))
 BEGIN
-  SET result = IF(result IS NULL, NULL, STRING_TO_VECTOR("[1,2,3]"));
+  SET result = IF(result IS NULL, NULL, VEC_FromText("[1,2,3]"));
 END;$$
 
 

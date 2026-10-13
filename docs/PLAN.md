@@ -279,7 +279,7 @@ Decisions (2026-10-13, see the decision log):
   `schema_version` fallback; the version-specific tests. Fix `WHEREa.id` in the
   row-ownership SQL on the way.
 
-### Phase M3.1: bake the suite's SQL rewrites into the tests (still on 4.1.6)
+### Phase M3.1: bake the suite's SQL rewrites into the tests (still on 4.1.6) ✅ done (2026-10-13)
 - The MySQL-only SQL of the upstream scripts and fixtures rewritten in the files
   (`mrstest/mariadb_sql.py`'s rules), results re-recorded on MariaDB, the rewrite and
   most of the normaliser retired. A clean baseline for the 5.0.0 diff.

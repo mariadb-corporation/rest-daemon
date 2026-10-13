@@ -513,18 +513,14 @@ GET /svc/proc/resultset_vector?a=%5B0,1,4%5D
             "type": "items0",
             "items": [
                 {
-                    "a": [
-                        0.0,
-                        1.0,
-                        4.0
-                    ]
+                    "a": "AAAAAAAAgD8AAIBA"
                 }
             ],
             "_metadata": {
                 "columns": [
                     {
                         "name": "a",
-                        "type": "VECTOR"
+                        "type": "VARCHAR(12)"
                     }
                 ]
             }
@@ -643,7 +639,7 @@ PUT /svc/proc/move_geometry (payload-size:45)
 {
     "resultSets": [],
     "outParameters": {
-        "result": "5hAAAAEBAAAAAAAAAAAAWUAAAAAAAAAAAA=="
+        "result": "AAAAAAEBAAAAAAAAAAAAWUAAAAAAAAAAAA=="
     }
 }
 OK
@@ -687,9 +683,7 @@ PUT /svc/proc/move_json (payload-size:19)
 {
     "resultSets": [],
     "outParameters": {
-        "result": {
-            "foo": "bar"
-        }
+        "result": "{\"foo\":\"bar\"}"
     }
 }
 OK

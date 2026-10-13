@@ -93,7 +93,7 @@ if ($mrs_schema_version == 2)
            "referenced_schema","$mrs_add_db_object_join_schema",
            "referenced_table", "$mrs_add_db_object_join_table",
            "to_many", $mrs_add_db_object_join_to_many,
-           "column_mapping",cast(@_fields as JSON)), false,
+           "column_mapping",JSON_COMPACT(@_fields)), false,
              "$mrs_add_db_object_op");
 }
 
@@ -105,7 +105,7 @@ if ($_mrs_do_default_object_ref)
            "referenced_schema","$mrs_add_db_object_join_schema",
            "referenced_table", "$mrs_add_db_object_join_table",
            "to_many", $mrs_add_db_object_join_to_many,
-           "column_mapping",cast(@_fields as JSON)), false,
+           "column_mapping",JSON_COMPACT(@_fields)), false,
           '$mrs_add_db_object_join_reference_options');
 }
 

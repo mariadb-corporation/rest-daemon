@@ -29,17 +29,14 @@ Options (or environment variables):
   --mariadb-package  MARIADB_PACKAGE_DIR or a MariaDB server package
                                         (bin/mariadbd, bin/mariadb-install-db.exe
                                         on Windows, scripts/mariadb-install-db)
-  --record                              write the output as the new
-                                        r/<name>.mariadb.result
+  --record                              write the output as the new .result
 
-The tests are upstream's (the MySQL REST Service suite). Their SQL is
-translated for MariaDB at run time (mrstest/mariadb_sql.py), the metadata
-schema is the MariaDB shell plugins' deployment script
-(include/schema/*-mariadb.sql), and the output is compared, normalised
-(JSON member order, etags, ...), with r/<name>.mariadb.result where one was
-recorded on MariaDB, else with upstream's r/<name>.result. Until the results
-are re-recorded (Milestone 3), --record always writes the .mariadb.result
-file, never upstream's.
+The tests are the MySQL REST Service suite of mysql-server (mysql-test/suite/
+router), with their MySQL-only SQL rewritten for MariaDB in the files (a
+one-off conversion, 2026-10-13: JSON arrows, SRID attributes, VECTOR
+dimensions, FROM_BASE64 guards, ...), the metadata schema the MariaDB shell
+plugins' deployment script (include/schema/*-mariadb.sql), and the results
+recorded on MariaDB.
 """
 
 from __future__ import annotations
@@ -70,7 +67,7 @@ def pytest_addoption(parser):
     parser.addoption("--mariadb-source", default=os.environ.get("MARIADB_SOURCE_DIR"))
     parser.addoption("--mariadb-package", default=os.environ.get("MARIADB_PACKAGE_DIR"))
     parser.addoption("--record", action="store_true",
-                     help="write the test output as the new r/<name>.mariadb.result")
+                     help="write the test output as the new .result file")
 
 
 def free_port() -> int:

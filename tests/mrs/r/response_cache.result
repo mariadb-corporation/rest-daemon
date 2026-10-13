@@ -1,4 +1,3 @@
-RESET BINARY LOGS AND GTIDS;
 # MySQL Rest Service schema created.
 # MySQL Rest Service, server accounts configured.
 # DB `basic_schema` - created
@@ -44,9 +43,9 @@ VALUES(42, "Big row", repeat('X', 1000));
 # Registred MRS USER: 'admin'
 update performance_schema.setup_consumers set enabled=1 where name='events_statements_history_long';
 TRUNCATE TABLE performance_schema.events_statements_history_long;
-select http_requests_get, http_requests_post, http_requests_put, http_requests_delete, json_object('endpoints', (details->'$.restCachedEndpoints'), 'itemLoads', (details->'$.restCacheItemLoads'), 'itemEjects', (details->'$.restCacheItemEjects'), 'itemHits', (details->'$.restCacheItemHits'), 'itemMisses', (details->'$.restCacheItemMisses'), 'items', (details->'$.restCachedItems'), 'fileLoads', (details->'$.restCacheFileLoads'), 'fileEjects', (details->'$.restCacheFileEjects'), 'fileHits', (details->'$.restCacheFileHits'), 'fileMisses', (details->'$.restCacheFileMisses'), 'files', (details->'$.restCachedFiles')) as stats from mysql_rest_service_metadata.router_status order by id desc limit 1;
+select http_requests_get, http_requests_post, http_requests_put, http_requests_delete, json_object('endpoints', (JSON_EXTRACT(details,'$.restCachedEndpoints')), 'itemLoads', (JSON_EXTRACT(details,'$.restCacheItemLoads')), 'itemEjects', (JSON_EXTRACT(details,'$.restCacheItemEjects')), 'itemHits', (JSON_EXTRACT(details,'$.restCacheItemHits')), 'itemMisses', (JSON_EXTRACT(details,'$.restCacheItemMisses')), 'items', (JSON_EXTRACT(details,'$.restCachedItems')), 'fileLoads', (JSON_EXTRACT(details,'$.restCacheFileLoads')), 'fileEjects', (JSON_EXTRACT(details,'$.restCacheFileEjects')), 'fileHits', (JSON_EXTRACT(details,'$.restCacheFileHits')), 'fileMisses', (JSON_EXTRACT(details,'$.restCacheFileMisses')), 'files', (JSON_EXTRACT(details,'$.restCachedFiles'))) as stats from mysql_rest_service_metadata.router_status order by id desc limit 1;
 http_requests_get	http_requests_post	http_requests_put	http_requests_delete	stats
-0	0	0	0	{"files": 0, "items": 0, "fileHits": 0, "itemHits": 0, "endpoints": 11, "fileLoads": 0, "itemLoads": 0, "fileEjects": 0, "fileMisses": 0, "itemEjects": 0, "itemMisses": 0}
+0	0	0	0	{"endpoints": 11, "itemLoads": 0, "itemEjects": 0, "itemHits": 0, "itemMisses": 0, "items": 0, "fileLoads": 0, "fileEjects": 0, "fileHits": 0, "fileMisses": 0, "files": 0}
 PUT /svc/authentication/login
 
 OK
@@ -99,8 +98,7 @@ POST /svc/basic/t1auth (payload-size:9)
         }
     ],
     "_metadata": {
-        "etag": "6AF4F18B73FB04387AC2237DE50A4D2A2AD1CBEBD1A038349FA580548CD75BAC",
-        "gtid": "GTID"
+        "etag": "6AF4F18B73FB04387AC2237DE50A4D2A2AD1CBEBD1A038349FA580548CD75BAC"
     }
 }
 OK
@@ -114,10 +112,7 @@ OK
 select max(TIMER_END) into @initial_time from performance_schema.events_statements_history_long;
 DELETE /svc/basic/t1auth/11
 {
-    "itemsDeleted": 1,
-    "_metadata": {
-        "gtid": "GTID"
-    }
+    "itemsDeleted": 1
 }
 OK
 select max(TIMER_END) into @initial_time from performance_schema.events_statements_history_long;
@@ -433,10 +428,7 @@ OK
 select max(TIMER_END) into @initial_time from performance_schema.events_statements_history_long;
 DELETE /svc/basic/t1auth/50
 {
-    "itemsDeleted": 1,
-    "_metadata": {
-        "gtid": "GTID"
-    }
+    "itemsDeleted": 1
 }
 OK
 GET /svc/basic/t1auth/50
@@ -502,9 +494,6 @@ GET /svc/basic/proc
     "resultSets": [],
     "outParameters": {
         "result": "1"
-    },
-    "_metadata": {
-        "gtid": "GTID"
     }
 }
 OK
@@ -514,9 +503,6 @@ GET /svc/basic/proc
     "resultSets": [],
     "outParameters": {
         "result": "1"
-    },
-    "_metadata": {
-        "gtid":GTID
     }
 }
 OK
@@ -526,9 +512,6 @@ POST /svc/basic/proc (payload-size:2)
     "resultSets": [],
     "outParameters": {
         "result": "2"
-    },
-    "_metadata": {
-        "gtid": "GTID"
     }
 }
 OK
@@ -538,53 +521,38 @@ POST /svc/basic/proc (payload-size:2)
     "resultSets": [],
     "outParameters": {
         "result": "3"
-    },
-    "_metadata": {
-        "gtid":GTID
     }
 }
 OK
 select max(TIMER_END) into @initial_time from performance_schema.events_statements_history_long;
 GET /svc/basic/func
 {
-    "result": "4",
-    "_metadata": {
-        "gtid": "GTID"
-    }
+    "result": "4"
 }
 OK
 select max(TIMER_END) into @initial_time from performance_schema.events_statements_history_long;
 GET /svc/basic/func
 {
-    "result": "4",
-    "_metadata": {
-        "gtid":GTID
-    }
+    "result": "4"
 }
 OK
 select max(TIMER_END) into @initial_time from performance_schema.events_statements_history_long;
 POST /svc/basic/func (payload-size:2)
 {
-    "result": "5",
-    "_metadata": {
-        "gtid": "GTID"
-    }
+    "result": "5"
 }
 OK
 select max(TIMER_END) into @initial_time from performance_schema.events_statements_history_long;
 POST /svc/basic/func (payload-size:2)
 {
-    "result": "6",
-    "_metadata": {
-        "gtid":GTID
-    }
+    "result": "6"
 }
 OK
 select max(TIMER_END) into @initial_time from performance_schema.events_statements_history_long;
 select max(TIMER_END) into @initial_time from performance_schema.events_statements_history_long;
 select max(TIMER_END) into @initial_time from performance_schema.events_statements_history_long;
 stats
-{"files": 1, "items": 5, "fileHits": 1.0, "itemHits": 10.0, "endpoints": 11, "fileLoads": 2.0, "itemLoads": 9.0, "fileEjects": 1.0, "fileMisses": 2.0, "itemEjects": 3.0, "itemMisses": 10.0}
+{"endpoints": "11", "items": "6", "files": "1", "itemLoads": 9, "itemEjects": 2, "itemHits": 10, "itemMisses": 10, "fileLoads": 2, "fileEjects": 1, "fileHits": 1, "fileMisses": 2}
 update performance_schema.setup_consumers set enabled="YES" where name='events_statements_history_long';
 DROP SCHEMA basic_schema;
 DROP SCHEMA mysql_rest_service_metadata;

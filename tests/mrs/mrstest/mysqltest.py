@@ -323,10 +323,6 @@ class Environment:
     # internal commands (--mrsd_stop, --mrsd_restart, ...) used by the
     # harness' versions of mtr's router restart includes
     hooks: dict[str, Callable[[str], None]] = field(default_factory=dict)
-    # applied to every statement before it is sent (MariaDB mode: the
-    # MySQL-only SQL of the upstream scripts, see mariadb_sql.py); the
-    # echoed statement stays the original
-    sql_rewrite: Callable[[str], str] | None = None
 
 
 class Interpreter:
@@ -794,21 +790,17 @@ class Interpreter:
             return "No such row"
         return self.format_value(rows[row - 1][names.index(column)])
 
-    def rewrite_sql(self, sql: str) -> str:
-        return self.envn.sql_rewrite(sql) if self.envn.sql_rewrite else sql
-
     _DROP_USER = re.compile(r"^(\s*)drop\s+user\b", re.I)
 
     def execute_sql(self, cur, sql: str) -> None:
-        """execute a (rewritten) statement; MySQL's DROP USER also drops a
-        role, MariaDB wants DROP ROLE for one: retry as that on 1396"""
-        rewritten = self.rewrite_sql(sql)
+        """execute a statement; MySQL's DROP USER also drops a role, MariaDB
+        wants DROP ROLE for one: retry as that on 1396"""
         try:
-            cur.execute(rewritten)
+            cur.execute(sql)
         except pymysql.err.OperationalError as e:
-            if e.args[0] != 1396 or not self._DROP_USER.match(rewritten):
+            if e.args[0] != 1396 or not self._DROP_USER.match(sql):
                 raise
-            cur.execute(self._DROP_USER.sub(r"\1DROP ROLE", rewritten))
+            cur.execute(self._DROP_USER.sub(r"\1DROP ROLE", sql))
 
     @staticmethod
     def format_value(v) -> str:
@@ -844,7 +836,10 @@ class Interpreter:
                 result = getattr(cur, "_result", None)
                 if self.warnings and result is not None and result.warning_count:
                     cur.execute("SHOW WARNINGS")
-                    warnings = cur.fetchall()
+                    # not MariaDB's note 4227 on DROP USER ("Dropped users ...
+                    # have active connections"): whether it appears depends on
+                    # timing (MySQL has no such note)
+                    warnings = [w for w in cur.fetchall() if str(w[1]) != "4227"]
         except pymysql.err.MySQLError as e:
             code = e.args[0] if e.args else 0
             msg = e.args[1] if len(e.args) > 1 else str(e)

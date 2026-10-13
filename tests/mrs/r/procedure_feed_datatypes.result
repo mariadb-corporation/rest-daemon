@@ -553,7 +553,7 @@ GET /svc/basic/int
                 "columns": [
                     {
                         "name": "id",
-                        "type": " INTEGER"
+                        "type": "INTEGER"
                     }
                 ]
             }
@@ -683,28 +683,20 @@ GET /svc/basic/vector
             "type": "items0",
             "items": [
                 {
-                    "vec": [
-                        0.0
-                    ]
+                    "vec": "AAAAAAAAAAA="
                 },
                 {
-                    "vec": [
-                        1.0,
-                        2.0
-                    ]
+                    "vec": "AACAPwAAAEA="
                 },
                 {
-                    "vec": [
-                        1.0,
-                        0.0
-                    ]
+                    "vec": "AACAPwAAAAA="
                 }
             ],
             "_metadata": {
                 "columns": [
                     {
                         "name": "vec",
-                        "type": "VECTOR"
+                        "type": "VARCHAR(8)"
                     }
                 ]
             }

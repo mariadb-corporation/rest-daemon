@@ -350,13 +350,11 @@ OK
 
 #
 # II.16
-GET /svc/proc/set_vector?result=%5B10,20%5D
+GET /svc/proc/set_vector?result=%5B10,20,30%5D
 {
     "resultSets": [],
     "outParameters": {
         "result": [
-            10.0,
-            20.0,
             1.0,
             2.0,
             3.0
@@ -558,13 +556,11 @@ OK
 
 #
 # III.16
-PUT /svc/proc/set_vector (payload-size:18)
+PUT /svc/proc/set_vector (payload-size:21)
 {
     "resultSets": [],
     "outParameters": {
         "result": [
-            10.0,
-            20.0,
             1.0,
             2.0,
             3.0
@@ -1026,7 +1022,7 @@ PUT /svc/proc/string_in (payload-size:15)
                 "columns": [
                     {
                         "name": "1",
-                        "type": "BIGINT"
+                        "type": "INTEGER"
                     }
                 ]
             }
@@ -1100,7 +1096,7 @@ PUT /svc/proc/mix (payload-size:13)
                 "columns": [
                     {
                         "name": "min(id)",
-                        "type": " INTEGER"
+                        "type": "INTEGER"
                     }
                 ]
             }
@@ -1116,7 +1112,7 @@ PUT /svc/proc/mix (payload-size:13)
                 "columns": [
                     {
                         "name": "max(id)",
-                        "type": " INTEGER"
+                        "type": "INTEGER"
                     }
                 ]
             }
@@ -1135,7 +1131,7 @@ PUT /svc/proc/mix (payload-size:13)
                 "columns": [
                     {
                         "name": "id",
-                        "type": " INTEGER"
+                        "type": "INTEGER"
                     },
                     {
                         "name": "name",

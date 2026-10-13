@@ -27,7 +27,6 @@ from pathlib import Path
 import pytest
 
 from conftest import IS_WINDOWS, SUITE_DIR, Mrsd, server_options_for
-from mrstest import mariadb_sql
 from mrstest.mysqltest import Environment, Interpreter, ScriptFailed, ScriptSkipped
 
 
@@ -69,14 +68,10 @@ def test_mrs(name, paths, mysqld, tmp_path, request):
         request.applymarker(pytest.mark.xfail(reason=KNOWN_FAILURES[name], strict=False))
 
     test_file = SUITE_DIR / "t" / f"{name}.test"
-    # a result recorded on MariaDB (where the output legitimately differs:
-    # error texts, server-specific values), else upstream's
-    result_file = SUITE_DIR / "r" / f"{name}.mariadb.result"
-    if not result_file.exists() and not request.config.getoption("--record"):
-        result_file = SUITE_DIR / "r" / f"{name}.result"
+    result_file = SUITE_DIR / "r" / f"{name}.result"
     router_cnf = SUITE_DIR / "t" / f"{name}-router.cnf"
 
-    options = mariadb_sql.server_options(server_options_for(SUITE_DIR / "t" / f"{name}.cnf"))
+    options = server_options_for(SUITE_DIR / "t" / f"{name}.cnf")
     mysqld.ensure_options(options)
     mrsd = Mrsd(paths, mysqld, tmp_path / "router",
                 router_cnf if router_cnf.exists() else None)
@@ -115,8 +110,7 @@ def test_mrs(name, paths, mysqld, tmp_path, request):
         hooks={"mrsd_stop": mrsd.hook_stop,
                "mrsd_wait_stopped": mrsd.hook_wait_stopped,
                "mrsd_restart": mrsd.hook_restart,
-               "mrsd_require_jit": require_jit},
-        sql_rewrite=mariadb_sql.rewrite)
+               "mrsd_require_jit": require_jit})
 
     interp = Interpreter(envn)
     try:
@@ -140,7 +134,6 @@ def test_mrs(name, paths, mysqld, tmp_path, request):
     # binary data in responses: compare the bytes (surrogateescape round-trips)
     expected = (result_file.read_text(encoding="utf-8", errors="surrogateescape")
                 if result_file.exists() else "")
-    expected, actual = mariadb_sql.normalize_output(expected), mariadb_sql.normalize_output(actual)
     if actual != expected:
         reject = tmp_path / f"{name}.reject"
         reject.write_text(actual, encoding="utf-8", errors="surrogateescape",

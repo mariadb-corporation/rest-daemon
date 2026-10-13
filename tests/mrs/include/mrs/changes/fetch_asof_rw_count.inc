@@ -9,7 +9,7 @@ if (!$mrs_sql_changes_variable)
 
 START TRANSACTION;
 eval SET $mrs_sql_changes_variable=(
-           SELECT SUM(IF(v is NULL,0,v+0)) FROM (SELECT details->>"$.restAsofUsesRw" as v
+           SELECT SUM(IF(v is NULL,0,v+0)) FROM (SELECT JSON_UNQUOTE(JSON_EXTRACT(details,"$.restAsofUsesRw")) as v
            FROM mysql_rest_service_metadata.router_status)as sub);
 eval SET $mrs_sql_id_variable=(SELECT MAX(id) FROM mysql_rest_service_metadata.router_status);
 COMMIT;

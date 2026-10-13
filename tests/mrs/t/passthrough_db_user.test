@@ -180,9 +180,9 @@ exec $MRS_CLIENT_ARGS
 --echo #
 --echo # I.4
 --echo # there should be 4 connections for each user corresponding to the pool
---let $wait_condition=SELECT COUNT(*)=4 FROM performance_schema.processlist WHERE user='user1';
+--let $wait_condition=SELECT COUNT(*)=4 FROM information_schema.processlist WHERE user='user1';
 --source include/wait_condition_or_abort.inc
---let $wait_condition=SELECT COUNT(*)=4 FROM performance_schema.processlist WHERE user='user2';
+--let $wait_condition=SELECT COUNT(*)=4 FROM information_schema.processlist WHERE user='user2';
 --source include/wait_condition_or_abort.inc
 
 
@@ -295,7 +295,7 @@ exec $MRS_CLIENT_ARGS
 --echo #
 --echo # III.1
 --echo # change password and try again
-SET PASSWORD FOR user1@'%'='newpass';
+SET PASSWORD FOR user1@'%'=PASSWORD('newpass');
 
 exec $MRS_CLIENT_ARGS
   -a BASIC
@@ -313,7 +313,7 @@ exec $MRS_CLIENT_ARGS
   --path /svc/authentication/logout
   --session-file $MYSQL_TMP_DIR/user1b_session.dat;
 
---let $wait_condition=SELECT count(*)=0 FROM performance_schema.processlist where USER = 'user1'
+--let $wait_condition=SELECT count(*)=0 FROM information_schema.processlist where USER = 'user1'
 --source include/wait_condition.inc
 
 --echo #
@@ -368,7 +368,7 @@ sleep 0.5;
 sleep 0.5;
 
 # Please note that only 4 first requests blocks other fail like 8th.
---let $wait_condition=SELECT COUNT(*)=4 FROM performance_schema.processlist WHERE STATE like "Waiting%" and USER="user1";
+--let $wait_condition=SELECT COUNT(*)=4 FROM information_schema.processlist WHERE STATE like "Waiting%" and USER="user1";
 --source include/wait_condition_or_abort.inc
 
 --echo # 8th attempt, out of sessions
@@ -397,14 +397,14 @@ exec $MRS_CLIENT_ARGS
   --path /svc/authentication/logout
   --session-file $MYSQL_TMP_DIR/user3_session.dat;
 
---let $wait_condition=SELECT count(*)=0 FROM performance_schema.processlist where USER in ('user1', 'user2', 'user3')
+--let $wait_condition=SELECT count(*)=0 FROM information_schema.processlist where USER in ('user1', 'user2', 'user3')
 --source include/wait_condition.inc
 
---let $wait_condition=SELECT COUNT(*)=0 FROM performance_schema.processlist WHERE user='user1';
+--let $wait_condition=SELECT COUNT(*)=0 FROM information_schema.processlist WHERE user='user1';
 --source include/wait_condition_or_abort.inc
---let $wait_condition=SELECT COUNT(*)=0 FROM performance_schema.processlist WHERE user='user2';
+--let $wait_condition=SELECT COUNT(*)=0 FROM information_schema.processlist WHERE user='user2';
 --source include/wait_condition_or_abort.inc
---let $wait_condition=SELECT COUNT(*)=0 FROM performance_schema.processlist WHERE user='user3';
+--let $wait_condition=SELECT COUNT(*)=0 FROM information_schema.processlist WHERE user='user3';
 --source include/wait_condition_or_abort.inc
 
 
@@ -463,7 +463,7 @@ while ($i < 7) {
   let $i=`select $i + 1`;
 }
 
---let $wait_condition=SELECT COUNT(*)=0 FROM performance_schema.processlist WHERE user='user1';
+--let $wait_condition=SELECT COUNT(*)=0 FROM information_schema.processlist WHERE user='user1';
 --source include/wait_condition_or_abort.inc
 
 --echo #
@@ -502,7 +502,7 @@ exec $MRS_CLIENT_ARGS
   -p newpass
   --session-file $MYSQL_TMP_DIR/user1_session.dat;
 
---let $wait_condition=SELECT COUNT(*)=2 FROM performance_schema.processlist WHERE user='user1';
+--let $wait_condition=SELECT COUNT(*)=2 FROM information_schema.processlist WHERE user='user1';
 --source include/wait_condition_or_abort.inc
 
 --echo # Access db-object that doesn't require authentication, still service requires it.

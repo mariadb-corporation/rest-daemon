@@ -49,9 +49,9 @@ select attributes from mysql_rest_service_metadata.router;
 
 # the generated account and its roles
 --replace_regex /mariadb_restd1_[a-z0-9]+/mariadb_restd1_RANDOM/
-select user, host from mysql.user where user like 'mariadb_restd1_%';
+select user AS user, host AS host from mysql.user where user like 'mariadb_restd1_%';
 --replace_regex /mariadb_restd1_[a-z0-9]+/mariadb_restd1_RANDOM/
-select from_user, to_user from mysql.role_edges where to_user like 'mariadb_restd1_%' order by from_user;
+SELECT Role AS from_user, User AS to_user FROM mysql.roles_mapping WHERE User LIKE 'mariadb_restd1_%' ORDER BY Role;
 
 # Cleanup
 --disable_query_log

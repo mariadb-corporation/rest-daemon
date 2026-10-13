@@ -22,7 +22,7 @@ if (!$mrs_changes_current_is)
 --disable_result_log
 
 --let $old_value=`SELECT $mrs_sql_changes_variable`
---let $wait_condition=SELECT details->>"$.$mrs_sql_changes_field" $mrs_changes_current_is FROM mysql_rest_service_metadata.router_status ORDER BY id DESC LIMIT 0,1;
+--let $wait_condition=SELECT JSON_UNQUOTE(JSON_EXTRACT(details,"$.$mrs_sql_changes_field")) $mrs_changes_current_is FROM mysql_rest_service_metadata.router_status ORDER BY id DESC LIMIT 0,1;
 --source include/wait_condition_or_abort.inc
 
 
@@ -33,7 +33,7 @@ if (!$mrs_changes_current_is)
 
 if ($DEBUG)
 {
-  SELECT details->>"$.$mrs_sql_changes_field" FROM mysql_rest_service_metadata.router_status;
+  SELECT JSON_UNQUOTE(JSON_EXTRACT(details,"$.$mrs_sql_changes_field")) FROM mysql_rest_service_metadata.router_status;
 }
 
 --let $mrs_changes_inc=

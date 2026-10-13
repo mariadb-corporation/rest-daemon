@@ -150,7 +150,7 @@ OK
 #
 # III.11
 PUT /svc/func/move_json (payload-size:40)
-["aaaa", 20, 30, {"field1": "value1"}]
+["aaaa",20,30,{"field1":"value1"}]
 OK
 DROP SCHEMA func_schema;
 DROP SCHEMA mysql_rest_service_metadata;

@@ -17,7 +17,7 @@
 ## Architecture / key decisions
 
 - One client: MariaDB Connector/C 3.4+ (`-DMARIADB_CONNECTOR_DIR`); what it lacks is in `compat/include/mrsd/compat_client.h`. One server: MariaDB 10.11+, checked at startup (`server_compatibility.cc`, `MySQLSession::is_mariadb()` from the handshake); the SQL generators emit MariaDB SQL only (no runtime flavor switch any more).
-- The functional suite still runs upstream's `.test` scripts through a run-time SQL rewrite + output normalisation (`tests/mrs/mrstest/mariadb_sql.py`); 12 results are recorded on MariaDB, the rest compare against upstream's. Re-record everything in Milestone 3 (the schema rename touches every test anyway).
+- The functional suite's scripts carry MariaDB's SQL (the MySQL-only constructs were rewritten in the files, M3.1) and its results are recorded on MariaDB; no run-time rewrite or normalisation is left.
 - Minimum MariaDB server 10.11 (oldest LTS); developed on 13.2 (macOS), Windows tested on 11.8.9 LTS. Schema 4.1.6 itself needs 11.1 (`JSON_SCHEMA_VALID`): plugin-side issue.
 - **Removed from the product:** REST async tasks (`mysql_tasks`), a MariaDB REST Service decision (routines are always called directly); code gone 2026-10-13.
 - **GTID read-your-writes** (`readOwnWrites`, `_metadata.gtid`, `$asof`): Milestone 4, shared with the shell and plugins. Parked, not deleted; `$asof` → 400.
@@ -46,8 +46,7 @@
 - `src/router/src/common/mysql_session.cc` → ssl-mode emulation, prepared CALL fixes, `is_mariadb()`; `src/router/src/common/server_compatibility.cc` → the MariaDB-only gate.
 - `tools/smoke/run_smoke.sh` → smoke test; MariaDB build tree (`MARIADB_BUILD_DIR`+`MARIADB_SOURCE_DIR`) or package (`MARIADB_PACKAGE_DIR`; SQL via `mariadb-shell --sql` without a client).
 - `tests/mrs/conftest.py`, `tests/mrs/test_mrs_suite.py` → functional suite harness (`--mariadb-build`, `--mariadb-package`, `--record` → `.mariadb.result`, `MRS_TEST_GENERAL_LOG`).
-- `tests/mrs/mrstest/mariadb_sql.py` → the run-time SQL rewrite and output normalisation of upstream's scripts.
-- `tests/mrs/{disabled,known_failures}.def`, `tests/mrs/r/*.mariadb.result` → disabled/xfail lists, results recorded on MariaDB.
+- `tests/mrs/{disabled,known_failures}.def` → disabled/xfail lists; `tests/mrs/r/*.result` → results recorded on MariaDB.
 - `tests/mrs/include/schema/mrs_metadata_schema-version4-mariadb.sql` → 4.1.6 deployment script (comments as `#`, no seeded `MySQL` auth app).
 - VM scripts: `tools/vm/win.sh`, `win_sync.sh`, `win_wip.sh`; on the Windows VM `<win-home>\mrsd-win-mariadb.cmd`, `mrsd-smoke-mariadb.sh`, `mrsd-pytest-mariadb.ps1`; on the Ubuntu VM (`git push vm main`) `<dev>/mrsd-smoke-mariadb.sh`, `<dev>/mrsd-pytest-mariadb.sh` (MariaDB 11.8.9 and mariadb-shell 26.10.1 packages in `<downloads>`).
 

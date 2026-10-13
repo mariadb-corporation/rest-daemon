@@ -1,4 +1,3 @@
-RESET BINARY LOGS AND GTIDS;
 
 --source include/have_router.inc
 

@@ -13,7 +13,7 @@
 --let $mrs_user_data=$mrs_user_meta
 
 --replace_regex / AS .*/ AS '$USER'/
---eval CREATE USER $mrs_user_data IDENTIFIED WITH auth_socket AS '$USER'
+--eval CREATE USER $mrs_user_data IDENTIFIED VIA unix_socket AS '$USER'
 
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 

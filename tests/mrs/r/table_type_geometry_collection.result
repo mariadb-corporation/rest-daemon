@@ -2,10 +2,10 @@
 # MySQL Rest Service, server accounts configured.
 CREATE TABLE test.geo0(
 id INTEGER AUTO_INCREMENT PRIMARY KEY,
-gc GEOMETRYCOLLECTION SRID 0);
+gc GEOMETRYCOLLECTION);
 CREATE TABLE test.geo4326(
 id INTEGER AUTO_INCREMENT PRIMARY KEY,
-gc GEOMETRYCOLLECTION SRID 4326);
+gc GEOMETRYCOLLECTION);
 INSERT INTO test.geo0(gc)
 VALUES(ST_GeomFromText('GEOMETRYCOLLECTION(POINT(10 10), POINT(30 30), LINESTRING(15 15, 20 20))')),
 (ST_GeomFromText('GEOMETRYCOLLECTION(POINT(20 20), POINT(40 40), LINESTRING(25 25, 30 30))')),
@@ -55,27 +55,27 @@ GET /svc/test/geo0/2
             {
                 "type": "Point",
                 "coordinates": [
-                    20.0,
-                    20.0
+                    20,
+                    20
                 ]
             },
             {
                 "type": "Point",
                 "coordinates": [
-                    40.0,
-                    40.0
+                    40,
+                    40
                 ]
             },
             {
                 "type": "LineString",
                 "coordinates": [
                     [
-                        25.0,
-                        25.0
+                        25,
+                        25
                     ],
                     [
-                        30.0,
-                        30.0
+                        30,
+                        30
                     ]
                 ]
             }
@@ -96,27 +96,27 @@ GET /svc/test/geo0
                     {
                         "type": "Point",
                         "coordinates": [
-                            10.0,
-                            10.0
+                            10,
+                            10
                         ]
                     },
                     {
                         "type": "Point",
                         "coordinates": [
-                            30.0,
-                            30.0
+                            30,
+                            30
                         ]
                     },
                     {
                         "type": "LineString",
                         "coordinates": [
                             [
-                                15.0,
-                                15.0
+                                15,
+                                15
                             ],
                             [
-                                20.0,
-                                20.0
+                                20,
+                                20
                             ]
                         ]
                     }
@@ -130,27 +130,27 @@ GET /svc/test/geo0
                     {
                         "type": "Point",
                         "coordinates": [
-                            20.0,
-                            20.0
+                            20,
+                            20
                         ]
                     },
                     {
                         "type": "Point",
                         "coordinates": [
-                            40.0,
-                            40.0
+                            40,
+                            40
                         ]
                     },
                     {
                         "type": "LineString",
                         "coordinates": [
                             [
-                                25.0,
-                                25.0
+                                25,
+                                25
                             ],
                             [
-                                30.0,
-                                30.0
+                                30,
+                                30
                             ]
                         ]
                     }
@@ -164,22 +164,22 @@ GET /svc/test/geo0
                     {
                         "type": "Point",
                         "coordinates": [
-                            20.0,
-                            20.0
+                            20,
+                            20
                         ]
                     },
                     {
                         "type": "Point",
                         "coordinates": [
-                            40.0,
-                            40.0
+                            40,
+                            40
                         ]
                     },
                     {
                         "type": "Point",
                         "coordinates": [
-                            60.0,
-                            60.0
+                            60,
+                            60
                         ]
                     }
                 ]
@@ -199,15 +199,15 @@ PUT /svc/test/geo0/2 (payload-size:145)
             {
                 "type": "Point",
                 "coordinates": [
-                    5.0,
-                    5.0
+                    5,
+                    5
                 ]
             },
             {
                 "type": "Point",
                 "coordinates": [
-                    6.0,
-                    6.0
+                    6,
+                    6
                 ]
             }
         ]
@@ -222,8 +222,8 @@ PUT /svc/test/geo0/2 (payload-size:103)
             {
                 "type": "Point",
                 "coordinates": [
-                    7.0,
-                    7.0
+                    7,
+                    7
                 ]
             }
         ]
@@ -250,27 +250,27 @@ GET /svc/test/geo0/?q=%7B%22gc%22:%22GEOMETRYCOLLECTION%28POINT%2810%2010%29,%20
                     {
                         "type": "Point",
                         "coordinates": [
-                            10.0,
-                            10.0
+                            10,
+                            10
                         ]
                     },
                     {
                         "type": "Point",
                         "coordinates": [
-                            30.0,
-                            30.0
+                            30,
+                            30
                         ]
                     },
                     {
                         "type": "LineString",
                         "coordinates": [
                             [
-                                15.0,
-                                15.0
+                                15,
+                                15
                             ],
                             [
-                                20.0,
-                                20.0
+                                20,
+                                20
                             ]
                         ]
                     }
@@ -300,27 +300,27 @@ GET /svc/test/geo0/?q=%7B%22gc%22:%7B%22type%22:%20%22GeometryCollection%22,%20%
                     {
                         "type": "Point",
                         "coordinates": [
-                            10.0,
-                            10.0
+                            10,
+                            10
                         ]
                     },
                     {
                         "type": "Point",
                         "coordinates": [
-                            30.0,
-                            30.0
+                            30,
+                            30
                         ]
                     },
                     {
                         "type": "LineString",
                         "coordinates": [
                             [
-                                15.0,
-                                15.0
+                                15,
+                                15
                             ],
                             [
-                                20.0,
-                                20.0
+                                20,
+                                20
                             ]
                         ]
                     }
@@ -341,20 +341,20 @@ GET /svc/test/geo4326/2
             {
                 "type": "Point",
                 "coordinates": [
-                    2.0,
-                    2.0
+                    2,
+                    2
                 ]
             },
             {
                 "type": "LineString",
                 "coordinates": [
                     [
-                        2.0,
-                        2.0
+                        2,
+                        2
                     ],
                     [
-                        3.0,
-                        3.0
+                        3,
+                        3
                     ]
                 ]
             }
@@ -375,15 +375,15 @@ GET /svc/test/geo4326
                     {
                         "type": "Point",
                         "coordinates": [
-                            1.0,
-                            1.0
+                            1,
+                            1
                         ]
                     },
                     {
                         "type": "Point",
                         "coordinates": [
-                            2.0,
-                            2.0
+                            2,
+                            2
                         ]
                     }
                 ]
@@ -396,20 +396,20 @@ GET /svc/test/geo4326
                     {
                         "type": "Point",
                         "coordinates": [
-                            2.0,
-                            2.0
+                            2,
+                            2
                         ]
                     },
                     {
                         "type": "LineString",
                         "coordinates": [
                             [
-                                2.0,
-                                2.0
+                                2,
+                                2
                             ],
                             [
-                                3.0,
-                                3.0
+                                3,
+                                3
                             ]
                         ]
                     }
@@ -423,15 +423,15 @@ GET /svc/test/geo4326
                     {
                         "type": "Point",
                         "coordinates": [
-                            2.0,
-                            2.0
+                            2,
+                            2
                         ]
                     },
                     {
                         "type": "Point",
                         "coordinates": [
-                            3.0,
-                            3.0
+                            3,
+                            3
                         ]
                     }
                 ]
@@ -454,15 +454,15 @@ PUT /svc/test/geo4326/2 (payload-size:144)
             {
                 "type": "Point",
                 "coordinates": [
-                    3.0,
-                    3.0
+                    3,
+                    3
                 ]
             },
             {
                 "type": "Point",
                 "coordinates": [
-                    4.0,
-                    4.0
+                    4,
+                    4
                 ]
             }
         ]
@@ -477,20 +477,20 @@ PUT /svc/test/geo4326/2 (payload-size:159)
             {
                 "type": "Point",
                 "coordinates": [
-                    5.0,
-                    5.0
+                    5,
+                    5
                 ]
             },
             {
                 "type": "LineString",
                 "coordinates": [
                     [
-                        1.0,
-                        1.0
+                        1,
+                        1
                     ],
                     [
-                        2.0,
-                        2.0
+                        2,
+                        2
                     ]
                 ]
             }
@@ -518,15 +518,15 @@ GET /svc/test/geo4326/?q=%7B%22gc%22:%22GEOMETRYCOLLECTION%28POINT%281%201%29,%2
                     {
                         "type": "Point",
                         "coordinates": [
-                            1.0,
-                            1.0
+                            1,
+                            1
                         ]
                     },
                     {
                         "type": "Point",
                         "coordinates": [
-                            2.0,
-                            2.0
+                            2,
+                            2
                         ]
                     }
                 ]
@@ -548,15 +548,15 @@ GET /svc/test/geo4326/?q=%7B%22gc%22:%7B%22type%22:%20%22GeometryCollection%22,%
                     {
                         "type": "Point",
                         "coordinates": [
-                            1.0,
-                            1.0
+                            1,
+                            1
                         ]
                     },
                     {
                         "type": "Point",
                         "coordinates": [
-                            2.0,
-                            2.0
+                            2,
+                            2
                         ]
                     }
                 ]

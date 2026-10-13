@@ -1,4 +1,3 @@
-RESET BINARY LOGS AND GTIDS;
 
 --source include/have_router.inc
 
@@ -12,9 +11,9 @@ CREATE TABLE test.vec(
   v VECTOR(2));
 
 INSERT INTO test.vec(v)
-   VALUES(STRING_TO_VECTOR('[0,0]')),
-         (STRING_TO_VECTOR('[1,2]')),
-         (STRING_TO_VECTOR('[0,2]')),
+   VALUES(VEC_FromText('[0,0]')),
+         (VEC_FromText('[1,2]')),
+         (VEC_FromText('[0,2]')),
          (NULL);
 
 --echo

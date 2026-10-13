@@ -37,7 +37,7 @@ exec $MRS_CLIENT_ARGS
   --wait-until-status 60;
 
 --echo # Set the server to super_read_only, wait for the REST service to return 404
-SET GLOBAL super_read_only = 1;
+SET GLOBAL read_only = 1;
 
 exec $MRS_CLIENT_ARGS
   --path /svc/test_schema/tab
@@ -45,7 +45,7 @@ exec $MRS_CLIENT_ARGS
   --wait-until-status 60;
 
 --echo # Clear the super_read_only, wait for the REST service to become available again
-SET GLOBAL super_read_only = 0;
+SET GLOBAL read_only = 0;
 SET GLOBAL read_only = 0;
 
 exec $MRS_CLIENT_ARGS

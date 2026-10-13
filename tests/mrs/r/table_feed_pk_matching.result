@@ -421,14 +421,14 @@ OK
 # I.5
 GET /svc/pk/float/0
 {
-    "id": 0.0,
+    "id": 0,
     "links": [
         {
             "href": "/svc/pk/float/0"
         }
     ],
     "_metadata": {
-        "etag": "AFBBC54AF5AE2AC7EBA7533AA284E56655FC3BF6D1AD61EC2276F8743908101C"
+        "etag": "D8EF27668D99CD17CDE336F3365C684D00310742904D466983A625D9537B2EA0"
     }
 }
 OK

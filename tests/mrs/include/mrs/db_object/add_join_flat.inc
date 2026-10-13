@@ -84,7 +84,7 @@ if ($mrs_schema_version == 2)
            "referenced_schema","$mrs_add_db_object_join_schema",
            "referenced_table", "$mrs_add_db_object_join_table",
            "to_many", False,
-           "column_mapping",cast(@_fields as JSON)), True,
+           "column_mapping",JSON_COMPACT(@_fields)), True,
              "$mrs_add_db_object_op");
 }
 
@@ -96,7 +96,7 @@ if ($_mrs_do_default_object_ref)
            "referenced_schema","$mrs_add_db_object_join_schema",
            "referenced_table", "$mrs_add_db_object_join_table",
            "to_many", False,
-           "column_mapping",cast(@_fields as JSON)), True);
+           "column_mapping",JSON_COMPACT(@_fields)), True);
 }
 
 --echo # Registred OBJECT_REF at $mrs_add_db_object_join_schema.$mrs_add_db_object_join_table

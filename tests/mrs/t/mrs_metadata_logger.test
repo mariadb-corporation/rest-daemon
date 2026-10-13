@@ -204,7 +204,7 @@ UPDATE mysql_rest_service_metadata.config SET data =
 truncate mysql_rest_service_metadata.router_general_log;
 
 --echo Set the global mode to read-only to make the logging to metadata impossible
-SET GLOBAL super_read_only = 1;
+SET GLOBAL read_only = 1;
 
 --echo Wait until the Router notices it (based on the filelog)
 --let $grep_pattern = .*WARNING .* Destination .+ is read-only, stopping the REST service.*
@@ -213,7 +213,7 @@ SET GLOBAL super_read_only = 1;
 --source ../include/wait_for_pattern_in_file.inc
 
 --echo Turn off the ro mode
-SET GLOBAL super_read_only = 0;
+SET GLOBAL read_only = 0;
 SET GLOBAL read_only = 0;
 
 --let mrs_log_expected_level="WARNING"

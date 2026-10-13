@@ -1,12 +1,11 @@
-RESET BINARY LOGS AND GTIDS;
 # MySQL Rest Service schema created.
 # MySQL Rest Service, server accounts configured.
 CREATE TABLE test.geo0(
 id INTEGER AUTO_INCREMENT PRIMARY KEY,
-g GEOMETRY SRID 0);
+g GEOMETRY);
 CREATE TABLE test.geo4326(
 id INTEGER AUTO_INCREMENT PRIMARY KEY,
-g GEOMETRY SRID 4326);
+g GEOMETRY);
 INSERT INTO test.geo0(g)
 VALUES(ST_GeomFromText('POINT(0 0)')),
 (ST_GeomFromText('LINESTRING(110 100, 20 30)')),
@@ -56,12 +55,12 @@ GET /svc/test/geo0/2
         "type": "LineString",
         "coordinates": [
             [
-                110.0,
-                100.0
+                110,
+                100
             ],
             [
-                20.0,
-                30.0
+                20,
+                30
             ]
         ]
     }
@@ -77,8 +76,8 @@ GET /svc/test/geo0
             "g": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             }
         },
@@ -87,12 +86,12 @@ GET /svc/test/geo0
                 "type": "LineString",
                 "coordinates": [
                     [
-                        110.0,
-                        100.0
+                        110,
+                        100
                     ],
                     [
-                        20.0,
-                        30.0
+                        20,
+                        30
                     ]
                 ]
             }
@@ -103,20 +102,20 @@ GET /svc/test/geo0
                 "coordinates": [
                     [
                         [
-                            -110.0,
-                            100.0
+                            -110,
+                            100
                         ],
                         [
-                            0.0,
-                            0.0
+                            0,
+                            0
                         ],
                         [
-                            0.0,
-                            100.0
+                            0,
+                            100
                         ],
                         [
-                            -110.0,
-                            100.0
+                            -110,
+                            100
                         ]
                     ]
                 ]
@@ -137,12 +136,12 @@ PUT /svc/test/geo0/2 (payload-size:64)
         "type": "LineString",
         "coordinates": [
             [
-                100.0,
-                0.0
+                100,
+                0
             ],
             [
-                0.0,
-                0.0
+                0,
+                0
             ]
         ]
     },
@@ -154,8 +153,7 @@ PUT /svc/test/geo0/2 (payload-size:64)
         }
     ],
     "_metadata": {
-        "etag": "B626F8C5CBB9AB350279476B117713BF72A14A2317DCA8464DF5124DF7A2A4C8",
-        "gtid": "GTID"
+        "etag": "AD940DBD3B2BAEFE438B8E0778573C339EC998D81C90F7E503CFAB4959AB81F5"
     }
 }
 OK
@@ -164,8 +162,8 @@ PUT /svc/test/geo0/2 (payload-size:52)
     "g": {
         "type": "Point",
         "coordinates": [
-            100.0,
-            0.0
+            100,
+            0
         ]
     },
     "id": 2,
@@ -176,8 +174,7 @@ PUT /svc/test/geo0/2 (payload-size:52)
         }
     ],
     "_metadata": {
-        "etag": "4AF52208C224CE7E8C328D079F6EADF83781797BD300CB289B08EF0CBFD14AF0",
-        "gtid": "GTID"
+        "etag": "19FC0492E776030209DB439EEBFEAA29942D72ABD1E5DC6107A2EFA905D82BB8"
     }
 }
 OK
@@ -191,8 +188,8 @@ GET /svc/test/geo0/?q=%7B%22g%22:%22POINT%28100%200%29%22%7D
             "g": {
                 "type": "Point",
                 "coordinates": [
-                    100.0,
-                    0.0
+                    100,
+                    0
                 ]
             },
             "id": 2,
@@ -203,7 +200,7 @@ GET /svc/test/geo0/?q=%7B%22g%22:%22POINT%28100%200%29%22%7D
                 }
             ],
             "_metadata": {
-                "etag": "4AF52208C224CE7E8C328D079F6EADF83781797BD300CB289B08EF0CBFD14AF0"
+                "etag": "19FC0492E776030209DB439EEBFEAA29942D72ABD1E5DC6107A2EFA905D82BB8"
             }
         }
     ],
@@ -226,8 +223,8 @@ GET /svc/test/geo0/?q=%7B%22g%22:%22POINT%280%200%29%22%7D
             "g": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "id": 1,
@@ -238,7 +235,7 @@ GET /svc/test/geo0/?q=%7B%22g%22:%22POINT%280%200%29%22%7D
                 }
             ],
             "_metadata": {
-                "etag": "0E64B4DEF43324EE1D4A9C2CDCF3A2367F0CE0F2D525031F8FA078C6C14A50F0"
+                "etag": "CBA04B04B3ADC70C88639A1480041F59A9215A92E1EC6A7F7E0BF954238A007C"
             }
         }
     ],
@@ -264,8 +261,8 @@ GET /svc/test/geo0/?q=%7B%22g%22:%7B%22type%22:%22Point%22,%22coordinates%22:%5B
             "g": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "id": 1,
@@ -276,7 +273,7 @@ GET /svc/test/geo0/?q=%7B%22g%22:%7B%22type%22:%22Point%22,%22coordinates%22:%5B
                 }
             ],
             "_metadata": {
-                "etag": "0E64B4DEF43324EE1D4A9C2CDCF3A2367F0CE0F2D525031F8FA078C6C14A50F0"
+                "etag": "CBA04B04B3ADC70C88639A1480041F59A9215A92E1EC6A7F7E0BF954238A007C"
             }
         }
     ],
@@ -299,8 +296,8 @@ GET /svc/test/geo0/?q=%7B%22g%22:%7B%22type%22:%22Point%22,%22coordinates%22:%5B
             "g": {
                 "type": "Point",
                 "coordinates": [
-                    100.0,
-                    0.0
+                    100,
+                    0
                 ]
             },
             "id": 2,
@@ -311,7 +308,7 @@ GET /svc/test/geo0/?q=%7B%22g%22:%7B%22type%22:%22Point%22,%22coordinates%22:%5B
                 }
             ],
             "_metadata": {
-                "etag": "4AF52208C224CE7E8C328D079F6EADF83781797BD300CB289B08EF0CBFD14AF0"
+                "etag": "19FC0492E776030209DB439EEBFEAA29942D72ABD1E5DC6107A2EFA905D82BB8"
             }
         }
     ],
@@ -335,8 +332,8 @@ GET /svc/test/geo4326/2
     "g": {
         "type": "Point",
         "coordinates": [
-            89.0,
-            90.0
+            90,
+            89
         ]
     }
 }
@@ -351,8 +348,8 @@ GET /svc/test/geo4326
             "g": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             }
         },
@@ -360,8 +357,8 @@ GET /svc/test/geo4326
             "g": {
                 "type": "Point",
                 "coordinates": [
-                    89.0,
-                    90.0
+                    90,
+                    89
                 ]
             }
         },
@@ -369,8 +366,8 @@ GET /svc/test/geo4326
             "g": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    80.0
+                    80,
+                    0
                 ]
             }
         },
@@ -378,8 +375,8 @@ GET /svc/test/geo4326
             "g": {
                 "type": "Point",
                 "coordinates": [
-                    89.0,
-                    -90.0
+                    -90,
+                    89
                 ]
             }
         },
@@ -398,12 +395,12 @@ PUT /svc/test/geo4326/2 (payload-size:63)
         "type": "LineString",
         "coordinates": [
             [
-                80.0,
-                0.0
+                80,
+                0
             ],
             [
-                0.0,
-                0.0
+                0,
+                0
             ]
         ]
     },
@@ -415,8 +412,7 @@ PUT /svc/test/geo4326/2 (payload-size:63)
         }
     ],
     "_metadata": {
-        "etag": "BEB4B6B9F7A5BD7FEBACF892236A10C63F7FDA826F9500EC704C1823C3550D9B",
-        "gtid": "GTID"
+        "etag": "BA71E3C4491F38150A3B5631140E84C2964C1DB64C7B932B2592517B23D00AE3"
     }
 }
 OK
@@ -425,8 +421,8 @@ PUT /svc/test/geo4326/2 (payload-size:51)
     "g": {
         "type": "Point",
         "coordinates": [
-            80.0,
-            0.0
+            80,
+            0
         ]
     },
     "id": 2,
@@ -437,8 +433,7 @@ PUT /svc/test/geo4326/2 (payload-size:51)
         }
     ],
     "_metadata": {
-        "etag": "E8802D17B3FA6FA57240D0B76F7586D24E041D9999AA4C48061EA9A0F05854AC",
-        "gtid": "GTID"
+        "etag": "AC89919C79A6E86FE686616E319C888FA48ABFA95F097957B7AF62C0327DB236"
     }
 }
 OK
@@ -452,8 +447,27 @@ GET /svc/test/geo4326/?q=%7B%22g%22:%22POINT%2880%200%29%22%7D
             "g": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    80.0
+                    80,
+                    0
+                ]
+            },
+            "id": 2,
+            "links": [
+                {
+                    "rel": "self",
+                    "href": "/svc/test/geo4326/2"
+                }
+            ],
+            "_metadata": {
+                "etag": "AC89919C79A6E86FE686616E319C888FA48ABFA95F097957B7AF62C0327DB236"
+            }
+        },
+        {
+            "g": {
+                "type": "Point",
+                "coordinates": [
+                    80,
+                    0
                 ]
             },
             "id": 3,
@@ -464,14 +478,14 @@ GET /svc/test/geo4326/?q=%7B%22g%22:%22POINT%2880%200%29%22%7D
                 }
             ],
             "_metadata": {
-                "etag": "48179B27B0FBF6AFFBE327848EC9146B402B6EABAEB2FCD28130907653419E48"
+                "etag": "8A61BA05825F199B199EB8676C7CBFC93C98842ED2BD6C760DB5E38834085A26"
             }
         }
     ],
     "limit": 25,
     "offset": 0,
     "hasMore": false,
-    "count": 1,
+    "count": 2,
     "links": [
         {
             "rel": "self",
@@ -487,8 +501,8 @@ GET /svc/test/geo4326/?q=%7B%22g%22:%22POINT%280%200%29%22%7D
             "g": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "id": 1,
@@ -499,7 +513,7 @@ GET /svc/test/geo4326/?q=%7B%22g%22:%22POINT%280%200%29%22%7D
                 }
             ],
             "_metadata": {
-                "etag": "0E64B4DEF43324EE1D4A9C2CDCF3A2367F0CE0F2D525031F8FA078C6C14A50F0"
+                "etag": "CBA04B04B3ADC70C88639A1480041F59A9215A92E1EC6A7F7E0BF954238A007C"
             }
         }
     ],
@@ -525,8 +539,8 @@ GET /svc/test/geo4326/?q=%7B%22g%22:%7B%22type%22:%22Point%22,%22coordinates%22:
             "g": {
                 "type": "Point",
                 "coordinates": [
-                    0.0,
-                    0.0
+                    0,
+                    0
                 ]
             },
             "id": 1,
@@ -537,7 +551,7 @@ GET /svc/test/geo4326/?q=%7B%22g%22:%7B%22type%22:%22Point%22,%22coordinates%22:
                 }
             ],
             "_metadata": {
-                "etag": "0E64B4DEF43324EE1D4A9C2CDCF3A2367F0CE0F2D525031F8FA078C6C14A50F0"
+                "etag": "CBA04B04B3ADC70C88639A1480041F59A9215A92E1EC6A7F7E0BF954238A007C"
             }
         }
     ],
@@ -555,31 +569,11 @@ GET /svc/test/geo4326/?q=%7B%22g%22:%7B%22type%22:%22Point%22,%22coordinates%22:
 OK
 GET /svc/test/geo4326/?q=%7B%22g%22:%7B%22type%22:%22Point%22,%22coordinates%22:%5B0,80%5D%7D%7D
 {
-    "items": [
-        {
-            "g": {
-                "type": "Point",
-                "coordinates": [
-                    0.0,
-                    80.0
-                ]
-            },
-            "id": 3,
-            "links": [
-                {
-                    "rel": "self",
-                    "href": "/svc/test/geo4326/3"
-                }
-            ],
-            "_metadata": {
-                "etag": "48179B27B0FBF6AFFBE327848EC9146B402B6EABAEB2FCD28130907653419E48"
-            }
-        }
-    ],
+    "items": [],
     "limit": 25,
     "offset": 0,
     "hasMore": false,
-    "count": 1,
+    "count": 0,
     "links": [
         {
             "rel": "self",

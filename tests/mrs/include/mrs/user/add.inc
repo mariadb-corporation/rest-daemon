@@ -79,7 +79,7 @@ eval INSERT INTO `mysql_rest_service_metadata`.`mrs_user` (
     $mrs_add_user_login_permitted,
     NULL,
     NULL,
-    FROM_BASE64($mrs_add_user_auth_string));
+    IF(REGEXP_REPLACE($mrs_add_user_auth_string, '[[:space:]]', '') REGEXP '^[A-Za-z0-9+/]*={0,2}$' AND LENGTH(REGEXP_REPLACE($mrs_add_user_auth_string, '[[:space:]]', '')) % 4 = 0, FROM_BASE64($mrs_add_user_auth_string), NULL));
 
 --let $mrs_add_user_role_id=`SELECT IFNULL(default_role_id,"") FROM mysql_rest_service_metadata.auth_app WHERE id=$mrs_sql_app_id_variable`
 

@@ -174,7 +174,7 @@ PUT /svc/db/p (payload-size:2)
                 "columns": [
                     {
                         "name": "current_user()",
-                        "type": "VARCHAR(288)"
+                        "type": "VARCHAR(384)"
                     }
                 ]
             }
@@ -196,7 +196,7 @@ PUT /svc/db/p2 (payload-size:2)
                 "columns": [
                     {
                         "name": "current_user()",
-                        "type": "VARCHAR(288)"
+                        "type": "VARCHAR(384)"
                     }
                 ]
             }
@@ -306,7 +306,7 @@ PUT /svc/db/p2 (payload-size:2)
                 "columns": [
                     {
                         "name": "current_user()",
-                        "type": "VARCHAR(288)"
+                        "type": "VARCHAR(384)"
                     }
                 ]
             }
@@ -335,7 +335,7 @@ OK
 #
 # III.1
 # change password and try again
-SET PASSWORD FOR user1@'%'='newpass';
+SET PASSWORD FOR user1@'%'=PASSWORD('newpass');
 GET /svc/authentication/login
 
 OK
@@ -374,7 +374,7 @@ POST /svc/authentication/logout
     "status": 200
 }
 OK
-Timeout in wait_condition.inc for SELECT count(*)=0 FROM performance_schema.processlist where USER = 'user1'
+Timeout in wait_condition.inc for SELECT count(*)=0 FROM information_schema.processlist where USER = 'user1'
 #
 # III.2
 # switch off restriction to registered users and try again with user3

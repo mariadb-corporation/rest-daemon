@@ -70,12 +70,14 @@ MARIADB_SOURCE_DIR=<dev>/mariadb-server \
 ```
 - `include/schema/mrs_metadata_schema-version4-mariadb.sql` is the MariaDB plugins' 4.1.6
   deployment script with its `--` comments turned into `#` (mysqltest syntax).
-- `mrstest/mariadb_sql.py` rewrites the MySQL-only SQL of the upstream scripts before it is
-  sent (the echoed statement stays the original) and normalises the output (JSON member
-  order, etags, `Content-Length`, gtid lines); `r/<name>.mariadb.result` is a result
-  recorded on MariaDB, the other tests compare against upstream's `r/<name>.result`.
-  `--record` always writes the `.mariadb.result` file, until the results are re-recorded
-  for good in Milestone 3 (schema rename).
+- The scripts and fixtures carry MariaDB's SQL: upstream's MySQL-only constructs (JSON
+  arrows, SRID attributes, `VECTOR` without a dimension, `FROM_BASE64` of placeholders,
+  `super_read_only`, `role_edges`, `performance_schema.processlist`, `auth_socket`, `SET
+  PASSWORD`, `RESET BINARY LOGS AND GTIDS`, `CAST AS JSON`) were rewritten in the files
+  (M3.1, 2026-10-13, statement-aware through the suite's own parser); the results are
+  recorded on MariaDB and compared as they are. The interpreter keeps two MariaDB-isms:
+  `DROP USER` of a role is retried as `DROP ROLE`, and MariaDB's timing-dependent note
+  4227 on `DROP USER` is not printed.
 - Smoke test: `MARIADB_BUILD_DIR=... MARIADB_SOURCE_DIR=... (or MARIADB_PACKAGE_DIR=...)
   MYSQLSH=<dev>/shell/bld/bin/mariadb-shell SHELL_PLUGINS=<shell package>/lib/mariadb-shell/plugins
   tools/smoke/run_smoke.sh` (plus `MRS_SCRIPTS_DIR` for the scripts step).
@@ -715,3 +717,7 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
 - A MariaDB 11.8.9 macOS server package is available on the Mac:
   `MARIADB_PACKAGE_DIR=<downloads>/mariadb-11.8.9-macos26-arm-64bit-sandbox` (the
   5.0.0 floor; the live tests and the suite can run against it with that variable).
+- M3.1: the suite's MySQL-only SQL rewritten in the files (29 statements + 18 commands in
+  36 files, statement-aware), `mariadb_sql.py` and the output normaliser gone, all results
+  recorded on MariaDB (36 of 118 differ from upstream's: float rendering, etags, gtid
+  placeholders), the 22 `.mariadb.result` overlays gone.

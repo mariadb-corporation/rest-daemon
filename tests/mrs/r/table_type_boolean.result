@@ -2,12 +2,8 @@
 # MySQL Rest Service, server accounts configured.
 CREATE TABLE IF NOT EXISTS test.type_boolean(id INT AUTO_INCREMENT NOT NULL,  name VARCHAR(5), is_active BOOL, PRIMARY KEY (id));
 CREATE TABLE IF NOT EXISTS test.type_tinyint1(id INT AUTO_INCREMENT NOT NULL, name VARCHAR(5), is_active TINYINT(1), PRIMARY KEY (id));
-Warnings:
-Warning	1681	Integer display width is deprecated and will be removed in a future release.
 CREATE TABLE IF NOT EXISTS test.type_bit1(id INT AUTO_INCREMENT NOT NULL,     name VARCHAR(5), is_active BIT(1), PRIMARY KEY (id));
 CREATE TABLE IF NOT EXISTS test.type_tinyint2(id INT AUTO_INCREMENT NOT NULL, name VARCHAR(5), is_active TINYINT(2), PRIMARY KEY (id));
-Warnings:
-Warning	1681	Integer display width is deprecated and will be removed in a future release.
 CREATE TABLE IF NOT EXISTS test.type_bit2(id INT AUTO_INCREMENT NOT NULL,     name VARCHAR(5), is_active BIT(2), PRIMARY KEY (id));
 INSERT INTO test.type_boolean(name, is_active)  VALUES("0", 0),("1",1),("TRUE", TRUE), ("FALSE", FALSE);
 INSERT INTO test.type_tinyint1(name, is_active) VALUES("0", 0),("1",1),("TRUE", TRUE), ("FALSE", FALSE);
