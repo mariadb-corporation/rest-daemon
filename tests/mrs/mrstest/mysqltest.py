@@ -771,7 +771,7 @@ class Interpreter:
         """value of `...` in let/if: the first row's non-NULL columns joined by
         tabs; "" if there is no row or its first column is NULL"""
         with self.current.conn.cursor() as cur:
-            cur.execute(self.rewrite_sql(sql))
+            self.execute_sql(cur, sql)
             row = cur.fetchone()
             while cur.nextset():
                 pass
@@ -783,7 +783,7 @@ class Interpreter:
         """mysqltest's query_get_value(query, column, row): row is 1-based;
         "No such row" when there are fewer rows"""
         with self.current.conn.cursor() as cur:
-            cur.execute(self.rewrite_sql(sql))
+            self.execute_sql(cur, sql)
             names = [d[0] for d in cur.description or []]
             rows = cur.fetchall()
             while cur.nextset():
@@ -796,6 +796,19 @@ class Interpreter:
 
     def rewrite_sql(self, sql: str) -> str:
         return self.envn.sql_rewrite(sql) if self.envn.sql_rewrite else sql
+
+    _DROP_USER = re.compile(r"^(\s*)drop\s+user\b", re.I)
+
+    def execute_sql(self, cur, sql: str) -> None:
+        """execute a (rewritten) statement; MySQL's DROP USER also drops a
+        role, MariaDB wants DROP ROLE for one: retry as that on 1396"""
+        rewritten = self.rewrite_sql(sql)
+        try:
+            cur.execute(rewritten)
+        except pymysql.err.OperationalError as e:
+            if e.args[0] != 1396 or not self._DROP_USER.match(rewritten):
+                raise
+            cur.execute(self._DROP_USER.sub(r"\1DROP ROLE", rewritten))
 
     @staticmethod
     def format_value(v) -> str:
@@ -814,7 +827,7 @@ class Interpreter:
         buf: list[str] = []
         try:
             with self.current.conn.cursor() as cur:
-                cur.execute(self.rewrite_sql(sql))
+                self.execute_sql(cur, sql)
                 while True:
                     if cur.description is not None:
                         rows = cur.fetchall()

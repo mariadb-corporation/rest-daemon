@@ -128,6 +128,9 @@ _MYSQL_USER_COLS = re.compile(r"\bselect\s+user,\s*host\s+from\s+mysql\.user\b",
 # MySQL's auth_socket is MariaDB's built-in unix_socket; both take the OS user
 # as the authentication string
 _AUTH_SOCKET = re.compile(r"\bIDENTIFIED\s+WITH\s+auth_socket\b", re.I)
+# SET PASSWORD FOR u = 'text' is MySQL's; MariaDB takes a hash there and
+# wants PASSWORD('text') for a plain-text password
+_SET_PASSWORD = re.compile(r"(\bSET\s+PASSWORD\s+FOR\s+[^=]+=\s*)('[^']*')", re.I)
 
 
 def server_options(options: list[str]) -> list[str]:
@@ -138,6 +141,7 @@ def server_options(options: list[str]) -> list[str]:
 
 def rewrite(sql: str) -> str:
     sql = _AUTH_SOCKET.sub("IDENTIFIED VIA unix_socket", sql)
+    sql = _SET_PASSWORD.sub(r"\1PASSWORD(\2)", sql)
     if _RESET_GTIDS.match(sql):
         return "DO 0"  # no GTIDs to reset, nothing to do
     sql = _ROLE_EDGES.sub(r"SELECT Role AS from_user, User AS to_user FROM mysql.roles_mapping WHERE User LIKE \1 ORDER BY Role", sql)

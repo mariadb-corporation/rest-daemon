@@ -31,10 +31,12 @@ entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
   `null` are stored correctly, while a JSON *string* value (`"hello"`, `""`)
   is written unquoted and rejected by the column's `json_valid` check. Fixing
   this needs the metadata schema (shell and plugins) to report `json`.
-- **Roles**: MariaDB activates one role at a time and no role by default.
-  The service accounts created by `--setup` get a default role; an account
-  used for pass-through authentication (`mysql_user_data_access` or MySQL
-  Internal auth) needs `SET DEFAULT ROLE` by the DBA. The account running
+- **Roles**: MariaDB activates one role at a time and no role by default
+  (MRS runs `SET ROLE ALL` on its connections). The service accounts created
+  by `--setup` get a default role. For pass-through authentication
+  (`mysql_user_data_access`, MySQL Internal auth) the service activates the
+  account's role when it has exactly one and no default; with several roles
+  it logs a warning and the DBA sets one with `SET DEFAULT ROLE`. The account running
   `--setup` must hold the REST service roles `WITH ADMIN OPTION` to grant
   them (`GRANT ALL ... WITH GRANT OPTION` is not enough on MariaDB).
 - **Read-only destinations**: there is no `super_read_only`; `read_only` does
@@ -64,7 +66,9 @@ entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
   plugin (MRS names `caching_sha2_password`).
 - `DROP USER` of an account with open connections emits a Note.
 - Error texts differ (e.g. "Table doesn't exist" where MySQL says "Unknown
-  database"; "for key 'PRIMARY'" without the table name).
+  database"; "for key 'PRIMARY'" without the table name), and so do declared
+  lengths in result metadata (`CURRENT_USER()` is `VARCHAR(384)`, MySQL's
+  `VARCHAR(288)`).
 
 ## Test-suite only
 
