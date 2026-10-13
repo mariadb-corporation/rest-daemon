@@ -19,8 +19,8 @@ Plan: [PLAN.md](PLAN.md). Current state and next steps: `.claude/PROJECT_CONTEXT
 |---|---|
 | M2.0: MariaDB dependency inventory | ✅ done 2026-10-07, verdict GO in stages ([milestone2-inventory.md](milestone2-inventory.md)) |
 | M2.1: build against MariaDB Connector/C | ✅ done 2026-10-09: build + ctest 113/113 on macOS (3.4.11), Linux (3.4.9) and Windows (3.4.8, vcpkg); the MySQL build still passes |
-| M2.2: run against a MariaDB server | 🟡 macOS (2026-10-09): smoke test incl. MRS scripts passes against MariaDB 13.2; CRUD with JSON/GEOMETRY/VECTOR verified; Linux/Windows runs pending |
-| M2.3: test suites on MariaDB | 🟡 macOS 2026-10-09: MRS suite 97 passed, 14 skipped (vector, offline_mode, gtid_mode + the 5 MySQL skips), 10 xfailed (known differences, 3 to investigate), 13 MariaDB result files; unit + component 113/113; MySQL mode unchanged (116/5/1). Linux/Windows runs pending |
+| M2.2: run against a MariaDB server | 🟡 smoke test incl. MRS scripts passes on macOS (MariaDB 13.2) and Windows (11.8.9 LTS); Linux pending |
+| M2.3: test suites on MariaDB | 🟡 macOS 2026-10-09: MRS suite 97 passed, 14 skipped (vector, offline_mode, gtid_mode + the 5 MySQL skips), 10 xfailed (known differences, 3 to investigate), 13 MariaDB result files; unit + component 113/113; MySQL mode unchanged (116/5/1). Windows vs 11.8.9: the same 97/14/10/1 (2026-10-12). Linux pending |
 | M2.4: cleanup | ⬜ |
 
 ## How to build and test (macOS)
@@ -617,3 +617,21 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
 - MariaDB reports `RETURNS JSON` routine results and JSON parameters as LONGTEXT
   everywhere: JSON function results stay strings (documented).
 - MySQL mode of the suite after the harness changes: 116 passed, 5 skipped, 1 xpassed.
+
+### 2026-10-12: session 6 (Windows against MariaDB 11.8.9 LTS; plan changes; checkpoint)
+- Windows VM: MariaDB 11.8.9 ARM64 "sandbox" server package and mariadb-shell 26.10.1 ARM64
+  (`<win-home>\Downloads\...`). The server package has no `mariadb.exe` and needs the
+  ARM64 OpenSSL DLLs from the shell's `bin`. Smoke test and suite got a MariaDB package mode
+  (`MARIADB_PACKAGE_DIR`, SQL through `mariadb-shell --sql`, Windows `mariadb-install-db.exe
+  -d <dir> -R`). Smoke test incl. MRS scripts passes; MRS suite 97 passed, 0 failed, the
+  same as macOS, after two fixes: MariaDB test servers are stopped with SQL `SHUTDOWN` (a
+  killed server corrupts the Aria grant/role tables: 54 failures in a cascade), and the
+  timing-dependent "Dropped users ... have active connections" note is ignored.
+- MariaDB 13 accepts `->`/`->>`, 11.8 does not: the suite's arrow rewrite covers
+  double-quoted paths now; the daemon's own SQL has no arrows left.
+- Plan: Milestone 2 stays on schema 4.1.6 (main branches of the MariaDB shell and plugins);
+  schema 5.0.0 is Milestone 3; REST async tasks are removed from the product (code removal
+  in M2.4); GTID asof is an open point shared with the shell and plugins; packaging and CI
+  are Milestone 4.
+- `/checkpoint` and `/read-checkpoint` brought over from the shell repo;
+  `.claude/PROJECT_CONTEXT.md` holds the state and next steps now.

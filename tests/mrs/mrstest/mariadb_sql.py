@@ -154,6 +154,7 @@ def rewrite(sql: str) -> str:
 import json
 
 _CONTENT_LENGTH = re.compile(r"(Content-Length  ->  )\d+")
+_DROPPED_USERS_NOTE = re.compile(r"^Warnings:\nNote\t4227\tDropped users .*\n", re.M)
 _ETAG = re.compile(r'("etag": ")[0-9A-F]{64}(")')
 # the GTID of a write (session_track_gtids), not available on MariaDB until
 # an open point, see PLAN.md; the tests print it as "GTID" (a replace_regex)
@@ -182,6 +183,9 @@ def normalize_output(text: str) -> str:
     etags that hash those documents, integral floats (ST_AsGeoJSON prints
     20 vs 20.0). The pretty-printed documents of the mrs_client are re-dumped
     with sorted keys; other lines stay as they are."""
+    # DROP USER of an account with open connections: a Note whose presence
+    # depends on timing (MySQL never emits it)
+    text = _DROPPED_USERS_NOTE.sub("", text)
     text = _CONTENT_LENGTH.sub(r"\1<n>", text)
     text = _ETAG.sub(r"\1<etag>\2", text)
     text = _GTID_LINE.sub("", text)

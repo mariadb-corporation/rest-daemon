@@ -26,18 +26,17 @@
 ## Current state
 
 - **M2.1 (build on Connector/C): done** on macOS (3.4.11 Homebrew), Ubuntu (3.4.9, `libmariadb-dev` unpacked), Windows (3.4.8 vcpkg): ctest 113/113 each; MySQL build 113/113.
-- **M2.2 (run against MariaDB):** macOS vs 13.2 build tree: smoke test incl. MRS scripts, ad-hoc CRUD with JSON/GEOMETRY/VECTOR. **Windows vs 11.8.9 LTS ARM64 sandbox package: smoke test incl. MRS scripts passes (2026-10-12).** Linux pending.
-- **M2.3 (suites on MariaDB):** MRS suite MariaDB mode on macOS: 97 passed, 0 failed, 14 skipped, 10 xfailed, 1 xpassed; MySQL mode unchanged (116/5/1). Windows MariaDB-mode: the first run cascaded (54 failed) from Aria tables corrupted by killed servers; rerun with a clean `SHUTDOWN` in progress at this checkpoint. Live-DB unit tests on MariaDB not done.
+- **M2.2 (run against MariaDB):** macOS vs 13.2 build tree and Windows vs 11.8.9 LTS (ARM64 sandbox package, x64 daemon): smoke test incl. MRS scripts passes; ad-hoc CRUD with JSON/GEOMETRY/VECTOR on macOS. Linux pending.
+- **M2.3 (suites on MariaDB):** MRS suite MariaDB mode on macOS: 97 passed, 0 failed, 14 skipped, 10 xfailed, 1 xpassed; MySQL mode unchanged (116/5/1). **Windows MariaDB mode vs 11.8.9 LTS (2026-10-12): 97 passed, 0 failed, 14 skipped, 10 xfailed, 1 xpassed**, the same as macOS vs 13.2 (after the clean `SHUTDOWN` fix and ignoring the timing-dependent dropped-users note). Live-DB unit tests on MariaDB not done.
 - Known failures to investigate (`tests/mrs/known_failures.mariadb.def`): `json_view`, `json_view_access` (join sub-object carries all table columns), `role_privileges` (first login gets the SCRAM challenge instead of 307).
 
 ## Next steps
 
-1. Windows: read the MariaDB-mode suite result (`<win-dev>\mrsd-pytest-mariadb.log`), fix or record the Windows/11.8-specific failures.
-2. Linux (Ubuntu VM): a MariaDB 11.8 server and the mariadb-shell there (packages unpacked, no root), then smoke test and the MRS suite in MariaDB package mode.
-3. The three "to investigate" known failures.
-4. Live-DB unit tests (`RUN_WITH_LIVE_MYSQLD`, `tests/helpers/shared_server.cc`) against MariaDB.
-5. Phase M2.4 cleanup: remove the async-task code (`query_rest_task*`, `mysql_task_monitor*`, task-status endpoints, `mysqlTask` options, the nonblocking path of `MySQLSession`); README/CLAUDE.md for MariaDB; decide on keeping the MySQL build.
-6. Then Milestone 3 (schema 5.0.0).
+1. Linux (Ubuntu VM): a MariaDB 11.8 server and the mariadb-shell there (packages unpacked, no root), then smoke test and the MRS suite in MariaDB package mode.
+2. The three "to investigate" known failures.
+3. Live-DB unit tests (`RUN_WITH_LIVE_MYSQLD`, `tests/helpers/shared_server.cc`) against MariaDB.
+4. Phase M2.4 cleanup: remove the async-task code (`query_rest_task*`, `mysql_task_monitor*`, task-status endpoints, `mysqlTask` options, the nonblocking path of `MySQLSession`); README/CLAUDE.md for MariaDB; decide on keeping the MySQL build.
+5. Then Milestone 3 (schema 5.0.0).
 
 ## Files that matter
 
