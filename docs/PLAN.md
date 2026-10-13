@@ -40,7 +40,7 @@ remaining items (real deb/rpm installs, MSI, GitHub Actions) are finished last.
 |---|---|
 | Source origin | `mysql-server` repo, `router/` tree (trunk, forked 2026-09-30 at `06a5c1c99c3`) |
 | Git history | **Not preserved.** Plain copy |
-| Client library | Stock **MySQL 9.x** libmysqlclient (public API only), taken from a MySQL server binary package given by `-DMYSQL_PACKAGE_DIR=<path>` (uses its `include/` and `lib/`) |
+| Client library | Milestone 1: stock **MySQL 9.x** libmysqlclient (public API only) from a MySQL server package (`-DMYSQL_PACKAGE_DIR`). Since 2026-10-13: **MariaDB Connector/C only** (`-DMARIADB_CONNECTOR_DIR`) |
 | JIT executor (JavaScript endpoints) | **Included**; `-DMRS_JIT_EXECUTOR_LIB=<dir>` points to a directory with the prebuilt `libjitexecutor` **and** its headers (`polyglot_api.h`, `graal_isolate.h`, …). Local: `<dev>/workflow-test/ext/polyglot/polyglot-nativeapi-native-library/target` |
 | InnoDB Cluster / ClusterSet / ReplicaSet | **Out of scope.** No `metadata_cache`, no cluster bootstrap |
 | X Protocol | **Out of scope.** No mysqlxclient, mysqlxmessages or protobuf |
@@ -162,7 +162,7 @@ See [phase0-inventory.md](phase0-inventory.md). **Verdict: GO.** The kept code u
   (destination_status, metadata_cache/bootstrap paths, DynamicState, config exposure).
 - **Exit criteria:** a fresh install works via `mrsd --setup` alone on each OS.
 
-### Phase 4: packaging and CI (moved to Milestone 4)
+### Phase 4: packaging and CI (moved to Milestone 5)
 Decided 2026-10-05: CPack for all formats (not upstream's deb-in/rpm/WiX trees);
 formats deb + rpm, Linux tar.gz, Windows MSI + ZIP, macOS tar.gz; libmysqlclient and
 libjitexecutor always bundled, OpenSSL/ICU from the OS in deb/rpm and bundled in the
@@ -191,11 +191,11 @@ Scope decisions (2026-10-08, see the decision log):
 
 | Topic | Decision |
 |---|---|
-| MySQL build | **Kept** during the port, behind a client/server abstraction; the MySQL test suites stay the safety net until the MariaDB suites reach parity |
+| MySQL build | Kept during the port as the safety net; **dropped on 2026-10-13** (M2.4) together with MySQL server support, once the MariaDB suites were at parity on the three platforms |
 | Client library | **MariaDB Connector/C package** (release build with OpenSSL), found through `-DMARIADB_CONNECTOR_DIR` / `mariadb_config`; public API only, as in Milestone 1 |
 | Minimum MariaDB server | **10.11 (oldest supported LTS)**; develop and test on `main` (13.2). Caveat: the MRS metadata schema 4.1.6 uses `JSON_SCHEMA_VALID` (11.1+) and `JSON_OVERLAPS` (10.9+); deploying on 10.11 needs a schema change on the plugin side. Features needing newer servers degrade: `MAX_EXECUTION_TIME` hint → `SET STATEMENT max_statement_time`, `VECTOR` only where the server has it (11.7+) |
 | REST async tasks (`mysql_tasks`) | **Removed** (2026-10-12, a product decision: MariaDB REST routines are always called directly, as in the MariaDB shell plugins); code removed in M2.4 (2026-10-13) |
-| GTID / "asof" | **Out of Milestone 2**, disabled on MariaDB (the RW pool `session_track_gtids` SET is removed); an **open point**, see below |
+| GTID / "asof" | **Out of Milestone 2**: `asof` is refused with a clear error; the MySQL implementation stays parked in the tree for **Milestone 4** (see the open point below) |
 | `--setup` accounts | MariaDB's **default auth plugin** (`CREATE USER ... IDENTIFIED BY`) |
 | MRS scripts (JIT) | **In scope**: the smoke test's script step (example scripts deployed with `LOAD SCRIPTS` through the MariaDB Shell plugins) must pass on MariaDB; plugin-side problems go to the plugin team |
 
@@ -241,8 +241,15 @@ document generation, GTID tracking, `mysql_tasks`, account setup, tests.
   task-status endpoints, the `mysqlTask` options (still tolerated in metadata), the async
   OpenAPI variant, and the nonblocking query path of `MySQLSession` (only the task
   monitor used it). `DELETE` on a routine keeps answering 403.
-- Remove MySQL-only code paths that are no longer reachable (or keep the dual build, per
-  decision), README/docs for MariaDB, `restd:` markers.
+- ✅ 2026-10-13: the MySQL build and MySQL server support dropped (decision: MariaDB
+  only): Connector/C is the only client (`cmake/compat/mysql_package.cmake` and the
+  `MRSD_CLIENT_MARIADB` ifdefs gone), a MariaDB server 10.11+ the only one accepted, the
+  `is_mariadb()` runtime branches collapsed to the MariaDB code, the MySQL modes of the
+  functional suite, the live-DB tests and the smoke test gone; README/docs for MariaDB.
+- Remaining: the `restd:` markers pass; follow-ups from the inventory: VECTOR coverage in
+  the suite (upstream's fixtures declare `VECTOR` without a dimension, 7 tests disabled),
+  the fixed pool's `SET ROLE` (relies on the default role), the stated minimum version
+  (10.11 vs what the 4.1.6 schema and VECTOR need).
 
 ## Open point: GTID read-your-writes on MariaDB (Milestone 4)
 
@@ -274,7 +281,7 @@ Review once the 5.0.0 schema (Milestone 3) is in, against that schema.
 mrsd/
   CMakeLists.txt            top-level build
   cmake/                    build helpers (replacements for server macros)
-  compat/                   replacements for libmysqlclient internal symbols
+  compat/                   replacements for client-library internals, Connector/C gaps
   extra/
     mysql-internals/        vendored header-only server headers
     rapidjson/  libcno/     vendored third-party
@@ -295,7 +302,7 @@ mrsd/
 | Windows build infrastructure (MSVC flags, DLL exports, OpenSSL/ICU) | Budget time in Phase 1. Resolved: builds and tests pass on the Windows VM; CI comes at the end |
 | Hidden dependencies in test code (mock_server, test helpers) | Re-run `tools/analysis/include_closure.py --tests` after copying |
 | Behaviour differences from replacing `my_gcvt` (JIT number formatting) | **Done:** vendored `strings/dtoa.cc` in `mrsd_compat` |
-| Two OpenSSL copies in one process: libmysqlclient uses the package's bundled OpenSSL (3.5.7 in 26.7.0), mrsd code uses the system's (3.6.3 on the dev Mac) | Works on macOS (two-level namespace). On Linux/Windows the shared soname/DLL name means only one gets loaded. Revisit if TLS problems appear; option: link mrsd against the package's OpenSSL |
+| Two OpenSSL copies in one process (Milestone 1: libmysqlclient's bundled OpenSSL vs the system's) | **Moot since 2026-10-13:** Connector/C is built against the same OpenSSL the daemon links |
 | `mrsd_compat` is a static library linked into several shared libraries (harness, router_mysql, jit plugin) | Stateless code, so harmless; could become a shared library later |
 | Component tests need `mysql_server_mock`, which needs duktape (removed upstream; public upstream builds skip the mock and all component tests, `IF(NOT TARGET duktape) RETURN()`) | Open, Phase 2 |
 

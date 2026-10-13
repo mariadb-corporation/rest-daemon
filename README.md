@@ -1,19 +1,21 @@
 # mariadb-restd: MariaDB REST Service Daemon
 
-mariadb-restd ("restd" for short) is a standalone daemon for the **MySQL REST
-Service (MRS)**: it serves
-REST endpoints for MySQL tables, views, stored procedures, functions and
-JavaScript/TypeScript scripts, as defined in the MRS metadata schema
-(`mysql_rest_service_metadata`) of a MySQL server.
+mariadb-restd ("restd" for short) is the **MariaDB REST Service** daemon: it
+serves REST endpoints for MariaDB tables, views, stored procedures, functions
+and JavaScript/TypeScript scripts, as defined in the REST service metadata
+schema (`mysql_rest_service_metadata`, deployed by the MariaDB shell's `mrs`
+plugin) of a MariaDB server.
 
-It is a fork of the MRS plugin of MySQL Router (`router/` in mysql-server),
-without the router's connection routing, InnoDB Cluster/ClusterSet support,
-bootstrap and X protocol. It is built against a stock MySQL client library.
+It is a fork of the MySQL REST Service (MRS) plugin of MySQL Router (`router/`
+in mysql-server), without the router's connection routing, InnoDB
+Cluster/ClusterSet support, bootstrap and X protocol, ported to MariaDB: it is
+built against MariaDB Connector/C and runs against a MariaDB server (10.11 or
+later). What it does differently from the MySQL REST Service is listed in
+[docs/mariadb-differences.md](docs/mariadb-differences.md).
 
 > **Status:** work in progress. restd builds and passes its tests on Linux,
-> macOS and Windows against MySQL 26.7 (Milestone 1). MariaDB support (Connector/C,
-> MariaDB server) is the current milestone; see [docs/PLAN.md](docs/PLAN.md) and
-> [docs/PROGRESS.md](docs/PROGRESS.md). There are no packages yet.
+> macOS and Windows against MariaDB 11.8 and 13.2; see [docs/PLAN.md](docs/PLAN.md)
+> and [docs/PROGRESS.md](docs/PROGRESS.md). There are no packages yet.
 
 ## Building
 
@@ -21,12 +23,9 @@ bootstrap and X protocol. It is built against a stock MySQL client library.
 
 - CMake 3.24 or later and a C++23 compiler (tested: GCC 15, AppleClang 21,
   MSVC 2022 17.14)
-- a client library, one of:
-  - **MariaDB Connector/C** 3.4 or later (a release package, or Homebrew's
-    `mariadb-connector-c`), built with OpenSSL
-  - an extracted **MySQL server binary package**, 9.0 or later: restd uses its
-    client library (`lib/`) and headers (`include/`), and the tests use its
-    `mysqld`
+- **MariaDB Connector/C** 3.4 or later (a release package, Homebrew's
+  `mariadb-connector-c`, Debian's `libmariadb-dev` or vcpkg's `libmariadb`),
+  built with OpenSSL
 - OpenSSL 3 and ICU (system packages on Linux/macOS; on Windows, e.g. OpenSSL
   from vcpkg and the official ICU zip)
 - optional: the **JIT executor library** (`libjitexecutor` and its headers),
@@ -36,8 +35,7 @@ bootstrap and X protocol. It is built against a stock MySQL client library.
 
 | Option | |
 |---|---|
-| `MARIADB_CONNECTOR_DIR` | prefix of a MariaDB Connector/C installation; **one of** this and `MYSQL_PACKAGE_DIR` is required |
-| `MYSQL_PACKAGE_DIR` | path of the MySQL server package (builds against libmysqlclient instead) |
+| `MARIADB_CONNECTOR_DIR` | prefix of the MariaDB Connector/C installation (**required**) |
 | `MRS_JIT_EXECUTOR_LIB` | directory with `libjitexecutor` and its headers; without it, restd is built without MRS script support |
 | `WITH_UNIT_TESTS` | build the unit tests and the test tools (`OFF`) |
 | `WITH_COMPONENT_TESTS` | build the component tests, needs `WITH_UNIT_TESTS` (`OFF`) |
@@ -69,27 +67,26 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
 cmake --build build
 ```
 
-With MySQL's client library, pass `-DMYSQL_PACKAGE_DIR=/path/to/mysql-<version>-<platform>`
-instead of `MARIADB_CONNECTOR_DIR`. On macOS, OpenSSL and ICU are found in
-Homebrew's default locations.
+On macOS, OpenSSL and ICU are found in Homebrew's default locations.
 
 ### Windows
 
-restd is built for x64 (MySQL publishes Windows packages for x64 only). From a
-Visual Studio 2022 developer environment (`vcvarsall.bat amd64`, or
-`arm64_amd64` on Windows on ARM):
+restd is built for x64 (the JIT executor library is x64 only on Windows). From
+a Visual Studio 2022 developer environment (`vcvarsall.bat amd64`, or
+`arm64_amd64` on Windows on ARM), with Connector/C from vcpkg
+(`libmariadb[openssl]:x64-windows`):
 
 ```bat
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ^
-  -DMYSQL_PACKAGE_DIR=C:\path\to\mysql-<version>-winx64 ^
+  -DMARIADB_CONNECTOR_DIR=C:\path\to\vcpkg\installed\x64-windows ^
   -DOPENSSL_ROOT_DIR=C:\path\to\vcpkg\installed\x64-windows ^
   -DICU_ROOT=C:\path\to\icu ^
   -DMRS_JIT_EXECUTOR_LIB=%CD%\ext\polyglot\polyglot-nativeapi-native-library\target
 cmake --build build
 ```
 
-At run time, the DLLs of the MySQL client library, OpenSSL and ICU must be on
-`PATH`.
+At run time, the DLLs of Connector/C (`libmariadb.dll`), OpenSSL and ICU must
+be on `PATH`.
 
 ### Build output
 
@@ -115,8 +112,7 @@ configured layout. Build them without `WITH_UNIT_TESTS`.
 | `STANDALONE` (default) | `.tar.gz` (Linux, macOS), `.zip` (Windows) | relocatable: `bin/`, `lib/` (plugins in `lib/mariadb-restd/`), `docs/`; the defaults are relative to the executable |
 | `SYSTEM` (with `-DCMAKE_INSTALL_PREFIX=/usr`) | `.deb`, `.rpm` | `/usr/bin`, `/usr/lib/mariadb-restd/` (plugins), `/usr/lib/mariadb-restd/private/` (libraries), `/etc/mariadb-restd`, `/var/lib/mariadb-restd`, `/var/log/mariadb-restd` |
 
-The packages bundle `libmysqlclient` (from `MYSQL_PACKAGE_DIR`) and the JIT
-executor library; the `STANDALONE` packages also bundle OpenSSL and ICU, which
+The packages bundle Connector/C (`libmariadb`) and the JIT executor library; the `STANDALONE` packages also bundle OpenSSL and ICU, which
 deb/rpm take from the system. The deb/rpm packages add a systemd unit, a
 `mariadb-restd` service account (sysusers.d) and its folders (tmpfiles.d); the
 service is enabled after `--setup`. Building packages needs `patchelf` on
@@ -126,17 +122,17 @@ include the MSVC runtime.
 ## Setting up a deployment
 
 `mariadb-restd --setup` prepares a self-contained deployment directory for a
-MySQL server that has the MRS metadata schema (created, for example, with
-MySQL Shell's `CONFIGURE REST METADATA`):
+MariaDB server that has the REST service metadata schema (created with the
+MariaDB shell's `CONFIGURE REST METADATA`):
 
 ```sh
 mariadb-restd --setup admin@db1.example.com:3306 -d /srv/restd
 /srv/restd/start.sh          # start.ps1 on Windows; stop.sh / stop.ps1 to stop
 ```
 
-It registers the instance in the MRS metadata, creates a MySQL account with
+It registers the instance in the REST metadata, creates a server account with
 the `mysql_rest_service_meta_provider` and `mysql_rest_service_data_provider`
-roles, stores its password and the JWT secret in a keyring, creates a
+roles (its default role; MariaDB activates one role at a time), stores its password and the JWT secret in a keyring, creates a
 self-signed TLS certificate and writes `mariadb-restd.conf` (HTTPS on port
 8443). The account in the URI needs to create accounts, grant those roles and
 write the MRS metadata; passwords that aren't given are prompted for. If
@@ -146,13 +142,13 @@ anything fails, what was created is removed again.
 |---|---|
 | `-d`, `--directory` | the deployment directory (created if needed); without it, the default folders (`mariadb-restd --help` lists them; `/etc/mariadb-restd`, `/var/lib/mariadb-restd`, ... for deb/rpm) |
 | `-u`, `--user` | the system account that runs restd, owner of the created files (needed when running as root without `-d`) |
-| `--name` | name of the instance in the MRS metadata (default: `<hostname>:<HTTP port>`) |
-| `--report-host` | host name stored in the MRS metadata (default: the local host name) |
-| `--metadata-account`, `--data-account` | use these MySQL accounts (passwords prompted for) instead of a generated one |
+| `--name` | name of the instance in the REST metadata (default: `<hostname>:<HTTP port>`) |
+| `--report-host` | host name stored in the REST metadata (default: the local host name) |
+| `--metadata-account`, `--data-account` | use these server accounts (passwords prompted for) instead of a generated one |
 | `--jwt-secret` | secret for signing JSON Web Tokens; the same for all instances of the same MRS metadata |
 | `--developer`, `--developer-debug-port` | also serve the services in development by this developer |
 | `--socket` | connect through a Unix socket (URI host `localhost`); the deployment uses it too |
-| `--ssl-mode`, `--ssl-ca`, `--ssl-capath`, `--ssl-crl`, `--ssl-crlpath`, `--ssl-cipher`, `--tls-version` | TLS to the MySQL server, for the setup and the deployment |
+| `--ssl-mode`, `--ssl-ca`, `--ssl-capath`, `--ssl-crl`, `--ssl-crlpath`, `--ssl-cipher`, `--tls-version` | TLS to the MariaDB server, for the setup and the deployment |
 | `--conf-set-option=<section>.<option>=<value>` | set or add an option of the generated configuration, e.g. `http_server.port=8080` |
 | `--master-key-reader`, `--master-key-writer` | commands that read/store the keyring's master key, instead of a key file |
 | `--force` | overwrite an existing deployment, keeping its accounts and JWT secret |
@@ -212,7 +208,7 @@ the locations). It logs to `mariadb-restd.log` in `logging_folder`.
 ### Differences from MySQL Router's MRS configuration
 
 MySQL Router points MRS at routing plugins (`mysql_read_write_route`,
-`mysql_read_only_route`). restd has no routing plugin; the MySQL servers are
+`mysql_read_only_route`). restd has no routing plugin; the MariaDB servers are
 configured in `[mysql_rest_service]` directly:
 
 | Option | |
@@ -228,10 +224,10 @@ The other `[mysql_rest_service]` options (`mysql_user`,
 `wait_for_metadata_schema_access`, `developer`, ...) are the same as in MySQL
 Router.
 
-REST services, schemas and objects are defined in the MRS metadata schema, for
-example with MySQL Shell's MRS SQL (`CREATE REST SERVICE ...`) or the MySQL
-Shell for VS Code extension. MRS scripts: see
-[MRS_README.router](MRS_README.router).
+REST services, schemas and objects are defined in the REST metadata schema with
+the MariaDB shell's REST SQL (`CREATE REST SERVICE ...`) or its VS Code
+extension. REST scripts: see [MRS_README.router](MRS_README.router) (upstream's
+description, which still applies).
 
 ## Testing
 
@@ -247,41 +243,45 @@ The component tests start `mariadb-restd` and `mysql_server_mock` processes;
 cases that exercise features restd doesn't have are excluded in
 [tests/component/excluded_cases.cmake](tests/component/excluded_cases.cmake).
 
-**MRS functional tests** (`tests/mrs`): the MRS tests of mysql-server's
+**REST functional tests** (`tests/mrs`): the MRS tests of mysql-server's
 `mysql-test/suite/router`, kept as `.test` scripts with golden `.result`
-files and run by pytest against a real `mysqld` from the MySQL package:
+files and run by pytest against a real `mariadbd`, from a server package
+(`MARIADB_PACKAGE_DIR`) or a server build tree (`MARIADB_BUILD_DIR` and
+`MARIADB_SOURCE_DIR`):
 
 ```sh
 python3 -m venv venv && venv/bin/pip install -r tests/mrs/requirements.txt
-MRSD_BUILD=$PWD/build MYSQL_PACKAGE_DIR=/path/to/mysql-<version>-<platform> \
+MRSD_BUILD=$PWD/build MARIADB_PACKAGE_DIR=/path/to/mariadb-<version>-<platform> \
   venv/bin/python -m pytest tests/mrs -q
 ```
 
-`-k <test>` runs single tests and `--record` rewrites the `.result` files.
-Disabled tests are listed in `tests/mrs/disabled.def`, expected failures in
-`tests/mrs/known_failures.def`. On Linux (Ubuntu 24.04 and later), the
-package's `mysqld` needs `libaio.so.1`: point `LD_LIBRARY_PATH` at a directory
-with a `libaio.so.1 -> libaio.so.1t64` link. On Windows, use
-`venv\Scripts\python`, put the DLL directories and a `perl` on `PATH` (Git for
-Windows' `usr\bin` has one), and expect the tests' `exec` commands to run
-through `cmd.exe`, as they do under mtr.
+The scripts' MySQL-specific SQL is translated at run time
+(`tests/mrs/mrstest/mariadb_sql.py`) and the output compared, normalised, with
+`r/<name>.mariadb.result` where one was recorded on MariaDB, else with
+upstream's `r/<name>.result`. `-k <test>` runs single tests and `--record`
+writes the `.mariadb.result` file. Disabled tests are listed in
+`tests/mrs/disabled.def`, expected failures in `tests/mrs/known_failures.def`.
+On Windows, use `venv\Scripts\python`, put the DLL directories and a `perl` on
+`PATH` (Git for Windows' `usr\bin` has one), and expect the tests' `exec`
+commands to run through `cmd.exe`, as they do under mtr.
 
-**Smoke test** (`tools/smoke/run_smoke.sh`): starts `mysqld`, configures restd
-with `--setup`, starts it, creates a REST view with MySQL Shell and checks that
-it is served; see the script for its parameters.
+**Smoke test** (`tools/smoke/run_smoke.sh`): starts `mariadbd`, deploys the
+metadata schema from the MariaDB shell plugins, configures restd with
+`--setup`, starts it, creates a REST view with the MariaDB shell and checks
+that it is served; see the script for its parameters.
 
 ## Repository layout
 
 | | |
 |---|---|
 | `src/` | the router modules restd uses (harness, http, mysql_rest_service, jit_executor, ...) |
-| `compat/` | replacements for MySQL client library internals the router code used |
-| `cmake/compat/` | the parts of the MySQL server's build system the router CMake files expect |
+| `compat/` | replacements for the client-library internals the router code used, and what Connector/C lacks |
+| `cmake/compat/` | the parts of the MySQL server's build system the router CMake files expect, the Connector/C finder |
 | `extra/` | vendored code: rapidjson, libcno, googletest, duktape, MySQL server headers |
 | `ext/polyglot/` | Maven build of the JIT executor library (from the MySQL Shell sources) |
-| `tests/` | component tests, test helpers, MRS functional tests (`tests/mrs`), test data |
-| `tools/` | smoke test, dependency analysis scripts |
-| `docs/` | plan, progress log, dependency inventory |
+| `tests/` | component tests, test helpers, REST functional tests (`tests/mrs`), test data |
+| `tools/` | smoke test, VM helpers, a dependency analysis script |
+| `docs/` | plan, progress log, inventories, differences from the MySQL REST Service |
 
 [README.router](README.router) and [MRS_README.router](MRS_README.router) are
 MySQL Router's documentation, kept from upstream.

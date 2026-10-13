@@ -1,18 +1,24 @@
-# Running against MariaDB: differences and limitations
+# Differences from the MySQL REST Service
 
-What behaves differently when `mariadb-restd` serves a MariaDB server, compared
-with MySQL. Found while porting the MRS functional suite (Milestone 2, see
-[PROGRESS.md](PROGRESS.md)); the test-suite entries are in
-`tests/mrs/disabled.mariadb.def` and `tests/mrs/known_failures.mariadb.def`.
+`mariadb-restd` is a port of MySQL Router's MySQL REST Service (MRS) to MariaDB.
+It serves the same endpoints from the same metadata; this is what behaves
+differently, for people and tools coming from MRS. Found while porting the MRS
+test suite (Milestone 2, see [PROGRESS.md](PROGRESS.md)); the test-suite
+entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
 
 ## Not available
 
-- **GTID based `asof` requests** (read-your-writes; an open point): MariaDB has no
-  `session_track_gtids`, `gtid_executed` or `WAIT_FOR_EXECUTED_GTID_SET`. Such
-  requests fail with a clear error; responses carry no `_metadata.gtid`.
-- **REST async tasks** (`mysql_tasks`) are not part of `mariadb-restd` on either
-  server: routines are always called directly, `POST` answers with the result,
-  and there is no `{taskId}` status endpoint.
+- **GTID based `asof` requests** (read-your-writes): MRS builds them on MySQL's
+  GTIDs (`session_track_gtids`, `gtid_executed`, `WAIT_FOR_EXECUTED_GTID_SET`),
+  which MariaDB doesn't have. Such requests fail with a clear 400; responses
+  carry no `_metadata.gtid`. A MariaDB implementation is Milestone 4, together
+  with the MariaDB shell and plugins.
+- **REST async tasks** (`mysql_tasks`) are not part of `mariadb-restd`:
+  routines are always called directly, `POST` answers with the result, and
+  there is no `{taskId}` status endpoint. The `mysqlTask` options in existing
+  metadata are ignored.
+- **MySQL servers**: `mariadb-restd` refuses to start against anything but a
+  MariaDB server, 10.11 or later.
 
 ## Server behaviour
 
@@ -29,14 +35,14 @@ with MySQL. Found while porting the MRS functional suite (Milestone 2, see
   The service accounts created by `--setup` get a default role; an account
   used for pass-through authentication (`mysql_user_data_access` or MySQL
   Internal auth) needs `SET DEFAULT ROLE` by the DBA. The account running
-  `--setup` must hold the MRS roles `WITH ADMIN OPTION` to grant them
-  (`GRANT ALL ... WITH GRANT OPTION` is not enough on MariaDB).
+  `--setup` must hold the REST service roles `WITH ADMIN OPTION` to grant
+  them (`GRANT ALL ... WITH GRANT OPTION` is not enough on MariaDB).
 - **Read-only destinations**: there is no `super_read_only`; `read_only` does
   not apply to accounts with SUPER privilege, so the service only notices a
   read-only server when its own writes fail (an unprivileged service account).
 - **Offline mode** does not exist on MariaDB.
 - **Geometry**: MariaDB has no SRID attribute on columns and no geographic
-  axis order; coordinates are returned as stored (MySQL swaps them to
+  axis order; coordinates are returned as stored (MRS swaps them to
   latitude-longitude for SRID 4326). Equality filters use the column's SRID.
 - **VECTOR** columns have a fixed dimension on MariaDB (`VECTOR(n)`); MySQL's
   accept up to a maximum.
@@ -45,23 +51,25 @@ with MySQL. Found while porting the MRS functional suite (Milestone 2, see
   request runs into the read timeout instead.
 - **Invalid date/time literals** in filters compare as NULL (no match) instead
   of failing with 400.
-- **Floats** are rendered with the server's precision (`-1000` where MySQL
+- **Floats** are rendered with the server's precision (`-1000` where MRS
   prints the double `-999.9998779296876`).
 - **Integer display widths** (`int(11)`) appear in MariaDB's metadata; the
   OpenAPI output strips them.
 - **JSON text** in JSON columns is returned and stored as given (MySQL
   normalizes to `{"a": 1}` with a space and sorts the keys), so document
   lengths differ. The objects the service builds itself (rows, nested
-  references) are emitted in MySQL's member order, so their responses and
-  etags are the same on both servers.
+  references) are emitted in MRS's member order, so their documents and etags
+  are the same as MRS's.
+- **Accounts** created by `--setup` use the server's default authentication
+  plugin (MRS names `caching_sha2_password`).
 - `DROP USER` of an account with open connections emits a Note.
 - Error texts differ (e.g. "Table doesn't exist" where MySQL says "Unknown
-  database").
+  database"; "for key 'PRIMARY'" without the table name).
 
 ## Test-suite only
 
 - The upstream test fixtures declare `VECTOR` columns without a dimension and
-  store vectors of different lengths; the MariaDB mode of the suite maps them
-  to `BLOB` and disables the vector tests.
+  store vectors of different lengths; the suite maps them to `BLOB` and
+  disables the vector tests.
 - `mariadb-install-db` creates anonymous accounts that shadow every `'%'`
   account for local connections; the harness and the smoke test drop them.

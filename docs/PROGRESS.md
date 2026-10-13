@@ -18,29 +18,19 @@ Plan: [PLAN.md](PLAN.md). Current state and next steps: `.claude/PROJECT_CONTEXT
 | Milestone 2 phase | Status |
 |---|---|
 | M2.0: MariaDB dependency inventory | ✅ done 2026-10-07, verdict GO in stages ([milestone2-inventory.md](milestone2-inventory.md)) |
-| M2.1: build against MariaDB Connector/C | ✅ done 2026-10-09: build + ctest 113/113 on macOS (3.4.11), Linux (3.4.9) and Windows (3.4.8, vcpkg); the MySQL build still passes |
+| M2.1: build against MariaDB Connector/C | ✅ done 2026-10-09: build + ctest 113/113 on macOS (3.4.11), Linux (3.4.9) and Windows (3.4.8, vcpkg); the MySQL build was kept as the safety net until 2026-10-13 |
 | M2.2: run against a MariaDB server | ✅ done 2026-10-12: smoke test incl. MRS scripts passes on macOS (MariaDB 13.2), Windows and Ubuntu (11.8.9 LTS) |
 | M2.3: test suites on MariaDB | ✅ done 2026-10-13: MRS suite on macOS (13.2) and Windows (11.8.9) 100 passed, 0 failed, 14 skipped, 7 xfailed (known differences), 1 xpassed; Ubuntu (11.8.9) 101 passed, 0 failed (2026-10-12); unit + component 113/113 on all three; MySQL mode unchanged (116/5/1). Live-DB unit tests: MySQL 104/104 (macOS); MariaDB 102/104 on macOS, Ubuntu and Windows (the JSON-columns open point). M2.3 exit criteria met |
-| M2.4: cleanup | 🟡 2026-10-13: REST async tasks removed (6 files, handlers, options, OpenAPI, metadata flag, `MySQLSession` nonblocking path); verified on the three platforms: ctest 113/113, MRS suite in both modes and the live-DB unit tests unchanged. Open: README/CLAUDE.md pass for MariaDB, the MySQL-build decision, `restd:` marker check |
+| M2.4: cleanup | 🟡 2026-10-13: REST async tasks removed; MySQL build and MySQL server support dropped (Connector/C only, MariaDB 10.11+ only; −6k lines); docs for MariaDB. Open: the `restd:` marker pass, the follow-ups in PLAN.md (VECTOR coverage, fixed-pool `SET ROLE`, minimum version) |
 
 ## How to build and test (macOS)
 
-```sh
-cd <dev>/rest-daemon
-cmake -S . -B build-jit -G Ninja -DCMAKE_BUILD_TYPE=Debug \
-  -DMYSQL_PACKAGE_DIR=<dev>/mysql/mysql-26.7.0-macos15-arm64 \
-  -DMRS_JIT_EXECUTOR_LIB=$PWD/ext/polyglot/polyglot-nativeapi-native-library/target
-ninja -C build-jit
+Since 2026-10-13 the project is MariaDB-only: one build (`build-mariadb`, MariaDB
+Connector/C), one server flavor. The MySQL build (`build-test`/`build-jit`,
+`-DMYSQL_PACKAGE_DIR`) and the MySQL modes of the suites are gone; the state before that
+is tag `m2-pre-build-decision`.
 
-MRSD_BUILD=$PWD/build-jit \
-MYSQL_PACKAGE_DIR=<dev>/mysql/mysql-26.7.0-macos15-arm64 \
-MYSQLSH=<dev>/mysql/mysql-shell-26.7.0-macos15-arm64/bin/mysqlsh \
-SHELL_PLUGINS=<dev>/mysql/mysql-shell-plugins \
-  tools/smoke/run_smoke.sh      # prints "OK: {...}" on success
-```
-`build/` is the same build without JIT (leave out `-DMRS_JIT_EXECUTOR_LIB`).
-
-### MariaDB Connector/C build (Milestone 2, `build-mariadb`)
+### Build (`build-mariadb`)
 
 ```sh
 brew install mariadb-connector-c   # 3.4.x, OpenSSL; keg-only
@@ -50,9 +40,8 @@ cmake -S . -B build-mariadb -G Ninja -DCMAKE_BUILD_TYPE=Debug \
   -DWITH_UNIT_TESTS=ON -DWITH_COMPONENT_TESTS=ON
 ninja -C build-mariadb
 ```
-`MRSD_CLIENT_MARIADB` is defined for the whole build; the client-API differences are
-behind `#ifdef MRSD_CLIENT_MARIADB` (`grep -rn MRSD_CLIENT_MARIADB src compat tests`),
-centralised in `compat/include/mrsd/compat_client.h`.
+What Connector/C lacks of the client API the code was written for is evened out in
+`compat/include/mrsd/compat_client.h` (ssl-mode enum, type codes, `effective_field_type()`).
 
 Connector/C on the VMs (the finder accepts a Connector/C package, Homebrew, a Debian
 `libmariadb-dev` tree and vcpkg's layout):
@@ -66,36 +55,30 @@ Connector/C on the VMs (the finder accepts a Connector/C package, Homebrew, a De
   `plugins/libmariadb`. `<win-home>\mrsd-win-mariadb.cmd configure|build|ctest`
   (build dir `<win-dev>\mrsd-build-mariadb`, tests on; C: is nearly full, F: was enlarged to
   40 GB with `Resize-Partition`. C: can't grow past the recovery partition behind it).
-- Older Connector/C headers (3.4.8, 3.4.9) lack `MYSQL_TYPE_VECTOR` and `ER_QUERY_TIMEOUT`;
-  `compat_client.h` supplies them. The Linux `libmariadb.so.3` doesn't export the
-  `client_errors` tables, so `client_error_message()` keeps its own table.
+- Older Connector/C headers (3.4.8, 3.4.9) lack `MYSQL_TYPE_VECTOR`; `compat_client.h`
+  supplies it. The Linux `libmariadb.so.3` doesn't export the `client_errors` tables, so
+  `client_error_message()` keeps its own table.
 
 ### MRS functional suite (pytest, `tests/mrs`)
 
-MariaDB mode (Milestone 2; see the docstring of `tests/mrs/conftest.py`):
+See the docstring of `tests/mrs/conftest.py`.
 ```sh
 python3 -m venv build-mariadb/mrs-venv && build-mariadb/mrs-venv/bin/pip install -r tests/mrs/requirements.txt pytest-xdist
 MRSD_BUILD=$PWD/build-mariadb MARIADB_BUILD_DIR=<dev>/mariadb-server/light-build \
 MARIADB_SOURCE_DIR=<dev>/mariadb-server \
-  build-mariadb/mrs-venv/bin/python -m pytest tests/mrs -q -n 4 [-k <test>] [--record-mariadb]
+  build-mariadb/mrs-venv/bin/python -m pytest tests/mrs -q -n 4 [-k <test>] [--record]
 ```
 - `include/schema/mrs_metadata_schema-version4-mariadb.sql` is the MariaDB plugins' 4.1.6
-  deployment script with its `--` comments turned into `#` (mysqltest syntax); the `.inc`
-  files see `$MARIADB`.
+  deployment script with its `--` comments turned into `#` (mysqltest syntax).
 - `mrstest/mariadb_sql.py` rewrites the MySQL-only SQL of the upstream scripts before it is
-  sent (the echoed statement stays the original); `r/<name>.mariadb.result`,
-  `disabled.mariadb.def` and `known_failures.mariadb.def` are MariaDB overlays;
-  `Content-Length` values are masked (MariaDB returns JSON text as stored).
-- Smoke test in MariaDB mode: `MARIADB_BUILD_DIR=... MARIADB_SOURCE_DIR=...
-  MYSQLSH=<dev>/shell/bld/bin/mariadb-shell SHELL_PLUGINS=<dev>/mariadb-shell-plugins
+  sent (the echoed statement stays the original) and normalises the output (JSON member
+  order, etags, `Content-Length`, gtid lines); `r/<name>.mariadb.result` is a result
+  recorded on MariaDB, the other tests compare against upstream's `r/<name>.result`.
+  `--record` always writes the `.mariadb.result` file, until the results are re-recorded
+  for good in Milestone 3 (schema rename).
+- Smoke test: `MARIADB_BUILD_DIR=... MARIADB_SOURCE_DIR=... (or MARIADB_PACKAGE_DIR=...)
+  MYSQLSH=<dev>/shell/bld/bin/mariadb-shell SHELL_PLUGINS=<shell package>/lib/mariadb-shell/plugins
   tools/smoke/run_smoke.sh` (plus `MRS_SCRIPTS_DIR` for the scripts step).
-
-```sh
-python3 -m venv build-test/mrs-venv && build-test/mrs-venv/bin/pip install -r tests/mrs/requirements.txt
-MRSD_BUILD=$PWD/build-test \
-MYSQL_PACKAGE_DIR=<dev>/mysql/mysql-26.7.0-macos15-arm64 \
-  build-test/mrs-venv/bin/python -m pytest tests/mrs -q [-k <test>] [--record]
-```
 - needs a build with `-DWITH_UNIT_TESTS=ON` (for `mysqlrouter_mrs_client`)
 - `t/*.test` + `r/*.result` are upstream's `mysql-test/suite/router`, unchanged except
   `include/mysqlrouter_shutdown.inc` (router stop via harness hook) and the copyright lines
@@ -111,17 +94,14 @@ MYSQL_PACKAGE_DIR=<dev>/mysql/mysql-26.7.0-macos15-arm64 \
 `DatabaseQuery*` and `JsonMapping*` start their own server when `RUN_WITH_LIVE_MYSQLD=1`
 (`tests/helpers/shared_server.cc`); otherwise they are skipped.
 ```sh
-# MySQL (build-test, server from MRSD_MYSQL_PACKAGE_DIR)
-RUN_WITH_LIVE_MYSQLD=1 build-test/runtime_output_directory/routertest_mrs_plugin \
-  --gtest_filter='DatabaseQuery*.*:JsonMapping*.*'
-# MariaDB (build-mariadb; or MARIADB_PACKAGE_DIR=<package>)
+# MARIADB_BUILD_DIR + MARIADB_SOURCE_DIR, or MARIADB_PACKAGE_DIR=<package>
 RUN_WITH_LIVE_MYSQLD=1 MARIADB_BUILD_DIR=<dev>/mariadb-server/light-build \
 MARIADB_SOURCE_DIR=<dev>/mariadb-server \
   build-mariadb/runtime_output_directory/routertest_mrs_plugin \
   --gtest_filter='DatabaseQuery*.*:JsonMapping*.*'
 ```
-- MySQL 104/104; MariaDB 102/104, the 2 `special_types` failures are the JSON-string
-  write limitation (docs/mariadb-differences.md)
+- 102/104; the 2 `special_types` failures are the JSON-string write limitation
+  (docs/mariadb-differences.md, the JSON-columns open point)
 - Ubuntu: same command in `<dev>/mrsd/build-mariadb` with
   `MARIADB_PACKAGE_DIR=<downloads>/mariadb-11.8.9-linux-glibc2.34-arm-64bit-sandbox`.
   Windows: `<win-home>\mrsd-live-mariadb.cmd [gtest args]` (vcvars, the build's
@@ -145,7 +125,7 @@ VM at `<dev>/mysql/mrs_scripts` (no `node_modules`; the upload doesn't need it).
 
 x64 binaries run under Windows' built-in emulation. The GraalVM CE 23.0.1 on the VM is the
 **x64** Windows build (GraalVM has no Windows ARM64 release), so `libjitexecutor.dll` is x64,
-which fits an x64 `mrsd` linked against the x64 MySQL package.
+which fits an x64 `mrsd` linked against the x64 Connector/C (vcpkg).
 
 JIT library build (~25 min under emulation), `<win-home>\mrsd-polyglot-build.cmd`:
 ```bat
@@ -171,23 +151,26 @@ Two things are required, and the first failure hides the second:
   `polyglot-nativeapi/src/main/resources` and both `target` dirs (or `mvn -Ddev clean`).
 - `vcvars64.bat` (MSVC PATH/Path clash, see below).
 
-mrsd build (`<win-home>\mrsd-win.cmd configure|build`; source `<win-home>\mrsd`):
+mrsd build (`<win-home>\mrsd-win-mariadb.cmd configure|build|ctest`; source
+`<win-home>\mrsd`, build dir `<win-dev>\mrsd-build-mariadb`; the old `mrsd-win.cmd` built
+against the MySQL package and is obsolete):
 ```bat
 call "...\VC\Auxiliary\Build\vcvarsall.bat" arm64_amd64   & rem native ARM64-hosted compiler, x64 target
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ^
-  -DMYSQL_PACKAGE_DIR=<win-home>\Downloads\mysql-26.7.0-winx64 ^
+cmake -S . -B <win-dev>\mrsd-build-mariadb -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ^
+  -DMARIADB_CONNECTOR_DIR=<win-home>\mrsd-deps\vcpkg\installed\x64-windows ^
   -DOPENSSL_ROOT_DIR=<win-home>\mrsd-deps\vcpkg\installed\x64-windows ^
   -DICU_ROOT=<win-home>\mrsd-deps\icu ^
   -DMRS_JIT_EXECUTOR_LIB=<win-dev>\shell\ext\polyglot\polyglot-nativeapi-native-library\target
-ninja -C build
+ninja -C <win-dev>\mrsd-build-mariadb
 ```
 - OpenSSL 3.6.3 x64: `<win-dev>\vcpkg\vcpkg.exe install openssl:x64-windows --classic` with
   `--x-install-root/--x-buildtrees-root/--x-packages-root/--downloads-root` under `<win-home>\mrsd-deps\vcpkg` (F: is full)
 - ICU 78.3 x64: official `icu4c-78.3-Win64-MSVC2022.zip` in `<win-home>\mrsd-deps\icu`
 - RelWithDebInfo so everything uses the release C runtime, like the prebuilt deps
-- Smoke test: Git Bash script `<win-home>\mrsd-smoke.sh` (DLL dirs on PATH; MySQL Shell
-  26.7.0 Windows zip in Downloads, whose bundled `lib/mysqlsh/plugins` serves as SHELL_PLUGINS;
-  built mrs_scripts in `<win-home>\mrsd-deps\mrs_scripts`)
+- Smoke test: Git Bash script `<win-home>\mrsd-smoke-mariadb.sh` (DLL dirs on PATH; the
+  MariaDB 11.8.9 sandbox server and mariadb-shell 26.10.1 packages in Downloads, the shell's
+  `lib/mariadb-shell/plugins` as SHELL_PLUGINS; built mrs_scripts in
+  `<win-home>\mrsd-deps\mrs_scripts`). `mrsd-smoke.sh` (MySQL) is obsolete.
 - Source sync from the Mac: `tools/vm/win_sync.sh` (commits since `refs/win/synced`, via
   `git format-patch`, served briefly over HTTP on <host-ip>, applied with `git am`: the
   VM's sshd has no SFTP and stdin streaming to PowerShell never sees EOF);
@@ -198,9 +181,10 @@ ninja -C build
   `git update-ref refs/win/synced <Mac commit matching the clone's HEAD>`, run it again.
 - Run PowerShell on the VM: `tools/vm/win.sh <<'PS' ... PS` (quoted heredoc).
 
-- MRS functional suite: `powershell -File <win-home>\mrsd-pytest.ps1 -q [-k <test>]`
+- MRS functional suite: `powershell -File <win-home>\mrsd-pytest-mariadb.ps1 -q -n 4 [-k <test>]`
   (venv `<win-home>\mrsd-venv` from the ARM64 Python 3.14; puts the DLL dirs and Git's
-  `usr\bin` on PATH, for the perl the tests' `--perl` blocks need; ~32 min). Like mysqltest
+  `usr\bin` on PATH, for the perl the tests' `--perl` blocks need; ~11 min with 4 workers;
+  `mrsd-pytest.ps1` (MySQL) is obsolete). Like mysqltest
   on Windows, `exec` runs through `cmd.exe /c`, with `echo` replaced by a quote-stripping
   echo (`mrstest/echo.py` in place of mysqltest's `echo.exe`) and `/dev/null` by `NUL`.
   Redirect pytest's output to a file on the VM and read it back: long runs over SSH lose the
@@ -214,44 +198,43 @@ Notes for driving the VM over SSH:
 ### Linux (Ubuntu VM `<ubuntu-vm>`, `ssh <ubuntu-vm>`, aarch64)
 
 Source: `<dev>/mrsd`, a git repo that accepts pushes (`receive.denyCurrentBranch=updateInstead`).
-On the Mac: `git push vm main` (remote `vm`). Assets live in `<dev>/mysql/`:
-- `mysql-26.7.0-linux-glibc2.28-aarch64/` (server package)
-- `mysql-shell-26.7.0-linux-glibc2.28-arm-64bit/`
-- `mysql-shell-plugins/mrs_plugin/db_schema` (copied from the Mac)
-- `deps/`: no-root workarounds (see below)
+On the Mac: `git push vm main` (remote `vm`). Assets: the MariaDB 11.8.9 sandbox server
+and mariadb-shell 26.10.1 packages in `<downloads>`, Connector/C in
+`<dev>/mysql/deps/mariadb-connector/root/usr` (see "Connector/C on the VMs" above),
+`<dev>/mysql/deps/`: no-root workarounds (see below). The old MySQL assets in `<dev>/mysql/`
+(server package, MySQL Shell, mysql-shell-plugins) are unused now.
 
 ```sh
 cd <dev>/mrsd; L=/usr/lib/aarch64-linux-gnu; D=<dev>/mysql
-cmake -S . -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug \
-  -DMYSQL_PACKAGE_DIR=$D/mysql-26.7.0-linux-glibc2.28-aarch64 \
+cmake -S . -B build-mariadb -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug \
+  -DMARIADB_CONNECTOR_DIR=$D/deps/mariadb-connector/root/usr \
+  -DMRS_JIT_EXECUTOR_LIB=<dev>/mariadb-shell/ext/polyglot/polyglot-nativeapi-native-library/target \
+  -DWITH_UNIT_TESTS=ON -DWITH_COMPONENT_TESTS=ON \
   -DICU_INCLUDE_DIR=$D/deps/icu/usr/include \
   -DICU_UC_LIBRARY_RELEASE=$L/libicuuc.so.78 \
   -DICU_I18N_LIBRARY_RELEASE=$L/libicui18n.so.78 \
   -DICU_DATA_LIBRARY_RELEASE=$L/libicudata.so.78
-make -C build -j8
-LD_LIBRARY_PATH=$D/deps/lib MRSD_BUILD=$PWD/build \
-  MYSQL_PACKAGE_DIR=$D/mysql-26.7.0-linux-glibc2.28-aarch64 \
-  MYSQLSH=$D/mysql-shell-26.7.0-linux-glibc2.28-arm-64bit/bin/mysqlsh \
-  SHELL_PLUGINS=$D/mysql-shell-plugins tools/smoke/run_smoke.sh /tmp/mrsd-smoke
+make -C build-mariadb -j8
+<dev>/mrsd-smoke-mariadb.sh      # wrappers: smoke test and <dev>/mrsd-pytest-mariadb.sh
 ```
-The VM has no passwordless sudo, so there are three workarounds, none of them needed if
+The VM has no passwordless sudo, so there are two workarounds, neither needed if
 `sudo apt install libicu-dev ninja-build` is run once:
 - ICU headers: `apt-get download libicu-dev` unpacked into `deps/icu` (78.2, matches the installed runtime)
 - no ninja: Makefiles generator
-- `deps/lib/libaio.so.1 -> libaio.so.1t64` for the package's mysqld (Ubuntu 24.04+ renamed it)
 In the build tree the config must set `plugin_folder=<build>/plugin_output_directory`.
 
 ### Fedora (VM `ssh <fedora-vm>`, Fedora 44, aarch64): rpm packages
 
-Source: `<dev>/mrsd`, accepts pushes (`git push fedora main`, remote `fedora`). Assets in
-`<dev>/mysql/` (copied from the Ubuntu VM: server package, MySQL Shell, mysql-shell-plugins,
-mrs_scripts) and the JIT library + headers in `<dev>/jit/target` (built on Ubuntu, same
-glibc 2.43). GCC 16, CMake 4.3, openssl-devel and libicu-devel are installed; no ninja.
+Source: `<dev>/mrsd`, accepts pushes (`git push fedora main`, remote `fedora`). The JIT
+library + headers are in `<dev>/jit/target` (built on Ubuntu, same glibc 2.43). GCC 16,
+CMake 4.3, openssl-devel and libicu-devel are installed; no ninja. Not rebuilt since the
+switch to Connector/C (2026-10-13): it needs a Connector/C (`mariadb-connector-c-devel`
+or an unpacked package) and `-DMARIADB_CONNECTOR_DIR` in place of the MySQL package:
 ```sh
-cd <dev>/mrsd; D=<dev>/mysql
+cd <dev>/mrsd
 cmake -S . -B build-sys -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DINSTALL_LAYOUT=SYSTEM -DCMAKE_INSTALL_PREFIX=/usr \
-  -DMYSQL_PACKAGE_DIR=$D/mysql-26.7.0-linux-glibc2.28-aarch64 -DMRS_JIT_EXECUTOR_LIB=<dev>/jit/target
+  -DMARIADB_CONNECTOR_DIR=<connector prefix> -DMRS_JIT_EXECUTOR_LIB=<dev>/jit/target
 make -C build-sys -j8 && (cd build-sys && cpack -G RPM)
 ```
 `rpm-build` is installed (a user-local copy doesn't work, its macros hard-code
@@ -692,3 +675,20 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   functions in both client variants); the smoke test no longer loads `mysql_tasks`.
 - Open point recorded: JSON columns on MariaDB (metadata says `longtext`; JSON-string
   writes fail), to review after Milestone 3.
+- Decision: MariaDB only. The MySQL build (libmysqlclient, `-DMYSQL_PACKAGE_DIR`) and MySQL
+  server support are gone: `cmake/compat/mysql_package.cmake`, the `MRSD_CLIENT_MARIADB`
+  ifdefs (TLS session cache, `SslMode`, query attributes, ...), `helper/server_flavor`
+  and the MySQL branch at every `is_mariadb()` site (SQL generation, roles, read-only,
+  offline mode, `--setup`), the `ER_*` maps (call sites use MariaDB's codes), the gate
+  accepts MariaDB 10.11+ only (the component tests' mock greets as MariaDB), the MySQL
+  modes of `tests/mrs`, `shared_server.cc` and the smoke test. `$asof` is refused at parse
+  time on every path. GTID/`asof` is parked as Milestone 4 (shared with the shell and
+  plugins); packaging and CI are Milestone 5. Restore point: tag `m2-pre-build-decision`
+  + a bundle in `<dev>/rest-daemon-backups/`. The GitHub `origin` is still empty.
+- The mock-based unit tests had only ever run the MySQL SQL text (the flavor defaulted to
+  MySQL); their expectations are MariaDB's now.
+- Verified after the removal on the three platforms, all unchanged from before it: ctest
+  113/113, unit 389/389, live-DB 102/104; MRS suite macOS and Windows 100 passed, 0 failed,
+  14 skipped, 7 xfailed, 1 xpassed, Ubuntu 101/0/13/7/1. (Windows ctest: one 30 s timeout
+  in `routertest_component_http_server`, `GET__empty_static_folder_with_trailing_spaces_404`,
+  passes when rerun; seen twice now under load, unrelated to MariaDB.)
