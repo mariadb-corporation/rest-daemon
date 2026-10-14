@@ -309,10 +309,12 @@ Decisions (2026-10-13, see the decision log):
   without field metadata (`query_one` in the object loader, the user-group set, the
   sequence id) go by the data size. Unit tests for both paths.
 
-### Phase M3.4: switch to 5.0.0 (atomic) — steps 1–6 done on macOS (2026-10-13), Ubuntu/Windows pending
+### Phase M3.4: switch to 5.0.0 (atomic) ✅ done (2026-10-13)
 Done on branch `m3.4` (one commit per step). Mac, 13.2: unit 395/395, ctest 113/113,
 live 102/104, suite 108/0/4/5/1 (as before the switch), smoke test incl. MRS scripts with
-shell 26.10.2 and the plugins' `main`. Deviations from the steps below: see the decision
+shell 26.10.2 and the plugins' `main`. Ubuntu and Windows (11.8.9, shell 26.10.2 packages):
+ctest 113/113, live 102/104, suite 109/0/3/5/1 and 108/0/4/5/1, smoke test OK.
+Fast-forwarded to `main`. Deviations from the steps below: see the decision
 log (2026-10-13, M3.4 done on macOS).
 On branch `m3.4`, several commits, fast-forwarded to `main` when every suite is green
 (the tree is red in between). Decisions: the keyring master-key reader's `ROUTER_ID`

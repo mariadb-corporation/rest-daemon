@@ -13,7 +13,7 @@ Plan: [PLAN.md](PLAN.md). Current state and next steps: `.claude/PROJECT_CONTEXT
 | 3: MRS setup and cleanup | ✅ done 2026-10-05: branding (`mariadb-restd`), `--setup`, routing/cluster cleanup; tests pass on all three platforms |
 | 4: packaging and CI | ⏸ moved to Milestone 4 (2026-10-07): tar.gz (Linux, macOS), deb, rpm, Windows ZIP done and verified (unpacked); real deb/rpm installs need root; MSI deferred; CI last |
 
-**Milestone 1 (standalone daemon) is complete (2026-10-07). Milestone 2 (MariaDB) is complete (2026-10-13).** Milestone 3 (schema 5.0.0) is current. M3.0–M3.3 done; M3.4 (the switch to 5.0.0) done on macOS, Ubuntu/Windows pending.
+**Milestone 1 (standalone daemon) is complete (2026-10-07). Milestone 2 (MariaDB) is complete (2026-10-13).** Milestone 3 (schema 5.0.0) is current. M3.0–M3.4 done (M3.4, the switch to 5.0.0, verified on macOS, Ubuntu and Windows 2026-10-13); M3.5 next.
 
 | Milestone 2 phase | Status |
 |---|---|
@@ -181,10 +181,10 @@ ninja -C <win-dev>\mrsd-build-mariadb
 - ICU 78.3 x64: official `icu4c-78.3-Win64-MSVC2022.zip` in `<win-home>\mrsd-deps\icu`
 - RelWithDebInfo so everything uses the release C runtime, like the prebuilt deps
 - Smoke test: Git Bash script `<win-home>\mrsd-smoke-mariadb.sh` (DLL dirs on PATH; the
-  MariaDB 11.8.9 sandbox server and mariadb-shell 26.10.1 packages in Downloads, the shell's
-  `lib/mariadb-shell/plugins` as SHELL_PLUGINS; built mrs_scripts in
-  `<win-home>\mrsd-deps\mrs_scripts`). `mrsd-smoke.sh` (MySQL) is obsolete.
-- Source sync from the Mac: `tools/vm/win_sync.sh` (commits since `refs/win/synced`, via
+  MariaDB 11.8.9 sandbox server and mariadb-shell 26.10.2 packages in Downloads, the shell's
+  `lib/mariadb-shell/plugins` as SHELL_PLUGINS; built mrs_scripts (5.0 copy) in
+  `<win-home>\mrsd-deps\mrs_scripts-5`). `mrsd-smoke.sh` (MySQL) is obsolete.
+- Source sync from the Mac: `tools/vm/win_sync.sh` (`BRANCH=<branch>` to sync another branch than `main`; commits since `refs/win/synced`, via
   `git format-patch`, served briefly over HTTP on <host-ip>, applied with `git am`: the
   VM's sshd has no SFTP and stdin streaming to PowerShell never sees EOF);
   `tools/vm/win_wip.sh` copies uncommitted changes. `refs/win/synced` is local to the Mac
@@ -212,7 +212,8 @@ Notes for driving the VM over SSH:
 
 Source: `<dev>/mrsd`, a git repo that accepts pushes (`receive.denyCurrentBranch=updateInstead`).
 On the Mac: `git push vm main` (remote `vm`). Assets: the MariaDB 11.8.9 sandbox server
-and mariadb-shell 26.10.1 packages in `<downloads>`, Connector/C in
+and mariadb-shell 26.10.2 packages in `<downloads>` (the smoke wrapper uses 26.10.2 and
+`<dev>/mrs_scripts-5`), Connector/C in
 `<dev>/mysql/deps/mariadb-connector/root/usr` (see "Connector/C on the VMs" above),
 `<dev>/mysql/deps/`: no-root workarounds (see below). The old MySQL assets in `<dev>/mysql/`
 (server package, MySQL Shell, mysql-shell-plugins) are unused now.
@@ -780,4 +781,10 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   Plugins-side leftovers found: `mrs_notes` keeps `BINARY(16)` owner columns, the
   `mrs_scripts` example grants on `mysql_rest_service_metadata` and looks users up with
   `UNHEX(?)` (open point in PLAN.md; the user will confirm on the plugins' side).
-- Pending: Ubuntu and Windows (11.8.9), then fast-forward `m3.4` to `main`.
+- Ubuntu (11.8.9): ctest 113/113, live 102/104, suite 109 / 0 / 3 / 5 / 1, smoke test incl.
+  MRS script OK. Windows (11.8.9): ctest 113/113, live 102/104, suite 108 / 0 / 4 / 5 / 1,
+  smoke test incl. MRS script OK. Both with the mariadb-shell 26.10.2 packages (their
+  bundled 5.0.0 script is identical to the shell's `main`) and a 5.0 copy of `mrs_scripts`
+  (`<dev>/mrs_scripts-5`, `<win-home>\mrsd-deps\mrs_scripts-5`); the smoke wrappers on
+  both VMs point at them (the 26.10.1 versions kept as `*.26101`). `win_sync.sh` takes
+  `BRANCH=`. `m3.4` fast-forwarded to `main`.
