@@ -25,6 +25,8 @@
 #     cmake/bootstrap_vcpkg.cmake)
 #   -DWITH_VCPKG_TRIPLET=<vcpkg triplet>
 #   -DMRS_JIT_EXECUTOR_LIB=<dir with libjitexecutor and its headers>
+#   -DWITH_JIT_EXECUTOR=ON (build that library from ext/polyglot, see
+#     cmake/bootstrap_jit_executor.cmake)
 #   -DWITH_UNIT_TESTS=ON
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.24)
@@ -85,6 +87,8 @@ INCLUDE(cmake/compat/configure_checks.cmake)
 # the client library: MariaDB Connector/C, as the MySQL::client target
 INCLUDE(cmake/compat/mariadb_connector.cmake)
 SET(MRSD_CLIENT_PACKAGE_DIR "${MARIADB_CONNECTOR_DIR}")
+# the JIT executor library, built from ext/polyglot with -DWITH_JIT_EXECUTOR=ON
+INCLUDE(cmake/bootstrap_jit_executor.cmake)
 INCLUDE(cmake/compat/third_party.cmake)
 
 # global flags, as in the server build

@@ -209,16 +209,4 @@
             </plugin>
         </plugins>
     </build>
-    <repositories>
-        <repository>
-            <id>artifactory.libs-release</id>
-            <url>https://artifactory.oci.oraclecorp.com/libs-release</url>
-        </repository>
-    </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>artifactory.libs-release</id>
-            <url>https://artifactory.oci.oraclecorp.com/libs-release</url>
-        </pluginRepository>
-    </pluginRepositories>
 </project>
