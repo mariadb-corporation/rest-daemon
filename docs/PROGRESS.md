@@ -864,3 +864,20 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   build; smoke test with MRS script against Homebrew MariaDB 12.3.2. With the hand-built
   library also ctest 96/96 (unit tests) and the same smoke test. Linux and Windows not yet
   run.
+
+### 2026-10-14: session 9, continued (the macOS package with vcpkg's Connector/C)
+
+- The tarball of a vcpkg build failed to start: `libmariadb.3.dylib` needs
+  `@rpath/libz.1.3.2.dylib` (vcpkg's zlib), which wasn't bundled. Fixed in three places:
+  - `CMakeLists.txt`: with Connector/C from vcpkg (`MARIADB_CONNECTOR_FROM_VCPKG`), zlib and
+    OpenSSL are bundled in every layout.
+  - `cmake/bundle_runtime_libraries.cmake`: the dependency scan is repeated over the libraries
+    found in the previous pass; a library looked up by name (macOS `@rpath`) wasn't scanned
+    for its own dependencies. Executables are recognised by the file name, not the path: the
+    CPack staging prefix (`…/mariadb-restd-26.10.0-macos-arm64`) has dots, so no executable
+    had been rewritten, and their ICU references still pointed at `/opt/homebrew` (the
+    earlier macOS tarballs only worked on machines with Homebrew's ICU).
+  - `cmake/compat/mariadb_connector.cmake`: vcpkg's release OpenSSL (`lib/`) also in a Debug
+    build, where the toolchain picked `debug/lib` next to the release `libmariadb`.
+- Verified: Debug build with `WITH_JIT_EXECUTOR`, `--target package`; no absolute references
+  in the unpacked tarball; smoke test with `MRSD_INSTALL` incl. MRS script.

@@ -39,55 +39,78 @@ FOREACH(_dir ${BUNDLE_SCAN_DIRS})
     IF(IS_SYMLINK "${_f}")
       CONTINUE()
     ENDIF()
+    GET_FILENAME_COMPONENT(_fname "${_f}" NAME)
     IF(_f MATCHES "\\.(so|dylib|dll)$" OR _f MATCHES "\\.so\\.[0-9.]+$")
       LIST(APPEND _modules "${_f}")
-    ELSEIF(_f MATCHES "\\.exe$" OR (NOT WIN32 AND NOT _f MATCHES "\\."))
+    # by the file name: the install prefix has dots (CPack's
+    # .../mariadb-restd-26.10.0-macos-arm64)
+    ELSEIF(_f MATCHES "\\.exe$" OR (NOT WIN32 AND NOT _fname MATCHES "\\."))
       LIST(APPEND _executables "${_f}")
     ENDIF()
   ENDFOREACH()
 ENDFOREACH()
 
-FILE(GET_RUNTIME_DEPENDENCIES
-  EXECUTABLES ${_executables}
-  MODULES ${_modules}
-  DIRECTORIES ${BUNDLE_SEARCH_DIRS}
-  PRE_INCLUDE_REGEXES ${BUNDLE_NAME_REGEXES}
-  PRE_EXCLUDE_REGEXES ".*"
-  POST_INCLUDE_REGEXES ${BUNDLE_NAME_REGEXES}
-  POST_EXCLUDE_REGEXES ".*"
-  RESOLVED_DEPENDENCIES_VAR _resolved
-  UNRESOLVED_DEPENDENCIES_VAR _unresolved
-  CONFLICTING_DEPENDENCIES_PREFIX _conflicts)
+# Repeated over the libraries found in the previous pass: a library looked up
+# by name below (macOS @rpath) wasn't scanned for its own dependencies yet
+# (vcpkg's libmariadb -> @rpath/libz.1.3.2.dylib)
+SET(_resolved)
+SET(_resolved_names)
+SET(_scan_args EXECUTABLES ${_executables} MODULES ${_modules})
+WHILE(_scan_args)
+  FILE(GET_RUNTIME_DEPENDENCIES
+    ${_scan_args}
+    DIRECTORIES ${BUNDLE_SEARCH_DIRS}
+    PRE_INCLUDE_REGEXES ${BUNDLE_NAME_REGEXES}
+    PRE_EXCLUDE_REGEXES ".*"
+    POST_INCLUDE_REGEXES ${BUNDLE_NAME_REGEXES}
+    POST_EXCLUDE_REGEXES ".*"
+    RESOLVED_DEPENDENCIES_VAR _pass_resolved
+    UNRESOLVED_DEPENDENCIES_VAR _unresolved
+    CONFLICTING_DEPENDENCIES_PREFIX _conflicts)
 
-# macOS resolves @rpath/ references only through the binary's rpaths, which
-# don't point at the build machine's libraries: look those up by name
-FOREACH(_dep ${_unresolved})
-  GET_FILENAME_COMPONENT(_name "${_dep}" NAME)
-  SET(_found)
-  FOREACH(_dir ${BUNDLE_SEARCH_DIRS})
-    IF(NOT _found AND EXISTS "${_dir}/${_name}")
-      SET(_found "${_dir}/${_name}")
+  # macOS resolves @rpath/ references only through the binary's rpaths, which
+  # don't point at the build machine's libraries: look those up by name
+  FOREACH(_dep ${_unresolved})
+    GET_FILENAME_COMPONENT(_name "${_dep}" NAME)
+    SET(_found)
+    FOREACH(_dir ${BUNDLE_SEARCH_DIRS})
+      IF(NOT _found AND EXISTS "${_dir}/${_name}")
+        SET(_found "${_dir}/${_name}")
+      ENDIF()
+    ENDFOREACH()
+    IF(NOT _found)
+      MESSAGE(FATAL_ERROR "bundled library not found: ${_dep}")
+    ENDIF()
+    LIST(APPEND _pass_resolved "${_found}")
+  ENDFOREACH()
+
+  FOREACH(_name ${_conflicts_FILENAMES})
+    SET(_pick)
+    FOREACH(_candidate ${_conflicts_${_name}})
+      FILE(REAL_PATH "${_candidate}" _real_candidate)
+      IF(NOT _pick AND NOT _real_candidate MATCHES "^${BUNDLE_AVOID_DIR}/")
+        SET(_pick "${_candidate}")
+      ENDIF()
+    ENDFOREACH()
+    IF(NOT _pick)
+      LIST(GET _conflicts_${_name} 0 _pick)
+    ENDIF()
+    LIST(APPEND _pass_resolved "${_pick}")
+  ENDFOREACH()
+
+  SET(_scan_args)
+  FOREACH(_lib ${_pass_resolved})
+    GET_FILENAME_COMPONENT(_name "${_lib}" NAME)
+    IF(NOT _name IN_LIST _resolved_names)
+      LIST(APPEND _resolved_names "${_name}")
+      LIST(APPEND _resolved "${_lib}")
+      IF(NOT _scan_args)
+        SET(_scan_args LIBRARIES)
+      ENDIF()
+      LIST(APPEND _scan_args "${_lib}")
     ENDIF()
   ENDFOREACH()
-  IF(NOT _found)
-    MESSAGE(FATAL_ERROR "bundled library not found: ${_dep}")
-  ENDIF()
-  LIST(APPEND _resolved "${_found}")
-ENDFOREACH()
-
-FOREACH(_name ${_conflicts_FILENAMES})
-  SET(_pick)
-  FOREACH(_candidate ${_conflicts_${_name}})
-    FILE(REAL_PATH "${_candidate}" _real_candidate)
-    IF(NOT _pick AND NOT _real_candidate MATCHES "^${BUNDLE_AVOID_DIR}/")
-      SET(_pick "${_candidate}")
-    ENDIF()
-  ENDFOREACH()
-  IF(NOT _pick)
-    LIST(GET _conflicts_${_name} 0 _pick)
-  ENDIF()
-  LIST(APPEND _resolved "${_pick}")
-ENDFOREACH()
+ENDWHILE()
 
 # copy them, under the name the binaries refer to
 SET(_bundled_names)
