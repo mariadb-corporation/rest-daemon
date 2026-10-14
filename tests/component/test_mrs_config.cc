@@ -73,7 +73,7 @@ class RouterMrsConfig : public RouterComponentTest {
       const std::optional<std::string> &mysql_read_write_destinations,
       const std::optional<std::string> &mysql_user,
       const std::optional<std::string> &mysql_user_data_access,
-      const std::optional<std::uint64_t> &router_id) const {
+      const std::optional<std::string> &rest_daemon_id) const {
     std::vector<std::pair<std::string, std::string>> options{};
 
     if (mysql_read_only_destinations) {
@@ -91,8 +91,8 @@ class RouterMrsConfig : public RouterComponentTest {
       options.emplace_back("mysql_user_data_access",
                            mysql_user_data_access.value());
     }
-    if (router_id) {
-      options.emplace_back("router_id", std::to_string(router_id.value()));
+    if (rest_daemon_id) {
+      options.emplace_back("rest_daemon_id", rest_daemon_id.value());
     }
 
     return mysql_harness::ConfigBuilder::build_section("mysql_rest_service",
@@ -100,7 +100,7 @@ class RouterMrsConfig : public RouterComponentTest {
   }
 
   void setup_cluster(const std::string &mock_file,
-                     const uint64_t mrs_router_id = 1) {
+                     const std::string &mrs_router_id = kRestDaemonId) {
     const auto http_port = cluster_nodes_http_ports[0];
     auto mock_server_cmdline_args = mock_server_cmdline(mock_file)
                                         .port(cluster_nodes_ports[0])
@@ -120,9 +120,10 @@ class RouterMrsConfig : public RouterComponentTest {
         mysqlrouter::MetadataSchemaVersion{(2), (3), (0)}, cluster_name_);
 
     JsonAllocator allocator;
-    json_doc.AddMember("mrs_router_id", mrs_router_id, allocator);
+    json_doc.AddMember("mrs_router_id",
+                       JsonValue(mrs_router_id.c_str(), allocator), allocator);
     // restd: the daemon only accepts a MariaDB server (the handshake's
-    // version string), 10.11 or later
+    // version string), 11.7 or later
     json_doc.AddMember("server_version", "11.8.0-MariaDB", allocator);
 
     const auto json_str = json_to_string(json_doc);
@@ -144,7 +145,10 @@ class RouterMrsConfig : public RouterComponentTest {
   const uint16_t kClusterSize = 6;
   const uint16_t router_port_rw{port_pool_.get_next_available()};
 
-  uint64_t router_id_{1};
+  // restd: the daemon's id is a UUID (upstream: router_id, an integer)
+  static constexpr const char *kRestDaemonId =
+      "10000000-0000-7000-8000-000000000001";
+  std::string router_id_{kRestDaemonId};
   std::vector<uint16_t> cluster_nodes_ports;
   std::vector<uint16_t> cluster_nodes_http_ports;
   const std::string user_{"mysql_test_user"};
@@ -153,7 +157,7 @@ class RouterMrsConfig : public RouterComponentTest {
 
 /**
  * @test Checks that the Router refuses to start if
- * [mysql_rest_service].router_id is not configured
+ * [mysql_rest_service].rest_daemon_id is not configured
  */
 TEST_F(RouterMrsConfig, RouterComponentBootstrapWithDefaultCertsTest) {
   const std::string mrs_section =
@@ -166,7 +170,7 @@ TEST_F(RouterMrsConfig, RouterComponentBootstrapWithDefaultCertsTest) {
 
   check_exit_code(router, EXIT_FAILURE);
   EXPECT_TRUE(wait_log_contains(router,
-                                "Configuration error: option router_id in "
+                                "Configuration error: option rest_daemon_id in "
                                 "\\[mysql_rest_service\\] is required",
                                 500ms));
 }
@@ -176,10 +180,9 @@ TEST_F(RouterMrsConfig, RouterComponentBootstrapWithDefaultCertsTest) {
  * but with different router_id it fails to start.
  */
 TEST_F(RouterMrsConfig, id_mismatch) {
-  router_id_ = 1;
   // Use different id
   setup_cluster("metadata_dynamic_nodes_v2_gr_mrs.js",
-                /*mrs_router_id*/ router_id_ + 1);
+                /*mrs_router_id*/ "10000000-0000-7000-8000-000000000002");
 
   const auto mrs_section = get_mrs_section(
       std::nullopt, "127.0.0.1:" + std::to_string(cluster_nodes_ports[0]),
@@ -187,8 +190,11 @@ TEST_F(RouterMrsConfig, id_mismatch) {
   auto &router = launch_router(mrs_section, EXIT_FAILURE);
 
   EXPECT_TRUE(wait_log_contains(router,
-                                "Metadata already contains Router registered "
-                                "as '.*' at '.*' with id: \\d+, new id: \\d+",
+                                "Metadata already contains a REST daemon "
+                                "registered as '.*' at '.*' with id: "
+                                "10000000-0000-7000-8000-000000000002, "
+                                "configured id: "
+                                "10000000-0000-7000-8000-000000000001",
                                 5s));
 
   // restd: wait for the router to exit by itself; otherwise teardown may stop

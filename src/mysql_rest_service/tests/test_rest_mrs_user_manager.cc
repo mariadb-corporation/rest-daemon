@@ -82,7 +82,7 @@ class UserManagerFixture : public Test {
     std::string query_user{
         "SELECT id, auth_app_id, name, email, vendor_user_id, "
         "login_permitted, app_options, auth_string FROM "
-        "mysql_rest_service_metadata.mrs_user "
+        "mariadb_rest_service.mrs_user "
         "WHERE `auth_app_id`=X'02000000000000000000000000000000' and "
         "vendor_user_id='"};
     query_user.append(u.user[4]).append("' ");
@@ -111,7 +111,7 @@ class UserManagerFixture : public Test {
 
     std::string query_user_groups{
         "SELECT user_group_id FROM "
-        "mysql_rest_service_metadata.mrs_user_has_group "
+        "mariadb_rest_service.mrs_user_has_group "
         "WHERE user_id="};
     query_user_groups.append(u.sql_id);
 
@@ -252,7 +252,7 @@ TEST_F(UserManagerFixture, fetch_user_from_db_and_update) {
                      k_user_4000040400004_id_sql_str});
 
   EXPECT_CALL(session_,
-              query(StrEq("UPDATE mysql_rest_service_metadata.mrs_user SET "
+              query(StrEq("UPDATE mariadb_rest_service.mrs_user SET "
                           "auth_app_id=X'02000000000000000000000000000000',"
                           "name='John Doe', "
                           "email='new_john_doe@doe.com', "

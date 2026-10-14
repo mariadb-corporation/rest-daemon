@@ -47,22 +47,22 @@ std::string get_master_key_file_path() {
 }
 
 /*
- * MySQLRouter sets ROUTER_ID environment variable which can be used by
- * master-key-writer/master-key-writer to distinguish between routers, and
- * write/read appropriate master key.
+ * The daemon sets the REST_DAEMON_ID environment variable (restd: upstream's
+ * ROUTER_ID), which master-key-writer/master-key-reader can use to
+ * distinguish between instances, and write/read the appropriate master key.
  *
- * This function checks if ROUTER_ID variable is set.
+ * This function checks if REST_DAEMON_ID variable is set.
  *
- * @return true if ROUTER_ID is set in environment, false otherwise.
+ * @return true if REST_DAEMON_ID is set in environment, false otherwise.
  */
 bool check_router_id() {
 #ifdef _WIN32
   char env_str[2000] = {0};
   size_t len = 0;
 
-  return getenv_s(&len, env_str, sizeof(env_str), "ROUTER_ID") == 0;
+  return getenv_s(&len, env_str, sizeof(env_str), "REST_DAEMON_ID") == 0;
 #else
-  return getenv("ROUTER_ID") != nullptr;
+  return getenv("REST_DAEMON_ID") != nullptr;
 #endif
 }
 

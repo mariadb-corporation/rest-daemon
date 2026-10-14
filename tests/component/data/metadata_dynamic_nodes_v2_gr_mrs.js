@@ -34,7 +34,7 @@ if (mysqld.global.cluster_name === undefined) {
 }
 
 if (mysqld.global.mrs_router_id === undefined) {
-  mysqld.global.mrs_router_id = 1;
+  mysqld.global.mrs_router_id = "10000000-0000-7000-8000-000000000001";
 }
 
 ({

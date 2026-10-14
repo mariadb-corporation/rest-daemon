@@ -126,7 +126,7 @@ var defaults = {
   router_hostname: "router-host",
   router_options: "",
   router_name: "test_router",
-  mrs_router_id: 1,
+  mrs_router_id: "10000000-0000-7000-8000-000000000001",
   mrs_basedir: "",
 };
 
@@ -1450,7 +1450,7 @@ function get_response(stmt_key, options) {
     case "mrs_set_sql_mode":
       return {"stmt": "SET @@SESSION.sql_mode=DEFAULT;", "ok": {}};
     case "mrs_set_meta_provider_role":
-      return {"stmt": "SET ROLE mysql_rest_service_meta_provider", "ok": {}};
+      return {"stmt": "SET ROLE mariadb_rest_service_meta_provider", "ok": {}};
     case "mrs_select_basedir":
       return {
         stmt: "SELECT @@basedir",
@@ -1460,13 +1460,13 @@ function get_response(stmt_key, options) {
         }
       };
     case "mrs_set_data_provider_role":
-      return {"stmt": "SET ROLE mysql_rest_service_data_provider", "ok": {}};
+      return {"stmt": "SET ROLE mariadb_rest_service_data_provider", "ok": {}};
     case "mrs_select_router_id":
       return {
         stmt_regex:
-            "SELECT `id` FROM mysql_rest_service_metadata.router WHERE router_name = '.*' AND address = '.*'",
+            "SELECT `id` FROM mariadb_rest_service.rest_daemon WHERE name = '.*' AND address = '.*'",
         result: {
-          columns: [{"name": "id", "type": "LONG"}],
+          columns: [{"name": "id", "type": "STRING"}],
           rows: [[options.mrs_router_id]],
         }
       };

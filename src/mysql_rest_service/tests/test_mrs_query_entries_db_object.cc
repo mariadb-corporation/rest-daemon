@@ -67,7 +67,7 @@ class QueryEntriesDbObjectTests : public Test {
     EXPECT_CALL(
         mock_session,
         query(
-            StrEq("SELECT max(id) FROM mysql_rest_service_metadata.audit_log"),
+            StrEq("SELECT max(id) FROM mariadb_rest_service.audit_log"),
             _, _))
         .WillOnce(Invoke([audit_id_numeric](auto, auto &row, auto &) {
           mysqlrouter::MySQLSession::Row fields{audit_id_numeric};
@@ -76,7 +76,7 @@ class QueryEntriesDbObjectTests : public Test {
         .RetiresOnSaturation();
     EXPECT_CALL(mock_session,
                 query(StartsWith("SELECT * FROM (SELECT   o.id as "
-                                 "db_object_id, db.id as db_schema_id,"),
+                                 "rest_object_id, db.id as rest_schema_id,"),
                       _, _))
         .RetiresOnSaturation();
   }

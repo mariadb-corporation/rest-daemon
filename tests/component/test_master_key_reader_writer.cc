@@ -145,7 +145,7 @@ class MasterKeyReaderWriterTest : public RouterComponentBootstrapTest {
 
     keyring_info.generate_master_key();
     master_key_ = keyring_info.get_master_key();
-    keyring_info.add_router_id_to_env(1);
+    keyring_info.add_rest_daemon_id_to_env("10000000-0000-7000-8000-000000000001");
     keyring_info.write_master_key();
     mysql_harness::init_keyring_with_key(keyring_info.get_keyring_file(),
                                          keyring_info.get_master_key(), true);

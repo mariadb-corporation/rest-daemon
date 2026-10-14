@@ -29,6 +29,8 @@
 
 #include "test_mrs_database_rest_table.h"
 
+#include "mrs/database/metadata_schema.h"
+
 
 constexpr const char *k_test_ddl[] = {
     "CREATE SCHEMA mrstestdb", "USE mrstestdb",
@@ -1024,17 +1026,19 @@ bool DatabaseRestTableTest::binlog_changed() const {
 
 void DatabaseRestTableTest::prepare_user_metadata() {
   // This should match the latest version of mrs_metadata_schema.sql (with some
-  // FKs to unused tables removed)
+  // FKs to unused tables removed). restd: metadata 5.0.0, ids are `UUID`s,
+  // under the configured schema name; the tables' owner columns stay
+  // BINARY(16), so the row-ownership SQL compares BINARY(16) with UUID
   // Use of this should be minimized in unit-tests, most tests that need the MD
   // should be done in MTR
 
   static std::vector<const char *> k_sql = {
-      "DROP SCHEMA IF EXISTS mysql_rest_service_metadata",
-      "CREATE SCHEMA mysql_rest_service_metadata",
+      "DROP SCHEMA IF EXISTS mariadb_rest_service",
+      "CREATE SCHEMA mariadb_rest_service",
 
-      R"*(CREATE TABLE IF NOT EXISTS `mysql_rest_service_metadata`.`mrs_user` (
-  `id` BINARY(16) NOT NULL,
-  `auth_app_id` BINARY(16) NOT NULL,
+      R"*(CREATE TABLE IF NOT EXISTS `mariadb_rest_service`.`mrs_user` (
+  `id` UUID NOT NULL,
+  `auth_app_id` UUID NOT NULL,
   `name` VARCHAR(225) NULL,
   `email` VARCHAR(255) NULL,
   `vendor_user_id` VARCHAR(255) NULL,
@@ -1047,29 +1051,29 @@ void DatabaseRestTableTest::prepare_user_metadata() {
   INDEX `fk_auth_user_auth_app1_idx` (`auth_app_id` ASC) VISIBLE
 ) ENGINE = InnoDB;)*",
 
-      R"*(CREATE TABLE IF NOT EXISTS `mysql_rest_service_metadata`.`mrs_user_hierarchy` (
-  `user_id` BINARY(16) NOT NULL,
-  `reporting_to_user_id` BINARY(16) NOT NULL,
-  `user_hierarchy_type_id` BINARY(16) NOT NULL,
+      R"*(CREATE TABLE IF NOT EXISTS `mariadb_rest_service`.`mrs_user_hierarchy` (
+  `user_id` UUID NOT NULL,
+  `reporting_to_user_id` UUID NOT NULL,
+  `user_hierarchy_type_id` UUID NOT NULL,
   `options` JSON NULL,
   PRIMARY KEY (`user_id`, `reporting_to_user_id`, `user_hierarchy_type_id`),
   INDEX `fk_user_hierarchy_auth_user2_idx` (`reporting_to_user_id` ASC) VISIBLE,
   INDEX `fk_user_hierarchy_hierarchy_type1_idx` (`user_hierarchy_type_id` ASC) VISIBLE,
   CONSTRAINT `fk_user_hierarchy_auth_user1`
     FOREIGN KEY (`user_id`)
-    REFERENCES `mysql_rest_service_metadata`.`mrs_user` (`id`)
+    REFERENCES `mariadb_rest_service`.`mrs_user` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_user_hierarchy_auth_user2`
     FOREIGN KEY (`reporting_to_user_id`)
-    REFERENCES `mysql_rest_service_metadata`.`mrs_user` (`id`)
+    REFERENCES `mariadb_rest_service`.`mrs_user` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION
 ) ENGINE = InnoDB;)*",
 
-      R"*(CREATE TABLE IF NOT EXISTS `mysql_rest_service_metadata`.`mrs_user_group` (
-  `id` BINARY(16) NOT NULL,
-  `specific_to_service_id` BINARY(16) NULL,
+      R"*(CREATE TABLE IF NOT EXISTS `mariadb_rest_service`.`mrs_user_group` (
+  `id` UUID NOT NULL,
+  `specific_to_service_id` UUID NULL,
   `caption` VARCHAR(45) NULL,
   `description` VARCHAR(512) NULL,
   `options` JSON NULL,
@@ -1077,10 +1081,10 @@ void DatabaseRestTableTest::prepare_user_metadata() {
   INDEX `fk_user_group_service1_idx` (`specific_to_service_id` ASC) VISIBLE
 ) ENGINE = InnoDB;)*",
 
-      R"*(CREATE TABLE IF NOT EXISTS `mysql_rest_service_metadata`.`mrs_user_group_hierarchy` (
-  `user_group_id` BINARY(16) NOT NULL,
-  `parent_group_id` BINARY(16) NOT NULL,
-  `group_hierarchy_type_id` BINARY(16) NOT NULL,
+      R"*(CREATE TABLE IF NOT EXISTS `mariadb_rest_service`.`mrs_user_group_hierarchy` (
+  `user_group_id` UUID NOT NULL,
+  `parent_group_id` UUID NOT NULL,
+  `group_hierarchy_type_id` UUID NOT NULL,
   `level` INT UNSIGNED NOT NULL DEFAULT 0,
   `options` JSON NULL,
   PRIMARY KEY (`user_group_id`, `parent_group_id`, `group_hierarchy_type_id`),
@@ -1089,24 +1093,27 @@ void DatabaseRestTableTest::prepare_user_metadata() {
   INDEX `fk_user_group_hierarchy_group_hierarchy_type1_idx` (`group_hierarchy_type_id` ASC) VISIBLE,
   CONSTRAINT `fk_user_group_has_user_group_user_group1`
     FOREIGN KEY (`user_group_id`)
-    REFERENCES `mysql_rest_service_metadata`.`mrs_user_group` (`id`)
+    REFERENCES `mariadb_rest_service`.`mrs_user_group` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_user_group_has_user_group_user_group2`
     FOREIGN KEY (`parent_group_id`)
-    REFERENCES `mysql_rest_service_metadata`.`mrs_user_group` (`id`)
+    REFERENCES `mariadb_rest_service`.`mrs_user_group` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION
 ) ENGINE = InnoDB;)*",
 
-      R"*(INSERT INTO mysql_rest_service_metadata.mrs_user
+      R"*(INSERT INTO mariadb_rest_service.mrs_user
           (id, name, auth_app_id) VALUES
-          (0x11110000000000000000000000000000, 'UserOne', 0),
-          (0x22220000000000000000000000000000, 'UserTwo', 0),
-          (0x33330000000000000000000000000000, 'UserThree', 0))*",
+          ('11110000-0000-0000-0000-000000000000', 'UserOne',
+           '00000000-0000-0000-0000-000000000000'),
+          ('22220000-0000-0000-0000-000000000000', 'UserTwo',
+           '00000000-0000-0000-0000-000000000000'),
+          ('33330000-0000-0000-0000-000000000000', 'UserThree',
+           '00000000-0000-0000-0000-000000000000'))*",
   };
 
   for (const char *sql : k_sql) {
-    m_->execute(sql);
+    m_->execute(mrs::database::metadata_sql(sql));
   }
 }
