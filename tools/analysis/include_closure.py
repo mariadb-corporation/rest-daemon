@@ -20,7 +20,9 @@ Transitive #include closure of the MRS module set, reporting what lands
 outside the set (other router modules, server tree, generated, unresolved)."""
 import os, re, sys, collections
 
-SRC = os.environ.get("MYSQL_SRC", "<dev>/mysql/mysql-server")
+SRC = os.environ.get("MYSQL_SRC")
+if not SRC:
+    sys.exit("set MYSQL_SRC to a mysql-server source tree (MYSQL_BLD: its build tree)")
 BLD = os.environ.get("MYSQL_BLD", SRC + "/build")
 R = SRC + "/router/src"
 

@@ -3,6 +3,14 @@
 Plan: [PLAN.md](PLAN.md). Current state and next steps: `.claude/PROJECT_CONTEXT.md`
 (`/checkpoint`). This file keeps the build/test how-to and a session log entry per session.
 
+Paths of the development machines are written with placeholders: `<dev>` (the development
+directory of the machine at hand), `<home>`, `<downloads>`; on the Windows VM `<win-home>`
+(the user profile) and `<win-dev>` (the build drive); the VMs as `<windows-vm>`,
+`<ubuntu-vm>`, `<fedora-vm>` (ssh targets), the Mac as `<host-ip>` / `<hostname>`. Their
+values are kept outside the repository (a local `CLAUDE.local.md`). The Windows VM helper
+scripts (`tools/vm/win.sh`, `win_sync.sh`, `win_wip.sh`) are local tooling, not in the
+repository.
+
 ## Status
 
 | Phase | Status |

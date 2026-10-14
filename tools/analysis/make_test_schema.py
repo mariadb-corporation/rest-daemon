@@ -17,7 +17,7 @@ Reads MariaDB Shell's deployment script from a git ref of the shell repository
 - `DELIMITER` lines are kept (mysqltest understands them).
 
 Usage:
-  tools/analysis/make_test_schema.py [--shell-repo <dev>/shell] [--ref main]
+  tools/analysis/make_test_schema.py --shell-repo <MariaDB Shell checkout> [--ref main]
 """
 
 import argparse
@@ -67,7 +67,8 @@ def convert(text):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("--shell-repo", default=os.path.expanduser("<dev>/shell"))
+    parser.add_argument("--shell-repo", required=True,
+                        help="a MariaDB Shell checkout (read with git show)")
     parser.add_argument("--ref", default="main")
     parser.add_argument("--output", default=None,
                         help="default: %s in this repository" % TARGET)

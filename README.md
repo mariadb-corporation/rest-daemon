@@ -292,7 +292,7 @@ parameters.
 | `extra/` | vendored code: rapidjson, libcno, googletest, duktape, MySQL server headers |
 | `ext/polyglot/` | Maven build of the JIT executor library (from the MySQL Shell sources) |
 | `tests/` | component tests, test helpers, REST functional tests (`tests/mrs`), test data |
-| `tools/` | smoke test, VM helpers, a dependency analysis script |
+| `tools/` | smoke test, analysis scripts (dependency closure, the suite's schema generator and converter) |
 | `docs/` | plan, progress log, inventories, differences from the MySQL REST Service |
 
 [README.router](README.router) and [MRS_README.router](MRS_README.router) are
