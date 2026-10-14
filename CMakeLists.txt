@@ -208,15 +208,27 @@ IF(WIN32)
 ELSE()
   SET(_bundle_dest "${ROUTER_INSTALL_LIBDIR}")
 ENDIF()
+# Connector/C's client auth plugins, next to the bundled libmariadb (see
+# client_plugin_dir() in mysql_session.cc), with the bundled OpenSSL
+SET(_client_plugin_dest "${_bundle_dest}/${MRSD_CLIENT_PLUGIN_SUBDIR}")
+IF(MARIADB_CLIENT_PLUGIN_DIR)
+  FILE(GLOB _client_plugins "${MARIADB_CLIENT_PLUGIN_DIR}/*.so"
+    "${MARIADB_CLIENT_PLUGIN_DIR}/*.dylib" "${MARIADB_CLIENT_PLUGIN_DIR}/*.dll")
+  INSTALL(FILES ${_client_plugins} DESTINATION "${_client_plugin_dest}"
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+                WORLD_READ WORLD_EXECUTE
+    COMPONENT Router)
+ENDIF()
 SET(_bundle_scan
   "${ROUTER_INSTALL_BINDIR}" "${ROUTER_INSTALL_LIBDIR}"
-  "${ROUTER_INSTALL_PLUGINDIR}")
+  "${ROUTER_INSTALL_PLUGINDIR}" "${_client_plugin_dest}")
 LIST(REMOVE_DUPLICATES _bundle_scan)
 INSTALL(CODE "
   set(BUNDLE_NAME_REGEXES \"${_bundle_regexes}\")
   set(BUNDLE_SEARCH_DIRS \"${_bundle_dirs}\")
   set(BUNDLE_DEST \"${_bundle_dest}\")
   set(BUNDLE_SCAN_DIRS \"${_bundle_scan}\")
+  set(BUNDLE_CLIENT_PLUGIN_DIR \"${_client_plugin_dest}\")
   set(BUNDLE_AVOID_DIR \"${MRSD_CLIENT_PACKAGE_DIR}\")
   include(\"${CMAKE_SOURCE_DIR}/cmake/bundle_runtime_libraries.cmake\")
   " COMPONENT Router)

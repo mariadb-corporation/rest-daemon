@@ -164,6 +164,9 @@ FIND_PATH(MARIADB_CLIENT_PLUGIN_DIR
         "${MARIADB_CONNECTOR_DIR}/lib/${CMAKE_LIBRARY_ARCHITECTURE}/mariadb/plugin"
         "${MARIADB_CONNECTOR_DIR}/plugins/libmariadb"  # vcpkg
   NO_DEFAULT_PATH)
+# where the packages install the client plugins, next to the bundled
+# libmariadb (config.h: restd looks there first)
+SET(MRSD_CLIENT_PLUGIN_SUBDIR "mariadb-client-plugins")
 IF(NOT MARIADB_CLIENT_PLUGIN_DIR)
   MESSAGE(WARNING
     "MariaDB Connector/C client plugin directory not found under "

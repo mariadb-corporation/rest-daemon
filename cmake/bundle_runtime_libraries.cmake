@@ -26,9 +26,17 @@
 #   BUNDLE_AVOID_DIR     on a name clash, prefer copies outside this directory
 #                        (the client package's private OpenSSL: the binaries
 #                        link the build's OpenSSL, and one copy is shipped)
+#   BUNDLE_CLIENT_PLUGIN_DIR  install-prefix relative directory of
+#                        Connector/C's client plugins, a subdirectory of
+#                        BUNDLE_DEST: they find the bundled libraries in ..
 
 SET(_prefix "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}")
 SET(_dest "${_prefix}/${BUNDLE_DEST}")
+SET(_client_plugins)
+IF(BUNDLE_CLIENT_PLUGIN_DIR)
+  FILE(GLOB _client_plugins LIST_DIRECTORIES false
+    "${_prefix}/${BUNDLE_CLIENT_PLUGIN_DIR}/*")
+ENDIF()
 
 # the installed binaries
 SET(_executables)
@@ -136,7 +144,7 @@ IF(NOT APPLE)
   # libraries get RUNPATH $ORIGIN, so that their dependencies (libssl ->
   # libcrypto, libicuuc -> libicudata, libmariadb -> libssl) are the
   # bundled copies too, not the system's.
-  IF(_bundled_names)
+  IF(_bundled_names OR _client_plugins)
     FIND_PROGRAM(_patchelf patchelf)
     IF(NOT _patchelf)
       MESSAGE(FATAL_ERROR
@@ -146,6 +154,11 @@ IF(NOT APPLE)
   FOREACH(_name ${_bundled_names})
     EXECUTE_PROCESS(
       COMMAND ${_patchelf} --set-rpath "$ORIGIN" "${_dest}/${_name}"
+      COMMAND_ERROR_IS_FATAL ANY)
+  ENDFOREACH()
+  FOREACH(_plugin ${_client_plugins})
+    EXECUTE_PROCESS(
+      COMMAND ${_patchelf} --set-rpath "$ORIGIN/.." "${_plugin}"
       COMMAND_ERROR_IS_FATAL ANY)
   ENDFOREACH()
   RETURN()
@@ -194,6 +207,9 @@ FOREACH(_f ${_executables} ${_modules} ${_bundled_files})
     IF(NOT _loads MATCHES "path @loader_path ")
       LIST(APPEND _args -add_rpath "@loader_path")
     ENDIF()
+  ENDIF()
+  IF(_f IN_LIST _client_plugins AND NOT _loads MATCHES "path @loader_path/\\.\\. ")
+    LIST(APPEND _args -add_rpath "@loader_path/..")
   ENDIF()
 
   IF(_args)

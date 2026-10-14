@@ -38,7 +38,9 @@
 
 #ifdef _WIN32
 #include <winsock2.h>
+#include <windows.h>
 #else
+#include <dlfcn.h>
 #include <poll.h>
 #endif
 
@@ -47,6 +49,7 @@
 #include "router_config.h"  // MRSD_CLIENT_PLUGIN_DIR
 #include "mysql/harness/net_ts/internet.h"
 
+#include "mysql/harness/filesystem.h"
 #include "mysql/harness/logging/logger.h"
 #include "mysql/harness/stdx/expected.h"
 #include "mysqlrouter/mysql_client_thread_token.h"
@@ -62,6 +65,36 @@ using namespace std::string_literals;
     "VERIFY_IDENTITY";
 
 namespace {
+
+// libmariadb's auth plugins (caching_sha2_password, ...) are dynamic: the
+// packages install them into MRSD_CLIENT_PLUGIN_SUBDIR next to the bundled
+// libmariadb; without that directory (the build tree), the ones of the
+// Connector/C restd was built with
+std::string client_plugin_dir() {
+  std::string lib_path;
+#ifdef _WIN32
+  HMODULE module;
+  char path[MAX_PATH];
+  if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                             GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                         reinterpret_cast<LPCSTR>(&mysql_init), &module)) {
+    DWORD len = GetModuleFileNameA(module, path, sizeof(path));
+    if (len > 0 && len < sizeof(path)) lib_path.assign(path, len);
+  }
+#else
+  Dl_info info;
+  if (dladdr(reinterpret_cast<void *>(&mysql_init), &info) != 0 &&
+      info.dli_fname != nullptr) {
+    lib_path = info.dli_fname;
+  }
+#endif
+  if (!lib_path.empty()) {
+    mysql_harness::Path dir =
+        mysql_harness::Path(lib_path).dirname().join(MRSD_CLIENT_PLUGIN_SUBDIR);
+    if (dir.is_directory()) return dir.str();
+  }
+  return MRSD_CLIENT_PLUGIN_DIR;
+}
 
 using MysqlSessionTrackGet = int (*)(MYSQL *mysql,
                                      enum enum_session_state_type type,
@@ -83,12 +116,13 @@ MySQLSession::MySQLSession() {
   // refuses servers without TLS; the daemon's default is PREFERRED.
   set_ssl_options(SSL_MODE_PREFERRED, "", "", "", "", "", "");
 
-  // libmariadb's auth plugins (caching_sha2_password, ...) are dynamic. Its
-  // compiled-in directory is the installed package's; the build knows the
-  // one of the Connector/C it was built with. MARIADB_PLUGIN_DIR (the
-  // library's own override) and MYSQL_PLUGIN_DIR set by callers win.
-  if (MRSD_CLIENT_PLUGIN_DIR[0] != '\0' && !getenv("MARIADB_PLUGIN_DIR")) {
-    set_option(PluginDir(MRSD_CLIENT_PLUGIN_DIR));
+  // libmariadb's auth plugins (caching_sha2_password, ...) are dynamic, and
+  // its compiled-in directory is the one of the Connector/C installation:
+  // see client_plugin_dir(). MARIADB_PLUGIN_DIR (the library's own override)
+  // and MYSQL_PLUGIN_DIR set by callers win.
+  static const std::string plugin_dir = client_plugin_dir();
+  if (!plugin_dir.empty() && !getenv("MARIADB_PLUGIN_DIR")) {
+    set_option(PluginDir(plugin_dir.c_str()));
   }
 }
 

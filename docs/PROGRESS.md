@@ -881,3 +881,13 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
     build, where the toolchain picked `debug/lib` next to the release `libmariadb`.
 - Verified: Debug build with `WITH_JIT_EXECUTOR`, `--target package`; no absolute references
   in the unpacked tarball; smoke test with `MRSD_INSTALL` incl. MRS script.
+- Connector/C's client auth plugins are now in the packages: installed into
+  `mariadb-client-plugins/` next to the bundled `libmariadb` (every layout), with the
+  bundled OpenSSL (`@loader_path/..`, `$ORIGIN/..`). restd looks there first (the directory
+  of the loaded `libmariadb`, `dladdr`/`GetModuleHandleEx`) and falls back to the build's
+  `MRSD_CLIENT_PLUGIN_DIR` (the build tree). Before, the packages used the build machine's
+  plugin directory, so an account with `ed25519`/`caching_sha2_password` couldn't log in
+  from a package elsewhere. Verified: `--setup` as an `ed25519` account from the unpacked
+  Release tarball, with the build's plugin directory hidden, loads the package's
+  `client_ed25519.so`; from the build tree, the vcpkg one; ctest 96/96; smoke test with
+  `MRSD_INSTALL`.
