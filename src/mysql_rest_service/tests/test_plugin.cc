@@ -27,8 +27,21 @@
 #include <gtest/gtest.h>
 
 #include "helpers/process_manager.h"
+#include "helpers/shared_server.h"
 #include "mysql/harness/logging/registry.h"
 #include "test/helpers.h"
+
+namespace {
+
+// restd: removes the data directory the live tests' SharedServer initializes
+// once per run (upstream does this in its integration tests' environments;
+// without it each run left ~150 MB in the temp directory)
+class SharedServerEnvironment : public ::testing::Environment {
+ public:
+  void TearDown() override { SharedServer::destroy_statics(); }
+};
+
+}  // namespace
 
 int main(int argc, char *argv[]) {
   init_test_logger();
@@ -53,6 +66,8 @@ int main(int argc, char *argv[]) {
   }
 
   ProcessManager::set_origin(Path(argv[0]).dirname());
+
+  ::testing::AddGlobalTestEnvironment(new SharedServerEnvironment);
 
   return RUN_ALL_TESTS();
 }
