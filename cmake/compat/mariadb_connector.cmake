@@ -53,9 +53,24 @@ IF(NOT MARIADB_CONNECTOR_DIR)
   # a normal variable: the cache entry stays empty, and the next configure
   # takes the vcpkg prefix again
   SET(MARIADB_CONNECTOR_DIR "${VCPKG_INSTALLED_PREFIX}")
-  # the OpenSSL libmariadb is linked with, so that one OpenSSL is loaded
+  # its dependencies (zlib, OpenSSL) are vcpkg's too: the packages bundle them
+  SET(MARIADB_CONNECTOR_FROM_VCPKG ON)
+  # the OpenSSL libmariadb is linked with, so that one OpenSSL is loaded: the
+  # release libraries in lib/, as libmariadb's below, also in a Debug build
+  # (the vcpkg toolchain would find debug/lib's there)
   IF(NOT OPENSSL_ROOT_DIR)
     SET(OPENSSL_ROOT_DIR "${VCPKG_INSTALLED_PREFIX}")
+    SET(OPENSSL_INCLUDE_DIR "${VCPKG_INSTALLED_PREFIX}/include")
+    FOREACH(_var OPENSSL_SSL_LIBRARY OPENSSL_CRYPTO_LIBRARY)
+      STRING(FIND "${${_var}}" "${VCPKG_INSTALLED_PREFIX}/debug/" _pos)
+      IF(_pos EQUAL 0)
+        UNSET(${_var} CACHE)
+      ENDIF()
+    ENDFOREACH()
+    FIND_LIBRARY(OPENSSL_SSL_LIBRARY NAMES ssl libssl
+      PATHS "${VCPKG_INSTALLED_PREFIX}/lib" NO_DEFAULT_PATH)
+    FIND_LIBRARY(OPENSSL_CRYPTO_LIBRARY NAMES crypto libcrypto
+      PATHS "${VCPKG_INSTALLED_PREFIX}/lib" NO_DEFAULT_PATH)
   ENDIF()
 ENDIF()
 
