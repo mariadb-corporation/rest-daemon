@@ -25,11 +25,13 @@ What it does differently from the MySQL REST Service is listed in
 
 - CMake 3.24 or later and a C++23 compiler (tested: GCC 15, AppleClang 21,
   MSVC 2022 17.14)
-- **MariaDB Connector/C** 3.4 or later (a release package, Homebrew's
-  `mariadb-connector-c`, Debian's `libmariadb-dev` or vcpkg's `libmariadb`),
-  built with OpenSSL
-- OpenSSL 3 and ICU (system packages on Linux/macOS; on Windows, e.g. OpenSSL
-  from vcpkg and the official ICU zip)
+- **MariaDB Connector/C** 3.4 or later, built with OpenSSL, and OpenSSL 3:
+  by default, configure gets both from [vcpkg](https://vcpkg.io), as MariaDB
+  Shell does (below). Alternatively, pass a Connector/C installation with
+  `MARIADB_CONNECTOR_DIR` (a release package, Homebrew's
+  `mariadb-connector-c`, Debian's `libmariadb-dev`, ...); OpenSSL is then
+  taken from the system or `OPENSSL_ROOT_DIR`
+- ICU (system packages on Linux/macOS; on Windows, e.g. the official ICU zip)
 - optional: the **JIT executor library** (`libjitexecutor` and its headers),
   needed for MRS scripts; built from `ext/polyglot` (below)
 
@@ -37,12 +39,30 @@ What it does differently from the MySQL REST Service is listed in
 
 | Option | |
 |---|---|
-| `MARIADB_CONNECTOR_DIR` | prefix of the MariaDB Connector/C installation (**required**) |
+| `MARIADB_CONNECTOR_DIR` | prefix of a MariaDB Connector/C installation; without it, Connector/C and OpenSSL come from vcpkg |
+| `WITH_VCPKG_TRIPLET` | vcpkg triplet to get the dependencies with (default: the dynamic triplet of the host, if `MARIADB_CONNECTOR_DIR` is not set; `OFF`: no vcpkg) |
+| `VCPKG_ROOT` | the vcpkg checkout (default: `$VCPKG_ROOT`, else `../vcpkg`, cloned if missing) |
 | `MRS_JIT_EXECUTOR_LIB` | directory with `libjitexecutor` and its headers; without it, restd is built without MRS script support |
 | `WITH_UNIT_TESTS` | build the unit tests and the test tools (`OFF`) |
 | `WITH_COMPONENT_TESTS` | build the component tests, needs `WITH_UNIT_TESTS` (`OFF`) |
 | `OPENSSL_ROOT_DIR`, `ICU_ROOT` | where to find OpenSSL / ICU, if not in a default location |
 | `INSTALL_GIT_HOOKS` | link the hooks in `.githooks/` into the clone at configure time (`ON`) |
+
+### Dependencies from vcpkg
+
+Without `MARIADB_CONNECTOR_DIR`, configure installs the dependencies listed in
+`vcpkg.json` (Connector/C and OpenSSL) into `<build>/vcpkg_installed/<triplet>`
+and builds against them, the way MariaDB Shell's `-DWITH_VCPKG_TRIPLET` works
+(`cmake/bootstrap_vcpkg.cmake`):
+
+- vcpkg is taken from `-DVCPKG_ROOT`, the `VCPKG_ROOT` environment variable
+  or `../vcpkg` (next to the source tree, where MariaDB Shell's build puts it
+  too), in that order. If there is no checkout there, configure clones vcpkg
+  at the `builtin-baseline` commit of `vcpkg.json` and bootstraps it.
+- The triplet is the host's dynamic one (`arm64-osx-dynamic`,
+  `x64-linux-dynamic`, `x64-windows`, ...), as restd links the shared
+  `libmariadb`; choose another with `-DWITH_VCPKG_TRIPLET=<triplet>`.
+- A vcpkg toolchain file passed with `-DCMAKE_TOOLCHAIN_FILE` is used as is.
 
 ### JIT executor library
 
@@ -64,10 +84,12 @@ On Windows, run it from a `vcvars64.bat` environment; see `ext/polyglot/README.t
 
 ```sh
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  -DMARIADB_CONNECTOR_DIR=/opt/homebrew/opt/mariadb-connector-c \
   -DMRS_JIT_EXECUTOR_LIB=$PWD/ext/polyglot/polyglot-nativeapi-native-library/target
 cmake --build build
 ```
+
+With an installed Connector/C instead of vcpkg's, add e.g.
+`-DMARIADB_CONNECTOR_DIR=/opt/homebrew/opt/mariadb-connector-c`.
 
 On macOS, OpenSSL and ICU are found in Homebrew's default locations.
 
@@ -75,20 +97,18 @@ On macOS, OpenSSL and ICU are found in Homebrew's default locations.
 
 restd is built for x64 (the JIT executor library is x64 only on Windows). From
 a Visual Studio 2022 developer environment (`vcvarsall.bat amd64`, or
-`arm64_amd64` on Windows on ARM), with Connector/C from vcpkg
-(`libmariadb[openssl]:x64-windows`):
+`arm64_amd64` on Windows on ARM), with Connector/C and OpenSSL from vcpkg
+(triplet `x64-windows`):
 
 ```bat
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ^
-  -DMARIADB_CONNECTOR_DIR=C:\path\to\vcpkg\installed\x64-windows ^
-  -DOPENSSL_ROOT_DIR=C:\path\to\vcpkg\installed\x64-windows ^
   -DICU_ROOT=C:\path\to\icu ^
   -DMRS_JIT_EXECUTOR_LIB=%CD%\ext\polyglot\polyglot-nativeapi-native-library\target
 cmake --build build
 ```
 
-At run time, the DLLs of Connector/C (`libmariadb.dll`), OpenSSL and ICU must
-be on `PATH`.
+At run time, the DLLs of Connector/C (`libmariadb.dll`), OpenSSL (in
+`build\vcpkg_installed\x64-windows\bin`) and ICU must be on `PATH`.
 
 ### Build output
 
