@@ -91,6 +91,12 @@ entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
   `VECTOR` parameters render as arrays.
 - **Malformed base64** for a BINARY field is stored as NULL, as in MRS
   (MySQL's `FROM_BASE64` yields NULL; the service checks the value itself).
+- **Metadata changes are polled Galera-safe**: audit-log ids are taken at insert,
+  not at commit, so with concurrent writers (on Galera: several write nodes) a change
+  can become visible after one with a higher id. MRS reads only the ids after the last
+  one it saw and misses such a change until a full reload; restd also re-reads the
+  last 60 seconds of the audit log (by `changed_at`) and skips what it already
+  applied, and on a Galera node sets `wsrep_sync_wait` on its polling connection.
 - **Statement timeouts** (`sqlQuery.timeout`) are applied with
   `SET STATEMENT max_statement_time=... FOR ...` (MRS uses the
   `MAX_EXECUTION_TIME` optimizer hint, which MariaDB only knows from 12.0 and

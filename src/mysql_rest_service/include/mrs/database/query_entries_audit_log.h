@@ -27,6 +27,9 @@
 #ifndef ROUTER_SRC_REST_MRS_SRC_MRS_DATABASE_QUERY_AUDIT_LOG_ENTRIES_H_
 #define ROUTER_SRC_REST_MRS_SRC_MRS_DATABASE_QUERY_AUDIT_LOG_ENTRIES_H_
 
+#include <chrono>
+#include <map>
+#include <string>
 #include <vector>
 
 #include "mrs/database/entry/audit_log.h"
@@ -35,11 +38,24 @@
 namespace mrs {
 namespace database {
 
+// restd: Galera-safe polling. audit_log ids are AUTO_INCREMENT values taken
+// when the trigger inserts the row, not at commit: with concurrent writers,
+// and on a Galera cluster with several write nodes, a row with a lower id can
+// become visible after a higher one. A poll therefore also re-reads the rows
+// changed within an overlap window (by `changed_at`, on the server's clock)
+// and skips the ids it has already returned. Keep one instance per monitor
+// (the ids returned so far are its state). Upstream read `id > <last id>` only.
 class QueryAuditLogEntries : private Query {
  public:
   using VectorOfAuditEntries = std::vector<entry::AuditLog>;
 
+  // covers a transaction's duration, the replication delay and the clock skew
+  // between the nodes
+  static constexpr std::chrono::seconds k_overlap_window{60};
+
  public:
+  // the entries after audit_log_id, plus the ones within the overlap window
+  // not returned by an earlier call; returns the highest id seen
   virtual uint64_t query_entries(MySQLSession *session,
                                  const std::vector<std::string> &allowed_tables,
                                  const uint64_t audit_log_id);
@@ -58,6 +74,9 @@ class QueryAuditLogEntries : private Query {
   bool fetch_entries_;
   uint64_t max_id_;
   uint64_t no_of_entries_;
+  // ids returned within the overlap window -> their changed_at (server text)
+  std::map<uint64_t, std::string> returned_;
+  std::string window_start_;
 };
 
 }  // namespace database

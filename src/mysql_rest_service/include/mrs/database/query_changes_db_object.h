@@ -29,6 +29,7 @@
 
 #include <set>
 
+#include "mrs/database/query_entries_audit_log.h"
 #include "mrs/database/entry/db_object.h"
 #include "mrs/database/query_entries_db_object.h"
 
@@ -60,6 +61,8 @@ class QueryChangesDbObject : public QueryEntriesDbObject {
                           const entry::UniversalId &id);
   std::string build_query(const std::string &table_name,
                           const entry::UniversalId &id);
+  // restd: kept across polls (the overlap window's state)
+  QueryAuditLogEntries audit_entries_;
 };
 
 }  // namespace database

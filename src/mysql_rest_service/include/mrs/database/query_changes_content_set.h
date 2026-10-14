@@ -29,6 +29,7 @@
 
 #include <set>
 
+#include "mrs/database/query_entries_audit_log.h"
 #include "mrs/database/entry/universal_id.h"
 #include "mrs/database/query_entries_content_set.h"
 
@@ -50,6 +51,8 @@ class QueryChangesContentSet : public QueryEntriesContentSet {
                           const entry::UniversalId id);
 
   std::set<entry::UniversalId> entries_fetched;
+  // restd: kept across polls (the overlap window's state)
+  QueryAuditLogEntries audit_entries_;
 };
 
 }  // namespace database

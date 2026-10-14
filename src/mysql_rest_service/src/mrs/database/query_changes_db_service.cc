@@ -44,14 +44,13 @@ void QueryChangesDbService::query_entries(MySQLSession *session) {
     return;
   }
 
-  QueryAuditLogEntries audit_entries;
   VectorOfEntries local_entries;
   uint64_t max_audit_log_id = audit_log_id_;
   entries_fetched.clear();
 
-  audit_entries.query_entries(session, {"service"}, audit_log_id_);
+  audit_entries_.query_entries(session, {"service"}, audit_log_id_);
 
-  for (const auto &audit_entry : audit_entries.entries) {
+  for (const auto &audit_entry : audit_entries_.entries) {
     if (audit_entry.old_table_id.has_value())
       query_service_entries(session, &local_entries, audit_entry.table,
                             audit_entry.old_table_id.value());

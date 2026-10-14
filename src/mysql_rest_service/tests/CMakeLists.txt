@@ -45,6 +45,7 @@ ADD_TEST_FILE(test_plugin.cc
     ./test_metadata_schema.cc
     ./test_mrs_authentication_rate_control.cc
     ./test_mrs_entities_manager.cc
+    ./test_mrs_audit_log_window.cc
     ./test_mrs_database_converters.cc
     ./test_mrs_database_rest_table.cc
     ./test_mrs_database_rest_table_get.cc

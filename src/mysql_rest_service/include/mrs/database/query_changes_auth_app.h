@@ -49,7 +49,6 @@ class QueryChangesAuthApp : public QueryEntriesAuthAppImpl {
   }
 
   void query_entries(MySQLSession *session) override {
-    QueryAuditLogEntries audit_entries;
     Entries local_entries;
     uint64_t max_audit_log_id = Parent::audit_log_id_;
 
@@ -58,10 +57,10 @@ class QueryChangesAuthApp : public QueryEntriesAuthAppImpl {
     std::vector<std::string> allowed_changes{"auth_app", "auth_vendor",
                                              "service_has_auth_app"};
 
-    audit_entries.query_entries(session, allowed_changes,
+    audit_entries_.query_entries(session, allowed_changes,
                                 Parent::audit_log_id_);
 
-    for (const auto &audit_entry : audit_entries.entries) {
+    for (const auto &audit_entry : audit_entries_.entries) {
       auto table = audit_entry.table;
       if (audit_entry.old_table_id.has_value())
         query_auth_entries(session, &local_entries, table,
@@ -80,6 +79,8 @@ class QueryChangesAuthApp : public QueryEntriesAuthAppImpl {
   }
 
  private:
+  // restd: kept across polls (the overlap window's state)
+  QueryAuditLogEntries audit_entries_;
   void query_auth_entries(MySQLSession *session, Entries *out,
                           const std::string &table_name,
                           const entry::UniversalId &id) {

@@ -92,6 +92,30 @@ void check_supported_mrs_version(
   throw std::runtime_error(error_message.str());
 }
 
+// restd: on a Galera node, a poll waits until the node has applied what the
+// cluster committed before it (wsrep_sync_wait, reads). Best effort: the
+// audit log's overlap window covers the rest. `is_galera` caches the check
+// (a server without wsrep support has no @@wsrep_on).
+void sync_wait_on_galera(mysqlrouter::MySQLSession *session,
+                         std::optional<bool> *is_galera) {
+  if (!is_galera->has_value()) {
+    try {
+      auto row = session->query_one("SELECT @@wsrep_on");
+      const char *v = row && (*row)[0] ? (*row)[0] : "";
+      *is_galera = strcmp(v, "1") == 0 || strcmp(v, "ON") == 0;
+    } catch (const mysqlrouter::MySQLSession::Error &) {
+      *is_galera = false;
+    }
+  }
+  if (!is_galera->value()) return;
+
+  try {
+    session->execute("SET SESSION wsrep_sync_wait = 1");
+  } catch (const mysqlrouter::MySQLSession::Error &e) {
+    log_debug("wsrep_sync_wait not set: %s", e.what());
+  }
+}
+
 bool query_is_node_read_only(mysqlrouter::MySQLSession *session) {
   // restd: read_only only (no super_read_only); upstream checked both
   auto result{session->query_one("select @@read_only")};
@@ -232,6 +256,7 @@ void SchemaMonitor::run() {
 
       auto last_stored_time = std::chrono::system_clock::now();
       bool initial_run = true;
+      std::optional<bool> is_galera;
 
       do {
         using namespace observability;
@@ -239,6 +264,8 @@ void SchemaMonitor::run() {
                            ? cache_->get_instance(
                                  collector::kMySQLConnectionMetadataRW, true)
                            : std::move(*session_check_version);
+
+        sync_wait_on_galera(session.get(), &is_galera);
 
         const auto schema_version = query_schema_version(session.get());
         if (schema_version != current_schema_version) {

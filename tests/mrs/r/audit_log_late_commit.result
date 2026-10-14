@@ -1,0 +1,31 @@
+# MySQL Rest Service schema created.
+# MySQL Rest Service, server accounts configured.
+# DB `basic_schema` - created
+# Registred SERVICE at path: /svc
+# Registred DB_SCHEMA at path: /svc/basic
+# Registred DB_OBJECT at path: /svc/basic/t1
+# no auth app yet
+[]
+
+# 1. A transaction adds the auth app late_app to the service; its
+#    audit_log rows get their ids, but it does not commit yet.
+START TRANSACTION;
+
+# 2. Another transaction adds early_app and commits first, with higher
+#    audit_log ids of the same tables; the daemon applies it.
+early_app is listed
+
+# 3. The first transaction commits: its rows have the lower ids.
+COMMIT;
+late_rows_have_the_lower_ids
+1
+
+# 4. The daemon still applies the late change: the service lists the app.
+late_app is listed
+DROP SCHEMA basic_schema;
+DROP SCHEMA mariadb_rest_service;
+DROP ROLE mariadb_rest_service_admin;
+DROP ROLE mariadb_rest_service_schema_admin;
+DROP ROLE mariadb_rest_service_meta_provider;
+DROP ROLE mariadb_rest_service_data_provider;
+DROP ROLE mariadb_rest_service_dev;

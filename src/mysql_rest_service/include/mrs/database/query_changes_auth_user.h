@@ -27,6 +27,7 @@
 #ifndef ROUTER_SRC_REST_MRS_SRC_MRS_DATABASE_QUERY_CHANGES_AUTH_USER_H_
 #define ROUTER_SRC_REST_MRS_SRC_MRS_DATABASE_QUERY_CHANGES_AUTH_USER_H_
 
+#include "mrs/database/query_entries_audit_log.h"
 #include "mrs/database/entry/universal_id.h"
 #include "mrs/users/user_manager.h"
 #include "mysqlrouter/mysql_session.h"
@@ -49,6 +50,8 @@ class QueryChangesAuthUser {
   ChangedUsersIds entries_fetched;
   uint64_t audit_log_id_{0};
   bool first_run_{true};
+  // restd: kept across polls (the overlap window's state)
+  QueryAuditLogEntries audit_entries_;
 };
 
 }  // namespace database

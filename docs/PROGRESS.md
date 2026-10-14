@@ -21,7 +21,7 @@ repository.
 | 3: MRS setup and cleanup | ✅ done 2026-10-05: branding (`mariadb-restd`), `--setup`, routing/cluster cleanup; tests pass on all three platforms |
 | 4: packaging and CI | ⏸ moved to Milestone 4 (2026-10-07): tar.gz (Linux, macOS), deb, rpm, Windows ZIP done and verified (unpacked); real deb/rpm installs need root; MSI deferred; CI last |
 
-**Milestone 1 (standalone daemon) is complete (2026-10-07). Milestone 2 (MariaDB) is complete (2026-10-13).** Milestone 3 (schema 5.0.0) is current. M3.0–M3.5 done (5.0.0 served, wire formats and texts aligned with the shell; verified on macOS, Ubuntu and Windows 2026-10-13); M3.6 (Galera-safe audit polling) next.
+**Milestone 1 (standalone daemon) is complete (2026-10-07). Milestone 2 (MariaDB) is complete (2026-10-13).** **Milestone 3 (schema 5.0.0) is complete (2026-10-14).** Next: the JSON-columns open point, then Milestone 4.
 
 | Milestone 2 phase | Status |
 |---|---|
@@ -820,3 +820,14 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   was applied, uncommitted, to the user's plugins clone at their request. The example's
   4.0 REST schema dump can't be loaded in 5.0 (the shell's docs say so): its objects have
   to be created with REST SQL. Review-later list in PLAN.md.
+
+### 2026-10-14: session 8, continued (publication, M3.6)
+- History rewritten for publication and `main` pushed to GitHub: status-only commits folded
+  into the change they record, chains squashed; `CLAUDE.md` and the Windows VM helpers
+  removed from the history (local only), machine paths replaced by placeholders (see the
+  top of this file).
+- Live tests: the shared server's once-initialized data directory is removed at the end of
+  a run (a global test environment calls `SharedServer::destroy_statics()`).
+- M3.6: Galera-safe audit-log polling (overlap window by `changed_at`, ids already returned
+  skipped, `wsrep_sync_wait` on Galera nodes); unit tests and the suite test
+  `audit_log_late_commit`. Milestone 3 complete.

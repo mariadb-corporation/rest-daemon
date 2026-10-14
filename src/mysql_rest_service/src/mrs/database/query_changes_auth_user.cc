@@ -36,7 +36,6 @@ QueryChangesAuthUser::QueryChangesAuthUser(const uint64_t last_audit_log_id) {
 }
 
 void QueryChangesAuthUser::query_changed_ids(MySQLSession *session) {
-  QueryAuditLogEntries audit_entries;
   uint64_t max_audit_log_id = audit_log_id_;
 
   // The first run is done on the init, we only use it to determine te initial
@@ -44,9 +43,9 @@ void QueryChangesAuthUser::query_changed_ids(MySQLSession *session) {
 
   entries_fetched.clear();
 
-  audit_entries.query_entries(session, {"mrs_user"}, audit_log_id_);
+  audit_entries_.query_entries(session, {"mrs_user"}, audit_log_id_);
 
-  for (const auto &audit_entry : audit_entries.entries) {
+  for (const auto &audit_entry : audit_entries_.entries) {
     if (!first_run_ && audit_entry.old_table_id.has_value())
       entries_fetched.push_back(
           std::make_pair(audit_entry.old_table_id.value(), audit_entry.op));

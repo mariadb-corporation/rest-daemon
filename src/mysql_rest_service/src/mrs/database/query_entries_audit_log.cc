@@ -36,10 +36,22 @@ namespace database {
 uint64_t QueryAuditLogEntries::query_entries(
     MySQLSession *session, const std::vector<std::string> &allowed_tables,
     const uint64_t audit_log_id) {
+  entries.clear();
   max_id_ = audit_log_id;
   fetch_entries_ = true;
   build_query(allowed_tables, audit_log_id, false);
   execute(session);
+
+  // forget the ids that dropped out of the window: no row older than its
+  // start is read again (`changed_at` text compares in time order)
+  if (!window_start_.empty()) {
+    for (auto it = returned_.begin(); it != returned_.end();) {
+      if (it->second < window_start_)
+        it = returned_.erase(it);
+      else
+        ++it;
+    }
+  }
 
   return max_id_;
 }
@@ -57,17 +69,22 @@ uint64_t QueryAuditLogEntries::count_entries(
 void QueryAuditLogEntries::build_query(
     const std::vector<std::string> &allowed_tables, const uint64_t audit_log_id,
     bool count_entries) {
-  static mysqlrouter::sqlstring columns{
-      !count_entries ? "id,dml_type,table_name,old_row_id, new_row_id"
+  // restd: not static (upstream kept the first call's column list for all)
+  mysqlrouter::sqlstring columns{
+      !count_entries ? "id, dml_type, table_name, old_row_id, new_row_id, "
+                       "changed_at, NOW(6) - INTERVAL ? SECOND"
                      : "count(*)"};
-  query_ = {
-      metadata_query("SELECT ! FROM "
-      "mariadb_rest_service.audit_log WHERE ID > ? AND table_name in "
-      "(?) ORDER BY id")};
+  if (!count_entries)
+    columns << static_cast<uint64_t>(k_overlap_window.count());
+
+  query_ = {metadata_query(
+      "SELECT ! FROM mariadb_rest_service.audit_log WHERE table_name in (?) "
+      "AND (id > ? OR changed_at >= NOW(6) - INTERVAL ? SECOND) ORDER BY id")};
 
   query_ << columns;
-  query_ << audit_log_id;
   query_ << allowed_tables;
+  query_ << audit_log_id;
+  query_ << static_cast<uint64_t>(k_overlap_window.count());
 }
 
 void QueryAuditLogEntries::on_row(const ResultRow &row) {
@@ -83,20 +100,26 @@ void QueryAuditLogEntries::on_row_count(const ResultRow &row) {
 }
 
 void QueryAuditLogEntries::on_row_entries(const ResultRow &row) {
-  entries.emplace_back();
+  entry::AuditLog entry;
+  std::string changed_at;
 
   helper::MySQLRow mysql_row(row, metadata_, num_of_metadata_);
-  auto &entry = entries.back();
-
   mysql_row.unserialize(&entry.id);
   mysql_row.unserialize(&entry.op);
   mysql_row.unserialize(&entry.table);
   mysql_row.unserialize(&entry.old_table_id);
   mysql_row.unserialize(&entry.new_table_id);
+  mysql_row.unserialize(&changed_at);
+  mysql_row.unserialize(&window_start_);
 
   if (max_id_ < entry.id) {
     max_id_ = entry.id;
   }
+
+  // within the overlap window: once only
+  if (!returned_.emplace(entry.id, changed_at).second) return;
+
+  entries.push_back(std::move(entry));
 }
 
 }  // namespace database

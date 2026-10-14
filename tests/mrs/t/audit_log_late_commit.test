@@ -1,0 +1,97 @@
+--source include/have_router.inc
+
+# A change whose audit_log row commits after a row with a higher id has been
+# read (concurrent writers; on Galera, several write nodes) must still be
+# applied: the daemon re-reads an overlap window of the audit log.
+#
+# Both changes add an auth app: the daemon follows the audit log per kind of
+# object, so the late row must belong to the same kind as the row read first.
+# (Changes of REST objects can't overlap: the metadata's request path
+# validation reads all REST objects with locking reads.)
+
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
+--source ../include/predefined_setup/configure_router_mrs_root.inc
+--source ../include/schema/basic_schema.sql
+
+--source ../include/mrs/start_object_definition.inc
+
+--let $mrs_add_service_path="/svc"
+--let $mrs_add_host_name=""
+--source ../include/mrs/service/add.inc
+
+--let $mrs_add_schema=basic_schema
+--let $mrs_add_schema_path=/basic
+--source ../include/mrs/db_schema/add.inc
+
+--let $mrs_sql_id_variable=@db_obj1
+--let $mrs_add_db_object=table1
+--let $mrs_add_db_object_path=/t1
+--source ../include/mrs/db_object/add.inc
+
+--source ../include/mrs/end_object_definition.inc
+
+--let $mrs_host_and_port=127.0.0.1:$HTTP_SERVER_PORT
+--let MRS_CLIENT_ARGS=$MRS_CLIENT --url https://$mrs_host_and_port
+
+--exec $MRS_CLIENT_ARGS --path /svc/basic/t1/1 --wait-until-status 60 --display none
+--echo # no auth app yet
+--exec $MRS_CLIENT_ARGS --path /svc/authentication/authApps --display body
+
+--let $service_id=`SELECT @service_id`
+
+--echo
+--echo # 1. A transaction adds the auth app late_app to the service; its
+--echo #    audit_log rows get their ids, but it does not commit yet.
+connect (late_writer,127.0.0.1,root,,test,$MASTER_MYPORT);
+START TRANSACTION;
+--disable_query_log
+SET @app_id = mariadb_rest_service.get_sequence_id();
+INSERT INTO mariadb_rest_service.auth_app (id, auth_vendor_id, name, enabled,
+  limit_to_registered_users, default_role_id)
+  VALUES (@app_id, '31000000-0000-0000-0000-000000000000', 'late_app', 1, 0,
+          '31000000-0000-0000-0000-000000000000');
+eval INSERT INTO mariadb_rest_service.service_has_auth_app (service_id, auth_app_id)
+  VALUES ('$service_id', @app_id);
+--enable_query_log
+
+--echo
+--echo # 2. Another transaction adds early_app and commits first, with higher
+--echo #    audit_log ids of the same tables; the daemon applies it.
+connection default;
+--disable_query_log
+SET @app_id = mariadb_rest_service.get_sequence_id();
+INSERT INTO mariadb_rest_service.auth_app (id, auth_vendor_id, name, enabled,
+  limit_to_registered_users, default_role_id)
+  VALUES (@app_id, '31000000-0000-0000-0000-000000000000', 'early_app', 1, 0,
+          '31000000-0000-0000-0000-000000000000');
+eval INSERT INTO mariadb_rest_service.service_has_auth_app (service_id, auth_app_id)
+  VALUES ('$service_id', @app_id);
+--enable_query_log
+--let $wait_for_app=early_app
+--source ../include/test/wait_for_auth_app.inc
+
+--echo
+--echo # 3. The first transaction commits: its rows have the lower ids.
+connection late_writer;
+COMMIT;
+connection default;
+disconnect late_writer;
+
+--disable_query_log
+SELECT
+  (SELECT a.id FROM mariadb_rest_service.audit_log a
+     JOIN mariadb_rest_service.auth_app p ON p.id = a.new_row_id
+   WHERE a.table_name = 'auth_app' AND p.name = 'late_app') <
+  (SELECT a.id FROM mariadb_rest_service.audit_log a
+     JOIN mariadb_rest_service.auth_app p ON p.id = a.new_row_id
+   WHERE a.table_name = 'auth_app' AND p.name = 'early_app')
+  AS late_rows_have_the_lower_ids;
+--enable_query_log
+
+--echo
+--echo # 4. The daemon still applies the late change: the service lists the app.
+--let $wait_for_app=late_app
+--source ../include/test/wait_for_auth_app.inc
+
+# Cleanup
+--source ../include/mrs/cleanup.inc

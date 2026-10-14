@@ -58,15 +58,14 @@ QueryChangesDbObject::QueryChangesDbObject(QueryFactory *query_factory,
 void QueryChangesDbObject::query_entries(MySQLSession *session) {
   path_entries_fetched.clear();
 
-  QueryAuditLogEntries audit_entries;
   std::vector<DbObject> local_path_entries;
   uint64_t max_audit_log_id = audit_log_id_;
-  audit_entries.query_entries(
+  audit_entries_.query_entries(
       session,
       {kDbObjectTableName, kObjTableName, kObjRefTableName, kObjFieldTableName},
       audit_log_id_);
 
-  for (const auto &audit_entry : audit_entries.entries) {
+  for (const auto &audit_entry : audit_entries_.entries) {
     if (audit_entry.old_table_id.has_value())
       query_path_entries(session, &local_path_entries, audit_entry.table,
                          audit_entry.old_table_id.value());

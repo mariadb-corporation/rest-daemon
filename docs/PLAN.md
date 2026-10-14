@@ -382,6 +382,19 @@ Left for M3.5: user ids on the wire, the raw-bytes role id, counter names +
 ### Phase M3.6: Galera-safe audit polling
 - An overlap window by id and `changed_at` (clock-skew margin), a set of processed ids,
   best-effort `wsrep_sync_wait`.
+- Done: every audit-log poll reads `id > <last id> OR changed_at >= NOW(6) - INTERVAL 60
+  SECOND` (the server's clock; `changed_at` is indexed) and skips the ids it already
+  returned within the window (`QueryAuditLogEntries`, one instance kept per monitor). On a
+  Galera node (`@@wsrep_on`) each poll sets `wsrep_sync_wait = 1` on its connection. The
+  column list of the audit query is no longer a `static` (the first call fixed it).
+- The daemon follows the audit log per kind of object (eight monitors, each with its own
+  last id), so a late row is only missed when a higher id of the *same* kind was read
+  first. Changes of REST objects (and schemas, services, content sets) can't overlap at
+  all: the metadata's request-path validation reads them with locking reads, so concurrent
+  writers serialize. Auth apps, users and content files can.
+- Tests: `AuditLogWindowTest` (unit) and the suite test `audit_log_late_commit`: a
+  transaction adding an auth app commits after another one that took higher ids; it fails
+  without the window ("late_app is not listed") and passes with it.
 
 ## Open point: GTID read-your-writes on MariaDB (Milestone 4)
 
