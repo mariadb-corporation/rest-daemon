@@ -11,6 +11,14 @@
     },
     "openssl"
   ],
+  "features": {
+    "icu": {
+      "description": "ICU from vcpkg instead of the system's (release packages); select with -DVCPKG_MANIFEST_FEATURES=icu",
+      "dependencies": [
+        "icu"
+      ]
+    }
+  },
   "overrides": [
     {
       "name": "openssl",

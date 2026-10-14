@@ -1,0 +1,289 @@
+name: Rest-Daemon-Release
+
+# Builds the mariadb-restd release packages (STANDALONE layout) on GitHub-hosted
+# runners, as MariaDB-Shell-Release does for the shell:
+#   macOS x64 and arm64 (.tar.gz), Windows x64 and arm64 (.zip), Linux x64
+#   and arm64 (.tar.gz, built in a Rocky Linux 9 container for a glibc 2.34
+#   floor).
+# GraalVM has no Windows ARM64 release, so there is no native ARM64 JIT
+# executor library: the Windows arm64 leg builds on an ARM64 runner the way
+# the ARM64 development VM does, an x64 restd (ARM64-hosted MSVC targeting x64,
+# vcvarsall arm64_amd64) with the x64 JIT executor library (x64 GraalVM under
+# emulation). Its package is the x64 one, and runs on Windows on ARM under
+# emulation; it shares its JIT executor library with the Windows x64 leg.
+#
+# Every package is uploaded as the artifact pkg-<os>-<arch> of the run.
+#
+# Connector/C, OpenSSL and ICU come from vcpkg (vcpkg.json, feature icu). Two
+# things are cached with actions/cache, per platform:
+# - the JIT executor library (minutes of GraalVM native-image), keyed by
+#   everything it is built from: the files of ext/polyglot and the versions
+#   and checksums in cmake/bootstrap_jit_executor.cmake. A hit is handed to
+#   configure as MRS_JIT_EXECUTOR_LIB; a miss builds it (WITH_JIT_EXECUTOR) and
+#   saves it once restd has been built against it.
+# - vcpkg's binary cache (ICU, OpenSSL, Connector/C), keyed by vcpkg.json and
+#   falling back to the newest earlier one: vcpkg addresses the archives by
+#   each port's ABI hash, so unaffected ports stay warm across a change.
+
+on:
+  push:
+    branches: [ "release/candidate" ]
+  workflow_dispatch:
+
+env:
+  # bump to drop every cached JIT executor library
+  JIT_CACHE_VERSION: v1
+
+jobs:
+  # ==========================================================================
+  # macOS and Windows
+  # ==========================================================================
+  build:
+    name: Build (${{ matrix.os }}-${{ matrix.arch }})
+    runs-on: ${{ matrix.os-runner }}
+    timeout-minutes: 240
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # jit-platform: the platform of the JIT executor library, which
+          # names its cache
+          - os: macos
+            arch: x64
+            os-runner: macos-15-intel
+            vcpkg-triplet: x64-osx-dynamic
+            jit-platform: macos-x64
+          - os: macos
+            arch: arm64
+            os-runner: macos-latest
+            vcpkg-triplet: arm64-osx-dynamic
+            jit-platform: macos-arm64
+          - os: windows
+            arch: x64
+            os-runner: windows-2022
+            vcpkg-triplet: x64-windows
+            msvc-arch: x64
+            jit-platform: windows-x64
+          # an x64 build on ARM64, see the top of this file
+          - os: windows
+            arch: arm64
+            os-runner: windows-11-arm
+            vcpkg-triplet: x64-windows
+            msvc-arch: arm64_amd64
+            jit-platform: windows-x64
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-archives
+
+    steps:
+      - name: Print Trigger Source
+        run: |
+          echo "Triggered by event: ${{ github.event_name }}"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ========================================
+      # 1. CACHES
+      # ========================================
+      - name: Restore JIT executor library
+        id: jit
+        uses: actions/cache/restore@v4
+        with:
+          path: jit-cache
+          key: jit-executor-${{ env.JIT_CACHE_VERSION }}-${{ matrix.jit-platform }}-${{ hashFiles('ext/polyglot/**', 'cmake/bootstrap_jit_executor.cmake') }}
+
+      - name: Restore vcpkg binary cache
+        uses: actions/cache@v4
+        with:
+          path: vcpkg-archives
+          key: vcpkg-archives-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-archives-${{ matrix.os }}-${{ matrix.arch }}-
+
+      - name: Create the vcpkg binary cache directory
+        run: mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
+
+      # ========================================
+      # 2. TOOLS
+      # ========================================
+      # autoconf, automake, libtool: vcpkg's ICU
+      - name: Install macOS Build Dependencies
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja pkg-config autoconf automake libtool
+
+      # The JIT executor build (GraalVM native-image) needs the vcvars
+      # environment too: it can't set up MSVC by itself from Git Bash.
+      #
+      # Pinned to the VS 2022 toolset (MSVC 14.44), as in MariaDB Shell's
+      # release: the windows-11-arm image is a VS 2026 one, which still has
+      # the 14.44 toolset side by side, and windows-2022 defaults to it. Both
+      # Windows legs build with the same compiler.
+      - name: Setup Visual Studio 2022 Environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc-arch }}
+          toolset: '14.44'
+
+      # vcpkg ignores the environment above and runs vcvarsall itself with the
+      # newest toolset it finds: the overlay triplet pins its ports to 14.44
+      # too.
+      - name: Pin vcpkg to the VS 2022 toolset
+        if: runner.os == 'Windows'
+        run: echo "VCPKG_OVERLAY_TRIPLETS=${{ github.workspace }}/.github/vcpkg-triplets" >> "$GITHUB_ENV"
+
+      # Git Bash puts C:\Program Files\Git\usr\bin first on PATH, and its
+      # link.exe (coreutils' hard-link tool) shadows the MSVC linker.
+      - name: Remove conflicting Git link.exe
+        if: runner.os == 'Windows'
+        run: rm -f "C:/Program Files/Git/usr/bin/link.exe"
+
+      # ========================================
+      # 3. BUILD AND PACKAGE
+      # ========================================
+      - name: Build and package mariadb-restd
+        env:
+          TRIPLET: ${{ matrix.vcpkg-triplet }}
+          JIT_CACHE: ${{ github.workspace }}/jit-cache
+          OUT_DIR: ${{ github.workspace }}/out
+          RESTD_DEPS_DIR: ${{ runner.temp }}/restd-deps
+        run: tools/release/build_package.sh
+
+      - name: Save JIT executor library
+        if: steps.jit.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: jit-cache
+          key: ${{ steps.jit.outputs.cache-primary-key }}
+
+      # ========================================
+      # 4. UPLOAD ARTIFACTS FOR DOWNLOAD
+      # ========================================
+      - name: Upload Package Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: pkg-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            out/*.tar.gz
+            out/*.zip
+          if-no-files-found: error
+
+  # ==========================================================================
+  # Linux (Rocky Linux 9 container)
+  # ==========================================================================
+  linux:
+    name: Build (linux-${{ matrix.arch }})
+    runs-on: ${{ matrix.os-runner }}
+    timeout-minutes: 240
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            os-runner: ubuntu-24.04
+            docker-platform: linux/amd64
+            vcpkg-triplet: x64-linux-dynamic
+          - arch: arm64
+            os-runner: ubuntu-24.04-arm
+            docker-platform: linux/arm64
+            vcpkg-triplet: arm64-linux-dynamic
+
+    steps:
+      - name: Print Trigger Source
+        run: |
+          echo "Triggered by event: ${{ github.event_name }}"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ========================================
+      # 1. CACHES
+      # ========================================
+      - name: Restore JIT executor library
+        id: jit
+        uses: actions/cache/restore@v4
+        with:
+          path: jit-cache
+          key: jit-executor-${{ env.JIT_CACHE_VERSION }}-linux-${{ matrix.arch }}-${{ hashFiles('ext/polyglot/**', 'cmake/bootstrap_jit_executor.cmake') }}
+
+      - name: Restore vcpkg binary cache
+        uses: actions/cache@v4
+        with:
+          path: vcpkg-archives
+          key: vcpkg-archives-linux-${{ matrix.arch }}-${{ hashFiles('vcpkg.json', 'docker/linux-rocky9.Dockerfile') }}
+          restore-keys: |
+            vcpkg-archives-linux-${{ matrix.arch }}-
+
+      # native-image asks for a 20 GB heap (-J-Xmx20g in the pom), more than a
+      # hosted runner has: give a build of the library swap to fall back on.
+      - name: Add swap for the JIT executor build
+        if: steps.jit.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          free -h
+          # /mnt is the large scratch disk where the runner has one
+          if [ -d /mnt ]; then f=/mnt/jit.swap; else f=/jit.swap; fi
+          sudo fallocate -l 16G "$f"
+          sudo chmod 600 "$f" && sudo mkswap "$f" && sudo swapon "$f"
+          free -h
+
+      # ========================================
+      # 2. BUILD IMAGE
+      # ========================================
+      - name: Build Rocky Linux Docker Image
+        run: |
+          docker build \
+            --platform ${{ matrix.docker-platform }} \
+            -f docker/linux-rocky9.Dockerfile \
+            -t restd-rocky9-builder-${{ matrix.arch }}:${{ github.sha }} docker
+
+      # ========================================
+      # 3. BUILD AND PACKAGE
+      # ========================================
+      - name: Build and package mariadb-restd inside the container
+        run: |
+          mkdir -p vcpkg-archives out
+          docker run --rm \
+            --platform ${{ matrix.docker-platform }} \
+            -e TRIPLET=${{ matrix.vcpkg-triplet }} \
+            -e JIT_CACHE=/workspace/src/jit-cache \
+            -e OUT_DIR=/workspace/src/out \
+            -e RESTD_DEPS_DIR=/workspace/restd-deps \
+            -e VCPKG_DEFAULT_BINARY_CACHE=/workspace/src/vcpkg-archives \
+            -v "${{ github.workspace }}:/workspace/src" \
+            restd-rocky9-builder-${{ matrix.arch }}:${{ github.sha }} \
+            bash -c 'git config --global --add safe.directory "*" && tools/release/build_package.sh'
+
+      # The container runs as root: hand its output, and the caches that
+      # actions/cache saves as the runner user, back to that user.
+      - name: Fix Output Directory Permissions
+        if: always()
+        run: sudo chown -R "$(id -u):$(id -g)" "${{ github.workspace }}"
+
+      - name: Save JIT executor library
+        if: steps.jit.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: jit-cache
+          key: ${{ steps.jit.outputs.cache-primary-key }}
+
+      # ========================================
+      # 4. UPLOAD ARTIFACTS FOR DOWNLOAD
+      # ========================================
+      - name: Upload Package Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: pkg-linux-${{ matrix.arch }}
+          path: out/*.tar.gz
+          if-no-files-found: error
+
+      - name: Cleanup Docker Image
+        if: always()
+        run: docker rmi restd-rocky9-builder-${{ matrix.arch }}:${{ github.sha }} || true

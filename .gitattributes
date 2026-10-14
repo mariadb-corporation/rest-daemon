@@ -1,0 +1,2 @@
+# shell scripts run under bash on Windows too (Git Bash), which fails on CRLF
+*.sh text eol=lf
