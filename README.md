@@ -42,7 +42,9 @@ What it does differently from the MySQL REST Service is listed in
 | `MARIADB_CONNECTOR_DIR` | prefix of a MariaDB Connector/C installation; without it, Connector/C and OpenSSL come from vcpkg |
 | `WITH_VCPKG_TRIPLET` | vcpkg triplet to get the dependencies with (default: the dynamic triplet of the host, if `MARIADB_CONNECTOR_DIR` is not set; `OFF`: no vcpkg) |
 | `VCPKG_ROOT` | the vcpkg checkout (default: `$VCPKG_ROOT`, else `../vcpkg`, cloned if missing) |
-| `MRS_JIT_EXECUTOR_LIB` | directory with `libjitexecutor` and its headers; without it, restd is built without MRS script support |
+| `MRS_JIT_EXECUTOR_LIB` | directory with `libjitexecutor` and its headers; without it (and without `WITH_JIT_EXECUTOR`), restd is built without MRS script support |
+| `WITH_JIT_EXECUTOR` | build `libjitexecutor` from `ext/polyglot` at configure time, downloading GraalVM and Maven (`OFF`) |
+| `RESTD_DEPS_DIR` | where `WITH_JIT_EXECUTOR` puts GraalVM, Maven and the Graal sources (`../restd-deps`) |
 | `WITH_UNIT_TESTS` | build the unit tests and the test tools (`OFF`) |
 | `WITH_COMPONENT_TESTS` | build the component tests, needs `WITH_UNIT_TESTS` (`OFF`) |
 | `OPENSSL_ROOT_DIR`, `ICU_ROOT` | where to find OpenSSL / ICU, if not in a default location |
@@ -69,7 +71,17 @@ and builds against them, the way MariaDB Shell's `-DWITH_VCPKG_TRIPLET` works
 `ext/polyglot` builds `libjitexecutor` (the GraalVM Polyglot Native API with
 the patch in `polyglot-nativeapi/patches`) into
 `ext/polyglot/polyglot-nativeapi-native-library/target`, the directory to pass
-as `MRS_JIT_EXECUTOR_LIB`. It needs GraalVM 23.0.1, its source code and Maven:
+as `MRS_JIT_EXECUTOR_LIB`. It needs GraalVM 23.0.1, its source code and Maven.
+
+`-DWITH_JIT_EXECUTOR=ON` does all of it at configure time
+(`cmake/bootstrap_jit_executor.cmake`): it downloads GraalVM CE for JDK
+23.0.1 and Maven (checksums pinned), sparse-clones the Graal sources at
+`jdk-23.0.1`, all into `RESTD_DEPS_DIR` (`../restd-deps`), runs `mvn package`
+and uses its output. The first configure takes a few minutes (about 3 on an
+M-series Mac); later ones reuse the library until the versions, the poms or
+the patch change. `native-image` asks for a 20 GB heap.
+
+By hand:
 
 ```sh
 cd ext/polyglot

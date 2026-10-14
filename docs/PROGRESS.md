@@ -845,3 +845,22 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
 - Verified on macOS: configure without options, build, `mariadb-restd --version`; explicit
   `MARIADB_CONNECTOR_DIR` configures without vcpkg; `WITH_VCPKG_TRIPLET=OFF` without a
   connector stops with a message. Linux and Windows not yet run.
+
+### 2026-10-14: session 9, continued (the JIT executor library, opt-in at configure time)
+
+- Built `ext/polyglot` by hand on the Mac (GraalVM CE 23.0.1 macos-aarch64, Maven 3.9.9,
+  a sparse clone of `oracle/graal` at `jdk-23.0.1` with only
+  `substratevm/src/org.graalvm.polyglot.nativeapi`): `mvn package` 1:15 min, patch applied.
+  Maven tried the poms' Oracle-internal repository (`artifactory.oci.oraclecorp.com`) first
+  and fell back to Maven Central; the `<repositories>`/`<pluginRepositories>` entries are
+  removed from the three poms, and a build with an empty local Maven repository resolves
+  everything (450 artifacts) from Maven Central.
+- `cmake/bootstrap_jit_executor.cmake`, `-DWITH_JIT_EXECUTOR=ON` (off by default): downloads
+  GraalVM (SHA-256 per platform pinned) and Maven (SHA-512) and clones the Graal sources into
+  `RESTD_DEPS_DIR` (`../restd-deps`), checks the clone's commit, builds from scratch (removing
+  the copied sources, so the patch can't be skipped), checks `patches-applied.txt` and writes
+  a stamp of the inputs; sets `MRS_JIT_EXECUTOR_LIB` as a normal variable.
+- Verified on macOS: from an empty deps dir, configure 3:07 min; reconfigure 1.3 s (stamp);
+  build; smoke test with MRS script against Homebrew MariaDB 12.3.2. With the hand-built
+  library also ctest 96/96 (unit tests) and the same smoke test. Linux and Windows not yet
+  run.
