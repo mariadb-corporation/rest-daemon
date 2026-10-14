@@ -831,3 +831,17 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
 - M3.6: Galera-safe audit-log polling (overlap window by `changed_at`, ids already returned
   skipped, `wsrep_sync_wait` on Galera nodes); unit tests and the suite test
   `audit_log_late_commit`. Milestone 3 complete.
+
+### 2026-10-14: session 9 (configure without options: dependencies from vcpkg)
+
+- Configure failed on a Mac without Homebrew's `mariadb-connector-c`. Aligned with MariaDB
+  Shell's `-DWITH_VCPKG_TRIPLET`: `vcpkg.json` (`libmariadb[openssl]`, `openssl` 3.6.3, the
+  shell's `builtin-baseline`) and `cmake/bootstrap_vcpkg.cmake`, which takes vcpkg from
+  `VCPKG_ROOT` or `../vcpkg` (cloned at the baseline if missing) and sets the toolchain.
+  Without `MARIADB_CONNECTOR_DIR`, the host's dynamic triplet is chosen (restd links the
+  shared `libmariadb`), so `cmake -S . -B build` needs no options; with it, nothing changes.
+- The default build type is now set before `PROJECT()`: with none set there, the vcpkg
+  toolchain links its `debug/lib` OpenSSL, next to the release `libmariadb`.
+- Verified on macOS: configure without options, build, `mariadb-restd --version`; explicit
+  `MARIADB_CONNECTOR_DIR` configures without vcpkg; `WITH_VCPKG_TRIPLET=OFF` without a
+  connector stops with a message. Linux and Windows not yet run.

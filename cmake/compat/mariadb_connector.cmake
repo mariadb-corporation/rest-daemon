@@ -21,7 +21,9 @@
 # release package, Homebrew's keg /opt/homebrew/opt/mariadb-connector-c, or
 # /usr with the distribution's libmariadb-dev (also works unpacked anywhere
 # with `dpkg -x`, as <dir>/usr), or vcpkg's installed/x64-windows with its
-# libmariadb port. Uses <prefix>/include/mariadb (mysql.h,
+# libmariadb port. Without MARIADB_CONNECTOR_DIR, the vcpkg install prefix of
+# the build (VCPKG_INSTALLED_PREFIX, see cmake/bootstrap_vcpkg.cmake), which
+# then also provides OpenSSL. Uses <prefix>/include/mariadb (mysql.h,
 # mariadb_version.h, errmsg.h, mysqld_error.h, ...), the shared library from
 # <prefix>/lib[/mariadb | /<multiarch>] and the client auth plugins from
 # <prefix>/lib[/<multiarch>]/{mariadb,libmariadb3}/plugin.
@@ -39,6 +41,23 @@
 
 SET(MARIADB_CONNECTOR_DIR "" CACHE PATH
   "Prefix of a MariaDB Connector/C installation (3.4 or later)")
+
+IF(NOT MARIADB_CONNECTOR_DIR)
+  IF(NOT VCPKG_INSTALLED_PREFIX)
+    MESSAGE(FATAL_ERROR
+      "MARIADB_CONNECTOR_DIR is not set and vcpkg is off "
+      "(WITH_VCPKG_TRIPLET=${WITH_VCPKG_TRIPLET}): pass "
+      "-DMARIADB_CONNECTOR_DIR=<Connector/C installation> or "
+      "-DWITH_VCPKG_TRIPLET=<triplet>")
+  ENDIF()
+  # a normal variable: the cache entry stays empty, and the next configure
+  # takes the vcpkg prefix again
+  SET(MARIADB_CONNECTOR_DIR "${VCPKG_INSTALLED_PREFIX}")
+  # the OpenSSL libmariadb is linked with, so that one OpenSSL is loaded
+  IF(NOT OPENSSL_ROOT_DIR)
+    SET(OPENSSL_ROOT_DIR "${VCPKG_INSTALLED_PREFIX}")
+  ENDIF()
+ENDIF()
 
 GET_FILENAME_COMPONENT(MARIADB_CONNECTOR_DIR "${MARIADB_CONNECTOR_DIR}" ABSOLUTE)
 

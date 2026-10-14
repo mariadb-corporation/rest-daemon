@@ -192,7 +192,7 @@ Scope decisions (2026-10-08, see the decision log):
 | Topic | Decision |
 |---|---|
 | MySQL build | Kept during the port as the safety net; **dropped on 2026-10-13** (M2.4) together with MySQL server support, once the MariaDB suites were at parity on the three platforms |
-| Client library | **MariaDB Connector/C package** (release build with OpenSSL), found through `-DMARIADB_CONNECTOR_DIR` / `mariadb_config`; public API only, as in Milestone 1 |
+| Client library | **MariaDB Connector/C package** (release build with OpenSSL), found through `-DMARIADB_CONNECTOR_DIR` / `mariadb_config`; public API only, as in Milestone 1. Since 2026-10-14, without `-DMARIADB_CONNECTOR_DIR` configure gets Connector/C and OpenSSL from vcpkg (`vcpkg.json`), as MariaDB Shell does |
 | Minimum MariaDB server | **10.11 (oldest supported LTS)**; develop and test on `main` (13.2). Caveat: the MRS metadata schema 4.1.6 uses `JSON_SCHEMA_VALID` (11.1+) and `JSON_OVERLAPS` (10.9+); deploying on 10.11 needs a schema change on the plugin side. `sqlQuery.timeout` uses `SET STATEMENT max_statement_time` (done 2026-10-13: the `MAX_EXECUTION_TIME` hint only exists from 12.0 and was silently ignored on 11.8), `VECTOR` only where the server has it (11.7+) |
 | REST async tasks (`mysql_tasks`) | **Removed** (2026-10-12, a product decision: MariaDB REST routines are always called directly, as in the MariaDB shell plugins); code removed in M2.4 (2026-10-13) |
 | GTID / "asof" | **Out of Milestone 2**: `asof` is refused with a clear error; the MySQL implementation stays parked in the tree for **Milestone 4** (see the open point below) |

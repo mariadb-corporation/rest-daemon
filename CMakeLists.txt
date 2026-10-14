@@ -19,9 +19,11 @@
 # kept as upstream as possible; cmake/compat/ provides the parts of the MySQL
 # server build environment they expect.
 #
-# Required:
-#   -DMARIADB_CONNECTOR_DIR=<MariaDB Connector/C installation, 3.4 or later>
 # Optional:
+#   -DMARIADB_CONNECTOR_DIR=<MariaDB Connector/C installation, 3.4 or later>
+#     (without it, Connector/C and OpenSSL come from vcpkg, see
+#     cmake/bootstrap_vcpkg.cmake)
+#   -DWITH_VCPKG_TRIPLET=<vcpkg triplet>
 #   -DMRS_JIT_EXECUTOR_LIB=<dir with libjitexecutor and its headers>
 #   -DWITH_UNIT_TESTS=ON
 
@@ -31,6 +33,18 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.24)
 # copyright pre-commit hook). No-op outside a git checkout; turn it off with
 # -DINSTALL_GIT_HOOKS=OFF. See cmake/git_hooks.cmake.
 INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/git_hooks.cmake)
+
+# Before PROJECT(): the vcpkg toolchain links its debug libraries when no
+# build type is set there
+GET_PROPERTY(_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+IF(NOT CMAKE_BUILD_TYPE AND NOT _multi_config)
+  SET(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Build type" FORCE)
+ENDIF()
+
+# Connector/C and OpenSSL from vcpkg (vcpkg.json), unless MARIADB_CONNECTOR_DIR
+# is given: sets CMAKE_TOOLCHAIN_FILE, so it must come before PROJECT(). See
+# cmake/bootstrap_vcpkg.cmake.
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/bootstrap_vcpkg.cmake)
 
 # VERSION holds "<KEY> = <value>" entries; VERSION = x.y.z is required
 FILE(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" _version_lines
@@ -62,9 +76,6 @@ SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS ON)
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
-IF(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  SET(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Build type" FORCE)
-ENDIF()
 
 OPTION(WITH_UNIT_TESTS "Build the unit and component tests" OFF)
 
