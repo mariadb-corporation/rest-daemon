@@ -17,7 +17,9 @@
 # End-to-end smoke test for mrsd (macOS/Linux).
 #
 # 1. starts a throwaway mariadbd from a MariaDB server build tree or package
-# 2. deploys the MRS metadata schema (from the MariaDB shell plugins)
+# 2. deploys the REST metadata schema with MariaDB Shell's CONFIGURE REST
+#    METADATA (the shell's bundled 5.0.0 project; through the msm plugin's
+#    deploySchema when SHELL_PLUGINS is given)
 # 3. configures mrsd with --setup (MRS account, keyring, config)
 # 4. starts mrsd, creates + publishes a REST view with the MariaDB shell
 # 5. checks that GET /smoke/smoke/city returns the rows and that the
@@ -25,7 +27,7 @@
 #
 # Usage:
 #   MRSD_BUILD=<mrsd build dir> MARIADB_PACKAGE_DIR=<server package> \
-#   MYSQLSH=<path to mariadb-shell> SHELL_PLUGINS=<plugins, see below> \
+#   MYSQLSH=<path to mariadb-shell> [SHELL_PLUGINS=<plugins, see below>] \
 #   tools/smoke/run_smoke.sh [workdir]
 #
 # MRSD_INSTALL=<installed or unpacked package> instead of MRSD_BUILD tests a
@@ -49,16 +51,18 @@ fi
 #                        scripts/mariadb-install-db, share/); without a
 #                        bin/mariadb client (e.g. the Windows sandbox
 #                        package) the SQL goes through $MYSQLSH --sql
-# MYSQLSH is the mariadb-shell and SHELL_PLUGINS the mariadb-shell-plugins
-# checkout, linked into the shell's user plugins, or the shell package's own
-# lib/mariadb-shell/plugins (used as is).
+# MYSQLSH is the mariadb-shell, 26.10.2 or later (built-in REST SQL and
+# CONFIGURE REST METADATA, metadata schema 5.0.0). SHELL_PLUGINS, optional,
+# is the mariadb-shell-plugins checkout, linked into the shell's user plugins,
+# or the shell package's own lib/mariadb-shell/plugins (used as is); with it
+# the deployment goes through msm.deploySchema.
 if [ -n "${MARIADB_BUILD_DIR:-}" ]; then
   MARIADB_SOURCE_DIR=${MARIADB_SOURCE_DIR:?set MARIADB_SOURCE_DIR}
 else
   MARIADB_PACKAGE_DIR=${MARIADB_PACKAGE_DIR:?set MARIADB_BUILD_DIR or MARIADB_PACKAGE_DIR}
 fi
 MYSQLSH=${MYSQLSH:?set MYSQLSH}
-SHELL_PLUGINS=${SHELL_PLUGINS:?set SHELL_PLUGINS}
+SHELL_PLUGINS=${SHELL_PLUGINS:-}
 WORK=${1:-$(mktemp -d)}
 PORT=${MYSQL_PORT:-13306}
 HTTP_PORT=${HTTP_PORT:-18080}
@@ -71,12 +75,9 @@ if command -v cygpath >/dev/null 2>&1; then
   [ -n "${MRSD_BUILD:-}" ] && MRSD_BUILD=$(cygpath -m "$MRSD_BUILD")
   [ -n "${MRSD_INSTALL:-}" ] && MRSD_INSTALL=$(cygpath -m "$MRSD_INSTALL")
   [ -n "${MARIADB_PACKAGE_DIR:-}" ] && MARIADB_PACKAGE_DIR=$(cygpath -m "$MARIADB_PACKAGE_DIR")
-  SHELL_PLUGINS=$(cygpath -m "$SHELL_PLUGINS")
+  [ -n "$SHELL_PLUGINS" ] && SHELL_PLUGINS=$(cygpath -m "$SHELL_PLUGINS")
   [ -n "${MRS_SCRIPTS_DIR:-}" ] && MRS_SCRIPTS_DIR=$(cygpath -m "$MRS_SCRIPTS_DIR")
 fi
-
-SCHEMA_DIR=$SHELL_PLUGINS/mrs_plugin/db_schema
-MRS_SQL=$(ls "$SCHEMA_DIR"/mysql_rest_service_metadata.msm.project/releases/deployment/*.sql | sort -V | tail -1)
 
 mkdir -p "$WORK"/{log,shellhome}
 echo "workdir: $WORK"
@@ -90,12 +91,12 @@ elif [ -n "${MARIADB_PACKAGE_DIR:-}" ]; then
     [ -x "$c" ] && MARIADB_CLIENT=$c && break
   done
 fi
-if [[ "$SHELL_PLUGINS" != */lib/mariadb-shell/plugins ]]; then
+if [ -n "$SHELL_PLUGINS" ] && [[ "$SHELL_PLUGINS" != */lib/mariadb-shell/plugins ]]; then
   # a plugins checkout: the shell's own plugin directory is
   # <MARIADB_SHELL_USER_CONFIG_HOME>/plugins
   mkdir -p "$WORK/shellhome/plugins"
   ln -sfn "$SHELL_PLUGINS/mrs_plugin" "$WORK/shellhome/plugins/mrs_plugin"
-  ln -sfn "$SHELL_PLUGINS/msm_plugin" "$WORK/shellhome/plugins/msm_plugin"  # used by mrs
+  ln -sfn "$SHELL_PLUGINS/msm_plugin" "$WORK/shellhome/plugins/msm_plugin"  # deploySchema
 fi
 export MARIADB_SHELL_USER_CONFIG_HOME="$WORK/shellhome"
 if [ -z "$MARIADB_CLIENT" ]; then
@@ -167,7 +168,10 @@ else
   sql_exec "CREATE USER IF NOT EXISTS root@'127.0.0.1'; GRANT ALL ON *.* TO root@'127.0.0.1' WITH GRANT OPTION; DELETE FROM mysql.global_priv WHERE user=''; FLUSH PRIVILEGES;"
 fi
 
-sql_file "$MRS_SQL"
+# the metadata schema: the shell's bundled project (REST SQL runs in the shell)
+"$MYSQLSH" --no-wizard --sql -uroot -h127.0.0.1 -P"$PORT" \
+  -e "CONFIGURE REST METADATA;"
+echo "metadata schema: $(sql_value "SELECT CONCAT_WS('.', major, minor, patch) FROM mariadb_rest_service.msm_schema_version")"
 sql_exec "
   CREATE SCHEMA smoke;
   CREATE TABLE smoke.city (id INT PRIMARY KEY, name VARCHAR(64));
@@ -237,18 +241,20 @@ done
 [ -n "$ok" ] || fail "REST view, last response: $body"
 
 # the running instance uses the registration of --setup: still one row
-routers=$(sql_value "SELECT COUNT(*) FROM mysql_rest_service_metadata.router")
+routers=$(sql_value "SELECT COUNT(*) FROM mariadb_rest_service.rest_daemon")
 [ "$routers" = 1 ] || fail "expected 1 registered instance, found $routers"
 echo "OK (one registered instance)"
 
 # --- optional: MRS scripts (JIT executor) ------------------------------------
-# MRS_SCRIPTS_DIR: a built copy of mysql-shell-plugins'
-# mrs_plugin/examples/mrs_scripts (npm install && npm run build).
+# MRS_SCRIPTS_DIR: a built copy of mariadb-shell-plugins'
+# mrs_plugin/examples/mrs_scripts (npm install && npm run build). Uploaded with
+# the mrs_plugin's mrs.load.content_set() (REST SQL takes no directory since
+# shell 26.10.2), so it needs SHELL_PLUGINS.
 if [ -n "${MRS_SCRIPTS_DIR:-}" ]; then
-  echo "CREATE OR REPLACE REST CONTENT SET /scripts ON SERVICE /smoke FROM \"$MRS_SCRIPTS_DIR\" LOAD SCRIPTS;" \
-    > "$WORK/scripts.sql"
-  MARIADB_SHELL_USER_CONFIG_HOME="$WORK/shellhome" "$MYSQLSH" --no-wizard --sql \
-    -uroot -h127.0.0.1 -P"$PORT" --file "$WORK/scripts.sql"
+  [ -n "$SHELL_PLUGINS" ] || { echo "MRS_SCRIPTS_DIR needs SHELL_PLUGINS" >&2; exit 1; }
+  MARIADB_SHELL_USER_CONFIG_HOME="$WORK/shellhome" "$MYSQLSH" --no-wizard --py \
+    -uroot -h127.0.0.1 -P"$PORT" \
+    -e "mrs.load.content_set(directory='$MRS_SCRIPTS_DIR', content_set_path='/scripts', service_path='/smoke')"
 
   ok=
   for _ in $(seq 1 20); do

@@ -3,15 +3,16 @@
 mariadb-restd ("restd" for short) is the **MariaDB REST Service** daemon: it
 serves REST endpoints for MariaDB tables, views, stored procedures, functions
 and JavaScript/TypeScript scripts, as defined in the REST service metadata
-schema (`mysql_rest_service_metadata`, deployed by the MariaDB shell's `mrs`
-plugin) of a MariaDB server.
+schema (`mariadb_rest_service`, version 5.0, deployed by MariaDB Shell's
+`CONFIGURE REST METADATA`) of a MariaDB server.
 
 It is a fork of the MySQL REST Service (MRS) plugin of MySQL Router (`router/`
 in mysql-server), without the router's connection routing, InnoDB
 Cluster/ClusterSet support, bootstrap and X protocol, ported to MariaDB: it is
-built against MariaDB Connector/C and runs against a MariaDB server (10.11 or
-later; the metadata schema the MariaDB shell deploys needs 11.1, `VECTOR`
-columns 11.7). What it does differently from the MySQL REST Service is listed in
+built against MariaDB Connector/C and runs against a MariaDB server, 11.7 or
+later (the metadata schema's ids are `UUID`s with `UUID_v7()` defaults). It
+serves metadata schema 5.0.x only and refuses to start on another version.
+What it does differently from the MySQL REST Service is listed in
 [docs/mariadb-differences.md](docs/mariadb-differences.md).
 
 > **Status:** work in progress. restd builds and passes its tests on Linux,
@@ -131,9 +132,11 @@ mariadb-restd --setup admin@db1.example.com:3306 -d /srv/restd
 /srv/restd/start.sh          # start.ps1 on Windows; stop.sh / stop.ps1 to stop
 ```
 
-It registers the instance in the REST metadata, creates a server account with
-the `mysql_rest_service_meta_provider` and `mysql_rest_service_data_provider`
-roles (its default role; MariaDB activates one role at a time), stores its password and the JWT secret in a keyring, creates a
+It registers the instance in the REST metadata (table `rest_daemon`; the
+server generates the instance's UUID, written to the configuration as
+`rest_daemon_id`), creates a server account `mariadb_restd_<random>` with the
+`mariadb_rest_service_meta_provider` and `mariadb_rest_service_data_provider`
+roles (the first is its default role; MariaDB activates one role at a time), stores its password and the JWT secret in a keyring, creates a
 self-signed TLS certificate and writes `mariadb-restd.conf` (HTTPS on port
 8443). The account in the URI needs to create accounts, grant those roles and
 write the MRS metadata; passwords that aren't given are prompted for. If
@@ -145,7 +148,7 @@ anything fails, what was created is removed again.
 | `-u`, `--user` | the system account that runs restd, owner of the created files (needed when running as root without `-d`) |
 | `--name` | name of the instance in the REST metadata (default: `<hostname>:<HTTP port>`) |
 | `--report-host` | host name stored in the REST metadata (default: the local host name) |
-| `--metadata-schema` | the REST metadata schema to serve, `<prefix>mysql_rest_service_metadata<postfix>` (default: the base name); the roles follow it |
+| `--metadata-schema` | the REST metadata schema to serve, `<prefix>mariadb_rest_service<postfix>` (default: `mariadb_rest_service`); the roles follow it |
 | `--metadata-account`, `--data-account` | use these server accounts (passwords prompted for) instead of a generated one |
 | `--jwt-secret` | secret for signing JSON Web Tokens; the same for all instances of the same MRS metadata |
 | `--developer`, `--developer-debug-port` | also serve the services in development by this developer |
@@ -188,11 +191,15 @@ ssl_key=/etc/mariadb-restd/server-key.pem
 [mysql_rest_service]
 mysql_user=mrs_user
 mysql_read_write_destinations=db1.example.com:3306
-router_id=1
+rest_daemon_id=0199a1b2-6c3e-7d41-9a0f-2b8c4d5e6f70
 ```
 
-The account in `mysql_user` needs the `mysql_rest_service_meta_provider` and
-`mysql_rest_service_data_provider` roles; its password, and the secret used
+`rest_daemon_id` is the UUID of the instance's row in the metadata table
+`rest_daemon` (`--setup` registers it); at start-up restd refuses to run when
+the metadata holds the same name and address under another id.
+
+The account in `mysql_user` needs the `mariadb_rest_service_meta_provider` and
+`mariadb_rest_service_data_provider` roles; its password, and the secret used
 to sign JWTs, are read from the keyring:
 
 ```sh
@@ -217,13 +224,14 @@ configured in `[mysql_rest_service]` directly:
 |---|---|
 | `mysql_read_write_destinations` | **required**, comma-separated `host[:port]`, `[ipv6]:port` or `local:/path/to/mysql.sock`; port 3306 if omitted |
 | `mysql_read_only_destinations` | same format; defaults to the read-write destinations |
-| `metadata_schema` | the REST metadata schema this instance serves, `<prefix>mysql_rest_service_metadata<postfix>` (default: the base name); the role names (`<prefix>mysql_rest_service_meta_provider<postfix>`, ...) follow it |
+| `metadata_schema` | the REST metadata schema this instance serves, `<prefix>mariadb_rest_service<postfix>` (default: `mariadb_rest_service`); the role names (`<prefix>mariadb_rest_service_meta_provider<postfix>`, ...) follow it |
+| `rest_daemon_id` | **required**, the instance's UUID in the metadata (MySQL Router: `router_id`, an integer); a master key reader gets it as `REST_DAEMON_ID` (MySQL Router: `ROUTER_ID`) |
 | `mysql_ssl_mode` | TLS to the servers: `DISABLED`, `PREFERRED` (default), `REQUIRED`, `VERIFY_CA`, `VERIFY_IDENTITY` |
 | `mysql_ssl_ca`, `mysql_ssl_capath`, `mysql_ssl_crl`, `mysql_ssl_crlpath` | CA and CRL files/directories for verifying the servers |
 | `mysql_ssl_cipher`, `mysql_ssl_curves`, `mysql_tls_version` | TLS ciphers, curves and versions |
 
 The other `[mysql_rest_service]` options (`mysql_user`,
-`mysql_user_data_access`, `router_id`, `metadata_refresh_interval`,
+`mysql_user_data_access`, `metadata_refresh_interval`,
 `wait_for_metadata_schema_access`, `developer`, ...) are the same as in MySQL
 Router.
 
@@ -267,9 +275,12 @@ On Windows, use `venv\Scripts\python`, put the DLL directories and a `perl` on
 commands to run through `cmd.exe`, as they do under mtr.
 
 **Smoke test** (`tools/smoke/run_smoke.sh`): starts `mariadbd`, deploys the
-metadata schema from the MariaDB shell plugins, configures restd with
-`--setup`, starts it, creates a REST view with the MariaDB shell and checks
-that it is served; see the script for its parameters.
+metadata schema with MariaDB Shell's `CONFIGURE REST METADATA` (shell 26.10.2
+or later; through the mariadb-shell-plugins' msm plugin when `SHELL_PLUGINS`
+is given), configures restd with `--setup`, starts it, creates a REST view
+with REST SQL and checks that it is served; optionally uploads and calls an
+MRS script (`MRS_SCRIPTS_DIR`, needs `SHELL_PLUGINS`). See the script for its
+parameters.
 
 ## Repository layout
 

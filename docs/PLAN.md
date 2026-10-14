@@ -309,7 +309,11 @@ Decisions (2026-10-13, see the decision log):
   without field metadata (`query_one` in the object loader, the user-group set, the
   sequence id) go by the data size. Unit tests for both paths.
 
-### Phase M3.4: switch to 5.0.0 (atomic) — plan approved 2026-10-13
+### Phase M3.4: switch to 5.0.0 (atomic) — steps 1–6 done on macOS (2026-10-13), Ubuntu/Windows pending
+Done on branch `m3.4` (one commit per step). Mac, 13.2: unit 395/395, ctest 113/113,
+live 102/104, suite 108/0/4/5/1 (as before the switch), smoke test incl. MRS scripts with
+shell 26.10.2 and the plugins' `main`. Deviations from the steps below: see the decision
+log (2026-10-13, M3.4 done on macOS).
 On branch `m3.4`, several commits, fast-forwarded to `main` when every suite is green
 (the tree is red in between). Decisions: the keyring master-key reader's `ROUTER_ID`
 variable becomes `REST_DAEMON_ID` (nothing released depends on it); the config section
@@ -374,6 +378,16 @@ Left for M3.5: user ids on the wire, the raw-bytes role id, counter names +
 `asof` with a clear error. The MariaDB shell and plugins carry the same open point
 ("unverified on MariaDB"); it is solved, if needed, in the three repositories together.
 It only matters for deployments with read-only replicas.
+
+## Open point: row-ownership columns with UUID user ids
+
+Metadata 5.0.0 made `mrs_user.id` a `UUID`; the owner columns of user tables are the
+user's own. The plugins' examples still use `BINARY(16)` (`mrs_notes`), which the daemon
+handles (`BINARY(16)` = `UUID` in `IN`/joins, M3.3 spike; live test `row_owner_root`).
+Likely the examples (and the docs) should move to `UUID` owner columns: to be confirmed
+on the plugins' side (user, 2026-10-13). Then: a `UUID`-owner variant of the live test,
+and settle how the script API hands the user id to scripts (M3.5; the `mrs_scripts`
+example looks users up with `UNHEX(?)` and still grants on `mysql_rest_service_metadata`).
 
 ## Open point: JSON columns on MariaDB (review after Milestone 3)
 
@@ -532,3 +546,13 @@ mrsd/
 - 2026-10-13: M3.4 plan approved (phase M3.4): branch `m3.4` fast-forwarded when green;
   keyring `ROUTER_ID` → `REST_DAEMON_ID`; the `[mysql_rest_service]` section and option
   names stay apart from `router_id` → `rest_daemon_id`. Binding stays `X'…'` (M3.3 spike).
+- 2026-10-13: M3.4 done on macOS. Deviations: the smoke test deploys the schema with the
+  shell's `CONFIGURE REST METADATA` (26.10.2 bundles 5.0.0; through the plugins' msm when
+  `SHELL_PLUGINS` is set) instead of a `git archive` of the script, and uploads MRS scripts
+  with `mrs.load.content_set()` (REST SQL takes no directory any more); the suite's test
+  copy of the schema is still generated from the shell's `main` (`make_test_schema.py`).
+  The passthroughDbUser message's "MariaDB Internal" was done in M3.4 (planned for M3.5).
+  The suite's fixed daemon UUID must not start with `0` (mysqltest reads it as false in
+  `if`); id-valued variables are tested with `== ''` / `IS NOT NULL`. `--setup` now goes
+  through `metadata_sql()` for its `rest_daemon` statements (missed in M3.2). The shell and
+  plugins checkouts may be used and built again (their 5.0.0 work is merged).

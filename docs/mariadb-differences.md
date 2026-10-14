@@ -1,7 +1,8 @@
 # Differences from the MySQL REST Service
 
 `mariadb-restd` is a port of MySQL Router's MySQL REST Service (MRS) to MariaDB.
-It serves the same endpoints from the same metadata; this is what behaves
+It serves the same endpoints from the MariaDB REST Service metadata schema 5.0
+(MRS's metadata, renamed and with UUID ids); this is what behaves
 differently, for people and tools coming from MRS. Found while porting the MRS
 test suite (Milestone 2, see [PROGRESS.md](PROGRESS.md)); the test-suite
 entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
@@ -18,8 +19,31 @@ entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
   there is no `{taskId}` status endpoint. The `mysqlTask` options in existing
   metadata are ignored.
 - **MySQL servers**: `mariadb-restd` refuses to start against anything but a
-  MariaDB server, 10.11 or later. The 4.1.6 metadata schema itself needs 11.1
-  (`JSON_SCHEMA_VALID`), `VECTOR` columns need 11.7.
+  MariaDB server, 11.7 or later (the metadata schema's `UUID_v7()` defaults).
+- **MRS metadata 4.x** (`mysql_rest_service_metadata`): only the MariaDB REST
+  Service metadata schema 5.0.x is served, see below.
+
+## Metadata schema and configuration
+
+- **Schema 5.0**, deployed by MariaDB Shell's `CONFIGURE REST METADATA`:
+  `mariadb_rest_service` (option `metadata_schema` / `--metadata-schema` for a
+  `<prefix>mariadb_rest_service<postfix>` deployment), with MRS's tables
+  renamed (`router` → `rest_daemon`, `db_schema` → `rest_schema`, `db_object`
+  → `rest_object`, `object*` → `data_mapping*`, ...) and `UUID` ids. A 4.x
+  schema, or a newer 5.x minor, is refused with a message naming the
+  supported version.
+- **Roles** carry the schema's prefix and postfix:
+  `<prefix>mariadb_rest_service_meta_provider<postfix>`,
+  `..._data_provider` (MRS: `mysql_rest_service_*`).
+- **Instance id**: `rest_daemon_id`, the UUID of the instance's `rest_daemon`
+  row (MRS: `router_id`, an integer). A master key reader gets it in
+  `REST_DAEMON_ID` (MRS: `ROUTER_ID`); JWTs carry it as `instance_id` (MRS:
+  `router-<id>`). `--setup` names the accounts it creates
+  `mariadb_restd_<random>` (MRS: `mysql_router<id>_<random>`).
+- **Status counters** are written to `rest_daemon_status` as
+  `mariadb_connections`, `mariadb_queries` and `active_mariadb_connections`.
+- The built-in authentication vendor is **MariaDB Internal** (MRS: MySQL
+  Internal), identified by its id, as before.
 
 ## Server behaviour
 
@@ -35,7 +59,7 @@ entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
 - **Roles**: MariaDB activates one role at a time and no role by default
   (MRS runs `SET ROLE ALL` on its connections). The service accounts created
   by `--setup` get a default role. For pass-through authentication
-  (`mysql_user_data_access`, MySQL Internal auth) the service activates the
+  (`mysql_user_data_access`, MariaDB Internal auth) the service activates the
   account's role when it has exactly one and no default; with several roles
   it logs a warning and the DBA sets one with `SET DEFAULT ROLE`. The account running
   `--setup` must hold the REST service roles `WITH ADMIN OPTION` to grant
