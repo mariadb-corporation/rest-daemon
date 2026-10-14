@@ -43,7 +43,7 @@ What it does differently from the MySQL REST Service is listed in
 |---|---|
 | `MARIADB_CONNECTOR_DIR` | prefix of a MariaDB Connector/C installation; without it, Connector/C and OpenSSL come from vcpkg |
 | `WITH_VCPKG_TRIPLET` | vcpkg triplet to get the dependencies with (default: the dynamic triplet of the host, if `MARIADB_CONNECTOR_DIR` is not set; `OFF`: no vcpkg) |
-| `VCPKG_ROOT` | the vcpkg checkout (default: `$VCPKG_ROOT`, else `../vcpkg`, cloned if missing) |
+| `VCPKG_ROOT` | the vcpkg checkout (default: `$VCPKG_ROOT` if it is a vcpkg git checkout, else `../vcpkg`, cloned if missing) |
 | `MRS_JIT_EXECUTOR_LIB` | directory with `libjitexecutor` and its headers; without it (and without `WITH_JIT_EXECUTOR`), restd is built without MRS script support |
 | `WITH_JIT_EXECUTOR` | build `libjitexecutor` from `ext/polyglot` at configure time, downloading GraalVM and Maven (`OFF`) |
 | `RESTD_DEPS_DIR` | where `WITH_JIT_EXECUTOR` puts GraalVM, Maven and the Graal sources (`../restd-deps`) |
@@ -61,9 +61,12 @@ and builds against them, the way MariaDB Shell's `-DWITH_VCPKG_TRIPLET` works
 (`cmake/bootstrap_vcpkg.cmake`):
 
 - vcpkg is taken from `-DVCPKG_ROOT`, the `VCPKG_ROOT` environment variable
-  or `../vcpkg` (next to the source tree, where MariaDB Shell's build puts it
-  too), in that order. If there is no checkout there, configure clones vcpkg
-  at the `builtin-baseline` commit of `vcpkg.json` and bootstraps it.
+  (if it is a vcpkg git checkout: a Visual Studio developer environment sets
+  it to Visual Studio's bundled vcpkg, which is ignored) or `../vcpkg` (next
+  to the source tree, where MariaDB Shell's build puts it too), in that
+  order. If there is no checkout there, configure clones vcpkg at the
+  `builtin-baseline` commit of `vcpkg.json` and bootstraps it; a directory
+  that exists and isn't a vcpkg checkout is left alone and configure stops.
 - The triplet is the host's dynamic one (`arm64-osx-dynamic`,
   `x64-linux-dynamic`, `x64-windows`, ...), as restd links the shared
   `libmariadb`; choose another with `-DWITH_VCPKG_TRIPLET=<triplet>`.

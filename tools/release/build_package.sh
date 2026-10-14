@@ -19,14 +19,16 @@
 # Bash in a vcvars environment) and in the Rocky Linux 9 container.
 #
 #   TRIPLET=<vcpkg triplet> JIT_CACHE=<dir> OUT_DIR=<dir> \
-#   [BUILD_DIR=build] [RESTD_DEPS_DIR=<dir>] tools/release/build_package.sh
+#   [BUILD_DIR=build] [RESTD_DEPS_DIR=<dir>] [LOG_DIR=<dir>] \
+#   tools/release/build_package.sh
 #
 # Connector/C, OpenSSL and ICU come from vcpkg (the icu feature of
 # vcpkg.json). JIT_CACHE is a directory with a JIT executor library built
 # earlier (libjitexecutor and its headers): if it has one, it's used as
 # MRS_JIT_EXECUTOR_LIB; otherwise the library is built at configure time
 # (WITH_JIT_EXECUTOR) and copied there afterwards, for the caller to cache.
-# The package is copied into OUT_DIR.
+# The package is copied into OUT_DIR. If the build fails, its logs (JIT
+# executor build, vcpkg) are copied into LOG_DIR, for the caller to keep.
 set -euo pipefail
 
 TRIPLET=${TRIPLET:?set TRIPLET}
@@ -38,6 +40,27 @@ BUILD_DIR=${BUILD_DIR:-build}
 native_path() {
   if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else echo "$1"; fi
 }
+
+# vcpkg is cloned next to the source tree (cmake/bootstrap_vcpkg.cmake): its
+# buildtrees hold the logs of a port that failed to build
+collect_logs() {
+  [ -n "${LOG_DIR:-}" ] || return 0
+  mkdir -p "$LOG_DIR"
+  for f in "$BUILD_DIR"/jit-executor-build.log "$BUILD_DIR"/vcpkg-manifest-install.log \
+           "$BUILD_DIR"/CMakeFiles/CMakeConfigureLog.yaml; do
+    if [ -f "$f" ]; then cp "$f" "$LOG_DIR/"; fi
+  done
+  if [ -d ../vcpkg/buildtrees ]; then
+    find ../vcpkg/buildtrees -maxdepth 2 -name '*.log' -exec cp {} "$LOG_DIR/" \; 2>/dev/null
+  fi
+  echo "==> Build logs copied to $LOG_DIR"
+}
+on_exit() {
+  local rc=$?
+  [ "$rc" -eq 0 ] || collect_logs || true
+  exit "$rc"
+}
+trap on_exit EXIT
 
 jobs=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo "${NUMBER_OF_PROCESSORS:-2}")
 jit_out=ext/polyglot/polyglot-nativeapi-native-library/target

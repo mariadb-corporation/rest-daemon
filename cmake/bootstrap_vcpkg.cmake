@@ -33,9 +33,12 @@
 # shared libmariadb, which the static default triplets on macOS and Linux do
 # not have. -DWITH_VCPKG_TRIPLET=OFF turns vcpkg off.
 #
-# vcpkg is taken from -DVCPKG_ROOT, $VCPKG_ROOT or ../vcpkg (the checkout
-# MariaDB Shell uses, when the two are cloned side by side), in that order,
-# and cloned there at the "builtin-baseline" commit of vcpkg.json if missing.
+# vcpkg is taken from -DVCPKG_ROOT, $VCPKG_ROOT (only if it is a vcpkg git
+# checkout: Visual Studio's developer environment points it at its bundled
+# vcpkg) or ../vcpkg (the checkout MariaDB Shell uses, when the two are cloned
+# side by side), in that order, and cloned there at the "builtin-baseline"
+# commit of vcpkg.json if missing; a directory that exists and isn't a vcpkg
+# checkout is never replaced.
 # A vcpkg toolchain file passed with -DCMAKE_TOOLCHAIN_FILE is used as is.
 
 IF(NOT DEFINED WITH_VCPKG_TRIPLET AND NOT MARIADB_CONNECTOR_DIR)
@@ -104,14 +107,34 @@ ENDIF()
 SET(VCPKG_GIT_TAG "${_vcpkg_baseline}"
   CACHE STRING "Git ref (branch, tag or commit) of vcpkg to clone")
 
+# The environment's VCPKG_ROOT only when it is a vcpkg checkout: a Visual
+# Studio developer environment sets it to the vcpkg bundled with Visual
+# Studio (no git checkout, so no baseline commit, and under "Program Files",
+# where ports built with autotools, ICU among them, fail on the space).
 IF(VCPKG_ROOT)
   SET(_vcpkg_root "${VCPKG_ROOT}")
-ELSEIF(NOT "$ENV{VCPKG_ROOT}" STREQUAL "")
+ELSEIF(NOT "$ENV{VCPKG_ROOT}" STREQUAL "" AND EXISTS "$ENV{VCPKG_ROOT}/.git")
   SET(_vcpkg_root "$ENV{VCPKG_ROOT}")
 ELSE()
+  IF(NOT "$ENV{VCPKG_ROOT}" STREQUAL "")
+    MESSAGE(STATUS "vcpkg: ignoring VCPKG_ROOT=$ENV{VCPKG_ROOT} "
+                   "(not a vcpkg git checkout)")
+  ENDIF()
   SET(_vcpkg_root "${CMAKE_CURRENT_SOURCE_DIR}/../vcpkg")
 ENDIF()
 GET_FILENAME_COMPONENT(_vcpkg_root "${_vcpkg_root}" ABSOLUTE)
+
+# Cloned only into a missing or empty directory: anything else there isn't
+# ours to replace (the fallback below removes what the first clone created)
+IF(NOT EXISTS "${_vcpkg_root}/.git" AND EXISTS "${_vcpkg_root}")
+  FILE(GLOB _vcpkg_root_entries "${_vcpkg_root}/*")
+  IF(_vcpkg_root_entries)
+    MESSAGE(FATAL_ERROR
+      "${_vcpkg_root} exists but is not a vcpkg git checkout: pass "
+      "-DVCPKG_ROOT=<vcpkg checkout, or a missing or empty directory to "
+      "clone vcpkg into>")
+  ENDIF()
+ENDIF()
 
 IF(CMAKE_HOST_WIN32)
   SET(_vcpkg_bootstrap "${_vcpkg_root}/bootstrap-vcpkg.bat")

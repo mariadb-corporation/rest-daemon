@@ -21,9 +21,10 @@ name: Rest-Daemon-Release
 #   and checksums in cmake/bootstrap_jit_executor.cmake. A hit is handed to
 #   configure as MRS_JIT_EXECUTOR_LIB; a miss builds it (WITH_JIT_EXECUTOR) and
 #   saves it once restd has been built against it.
-# - vcpkg's binary cache (ICU, OpenSSL, Connector/C), keyed by vcpkg.json and
-#   falling back to the newest earlier one: vcpkg addresses the archives by
-#   each port's ABI hash, so unaffected ports stay warm across a change.
+# - vcpkg's binary cache (ICU, OpenSSL, Connector/C), saved by every run
+#   (failed ones too) and restored from the newest earlier one, preferably
+#   with the same vcpkg.json: vcpkg addresses the archives by each port's ABI
+#   hash, so unaffected ports stay warm across a change.
 
 on:
   push:
@@ -64,13 +65,19 @@ jobs:
             os-runner: windows-2022
             vcpkg-triplet: x64-windows
             msvc-arch: x64
+            msvc-toolset: '14.44'
+            vcpkg-overlay: vs2022
             jit-platform: windows-x64
-          # an x64 build on ARM64, see the top of this file
+          # an x64 build on ARM64, see the top of this file. With the default
+          # toolset of the image's VS 2026: its side-by-side 14.44 toolset has
+          # no x64 libraries there (LNK1104 on MSVCRTD.lib).
           - os: windows
             arch: arm64
             os-runner: windows-11-arm
             vcpkg-triplet: x64-windows
             msvc-arch: arm64_amd64
+            msvc-toolset: ''
+            vcpkg-overlay: default
             jit-platform: windows-x64
 
     defaults:
@@ -98,12 +105,15 @@ jobs:
           path: jit-cache
           key: jit-executor-${{ env.JIT_CACHE_VERSION }}-${{ matrix.jit-platform }}-${{ hashFiles('ext/polyglot/**', 'cmake/bootstrap_jit_executor.cmake') }}
 
+      # Saved under a key of its own by every run, failed ones too (see the
+      # save step): the ports that did build are kept for the next run.
       - name: Restore vcpkg binary cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: vcpkg-archives
-          key: vcpkg-archives-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-archives-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('vcpkg.json', '.github/vcpkg-triplets/**') }}-${{ github.run_id }}
           restore-keys: |
+            vcpkg-archives-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('vcpkg.json', '.github/vcpkg-triplets/**') }}-
             vcpkg-archives-${{ matrix.os }}-${{ matrix.arch }}-
 
       - name: Create the vcpkg binary cache directory
@@ -120,23 +130,24 @@ jobs:
       # The JIT executor build (GraalVM native-image) needs the vcvars
       # environment too: it can't set up MSVC by itself from Git Bash.
       #
-      # Pinned to the VS 2022 toolset (MSVC 14.44), as in MariaDB Shell's
-      # release: the windows-11-arm image is a VS 2026 one, which still has
-      # the 14.44 toolset side by side, and windows-2022 defaults to it. Both
-      # Windows legs build with the same compiler.
-      - name: Setup Visual Studio 2022 Environment
+      # Windows x64 is pinned to the VS 2022 toolset (MSVC 14.44), as in
+      # MariaDB Shell's release (windows-2022 defaults to it); Windows arm64
+      # uses the image's default (see the matrix). This environment also sets
+      # VCPKG_ROOT to Visual Studio's bundled vcpkg, which
+      # cmake/bootstrap_vcpkg.cmake ignores.
+      - name: Setup Visual Studio Environment
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.msvc-arch }}
-          toolset: '14.44'
+          toolset: ${{ matrix.msvc-toolset }}
 
       # vcpkg ignores the environment above and runs vcvarsall itself with the
-      # newest toolset it finds: the overlay triplet pins its ports to 14.44
-      # too.
-      - name: Pin vcpkg to the VS 2022 toolset
+      # newest toolset it finds: the overlay triplets build its ports with the
+      # leg's toolset, release builds only.
+      - name: Select the vcpkg overlay triplets
         if: runner.os == 'Windows'
-        run: echo "VCPKG_OVERLAY_TRIPLETS=${{ github.workspace }}/.github/vcpkg-triplets" >> "$GITHUB_ENV"
+        run: echo "VCPKG_OVERLAY_TRIPLETS=${{ github.workspace }}/.github/vcpkg-triplets/${{ matrix.vcpkg-overlay }}" >> "$GITHUB_ENV"
 
       # Git Bash puts C:\Program Files\Git\usr\bin first on PATH, and its
       # link.exe (coreutils' hard-link tool) shadows the MSVC linker.
@@ -153,6 +164,7 @@ jobs:
           JIT_CACHE: ${{ github.workspace }}/jit-cache
           OUT_DIR: ${{ github.workspace }}/out
           RESTD_DEPS_DIR: ${{ runner.temp }}/restd-deps
+          LOG_DIR: ${{ github.workspace }}/logs
         run: tools/release/build_package.sh
 
       - name: Save JIT executor library
@@ -161,6 +173,22 @@ jobs:
         with:
           path: jit-cache
           key: ${{ steps.jit.outputs.cache-primary-key }}
+
+      - name: Save vcpkg binary cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: vcpkg-archives
+          key: vcpkg-archives-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('vcpkg.json', '.github/vcpkg-triplets/**') }}-${{ github.run_id }}
+
+      - name: Upload Build Logs On Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ matrix.os }}-${{ matrix.arch }}
+          path: logs
+          retention-days: 7
+          if-no-files-found: ignore
 
       # ========================================
       # 4. UPLOAD ARTIFACTS FOR DOWNLOAD
@@ -214,24 +242,43 @@ jobs:
           key: jit-executor-${{ env.JIT_CACHE_VERSION }}-linux-${{ matrix.arch }}-${{ hashFiles('ext/polyglot/**', 'cmake/bootstrap_jit_executor.cmake') }}
 
       - name: Restore vcpkg binary cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: vcpkg-archives
-          key: vcpkg-archives-linux-${{ matrix.arch }}-${{ hashFiles('vcpkg.json', 'docker/linux-rocky9.Dockerfile') }}
+          key: vcpkg-archives-linux-${{ matrix.arch }}-${{ hashFiles('vcpkg.json', 'docker/linux-rocky9.Dockerfile') }}-${{ github.run_id }}
           restore-keys: |
+            vcpkg-archives-linux-${{ matrix.arch }}-${{ hashFiles('vcpkg.json', 'docker/linux-rocky9.Dockerfile') }}-
             vcpkg-archives-linux-${{ matrix.arch }}-
 
+      # The image, vcpkg's port builds, GraalVM and native-image need more
+      # disk than a hosted runner has free: drop the preinstalled toolchains
+      # restd doesn't use.
+      - name: Free disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/share/swift \
+            /usr/local/share/powershell /usr/local/lib/node_modules || true
+          df -h /
+
       # native-image asks for a 20 GB heap (-J-Xmx20g in the pom), more than a
-      # hosted runner has: give a build of the library swap to fall back on.
+      # hosted runner has: give a build of the library swap to fall back on,
+      # as much as the disk can spare (a swap file that fills the disk takes
+      # the runner down).
       - name: Add swap for the JIT executor build
         if: steps.jit.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
           free -h
-          # /mnt is the large scratch disk where the runner has one
-          if [ -d /mnt ]; then f=/mnt/jit.swap; else f=/jit.swap; fi
-          sudo fallocate -l 16G "$f"
-          sudo chmod 600 "$f" && sudo mkswap "$f" && sudo swapon "$f"
+          avail=$(df --output=avail -BG / | tail -n 1 | tr -dc '0-9')
+          size=$((avail - 25))
+          [ "$size" -gt 16 ] && size=16
+          if [ "$size" -lt 4 ]; then
+            echo "::warning::only ${avail}G free on /: no swap added"
+            exit 0
+          fi
+          sudo fallocate -l "${size}G" /jit.swap
+          sudo chmod 600 /jit.swap && sudo mkswap /jit.swap && sudo swapon /jit.swap
           free -h
 
       # ========================================
@@ -257,6 +304,7 @@ jobs:
             -e OUT_DIR=/workspace/src/out \
             -e RESTD_DEPS_DIR=/workspace/restd-deps \
             -e VCPKG_DEFAULT_BINARY_CACHE=/workspace/src/vcpkg-archives \
+            -e LOG_DIR=/workspace/src/logs \
             -v "${{ github.workspace }}:/workspace/src" \
             restd-rocky9-builder-${{ matrix.arch }}:${{ github.sha }} \
             bash -c 'git config --global --add safe.directory "*" && tools/release/build_package.sh'
@@ -273,6 +321,22 @@ jobs:
         with:
           path: jit-cache
           key: ${{ steps.jit.outputs.cache-primary-key }}
+
+      - name: Save vcpkg binary cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: vcpkg-archives
+          key: vcpkg-archives-linux-${{ matrix.arch }}-${{ hashFiles('vcpkg.json', 'docker/linux-rocky9.Dockerfile') }}-${{ github.run_id }}
+
+      - name: Upload Build Logs On Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-linux-${{ matrix.arch }}
+          path: logs
+          retention-days: 7
+          if-no-files-found: ignore
 
       # ========================================
       # 4. UPLOAD ARTIFACTS FOR DOWNLOAD

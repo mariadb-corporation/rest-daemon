@@ -13,11 +13,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1335 USA
 
-# vcpkg's built-in x64-windows triplet, pinned to the VS 2022 toolset
-# (MSVC 14.44) that rest-daemon-release.yml selects (as MariaDB Shell's).
+# vcpkg's built-in x64-windows triplet with the default toolset of the
+# Visual Studio found, release builds only (see ../vs2022/x64-windows.cmake).
+# For the Windows arm64 leg of rest-daemon-release.yml: the windows-11-arm
+# image has no x64 libraries for its side-by-side 14.44 toolset.
 set(VCPKG_TARGET_ARCHITECTURE x64)
 set(VCPKG_CRT_LINKAGE dynamic)
 set(VCPKG_LIBRARY_LINKAGE dynamic)
-
-set(VCPKG_PLATFORM_TOOLSET v143)
-set(VCPKG_PLATFORM_TOOLSET_VERSION 14.44)
+set(VCPKG_BUILD_TYPE release)
