@@ -68,7 +68,7 @@ let $mrs_add_content="let Sample = (() => {
 
     static helloUser() {
       const userId = getCurrentMrsUserId();
-      const query = 'SELECT name FROM mariadb_rest_service.mrs_user WHERE id = UNHEX(?)';
+      const query = 'SELECT name FROM mariadb_rest_service.mrs_user WHERE id = ?';
       const result = getSession().runSql(query, [userId]).fetchOneObject();
       return 'Hello ' + result.name + '!';
     }

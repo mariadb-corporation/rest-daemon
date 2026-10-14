@@ -83,7 +83,7 @@ MysqlFixedPoolManager::ConnectionParameters new_connection_params(
 
   if (!node.has_value())
     throw std::runtime_error(
-        "Connection to MySQL is impossible, there are no destinations "
+        "Connection to MariaDB is impossible, there are no destinations "
         "available.");
   log_debug("MysqlFixedPoolManager::new_connection_params address:%s",
             node->str().c_str());

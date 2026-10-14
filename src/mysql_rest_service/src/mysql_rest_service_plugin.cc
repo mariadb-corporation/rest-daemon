@@ -81,17 +81,17 @@ void trace_error(const char *variable_user, const char *access,
                  const char *role, const mysqlrouter::MySQLSession::Error &e) {
   if (e.code() == ER_INVALID_ROLE) {
     log_error(
-        "MySQL Server account, set in '%s' (MRS/%s access), "
+        "MariaDB server account, set in '%s' (REST service %s access), "
         "must be granted with '%s' role.",
         variable_user, access, role);
     log_info(
-        "Please consult the MRS documentation on: how to configure MySQL "
-        "Server accounts for MRS");
+        "Please consult the MariaDB REST Service documentation on how to "
+        "configure the server accounts for the REST service");
     return;
   }
 
   log_error(
-      "User configured in '%s' variable, couldn't connect to MySQL Server. "
+      "User configured in '%s' variable, couldn't connect to the MariaDB server. "
       "The process failed with %u error: %s",
       variable_user, e.code(), e.message().c_str());
 }
@@ -147,8 +147,9 @@ class MrsModule {
       trace_error("mysql_user", "metadata",
                   mrs::database::metadata_role("meta_provider").c_str(), e);
       throw std::runtime_error(
-          "Can't start MySQL REST Service, because connection to MySQL server "
-          "failed. For more informations look at previous error messages.");
+          "Can't start the MariaDB REST Service, because connection to the "
+          "MariaDB server failed. For more information look at previous "
+          "error messages.");
     }
 
     try {
@@ -166,8 +167,9 @@ class MrsModule {
       trace_error("mysql_user_data_access", "user-data",
                   mrs::database::metadata_role("data_provider").c_str(), e);
       throw std::runtime_error(
-          "Can't start MySQL REST Service, because connection to MySQL server "
-          "failed. For more informations look at previous error messages.");
+          "Can't start the MariaDB REST Service, because connection to the "
+          "MariaDB server failed. For more information look at previous "
+          "error messages.");
     }
 
     auto socket_ops = mysql_harness::SocketOperations::instance();
@@ -325,7 +327,7 @@ static void init(mysql_harness::PluginFuncEnv *env) {
 
     if (sections.empty())
       throw std::invalid_argument(
-          "Missing configuration section for MRS plugin.");
+          "Missing configuration section [mysql_rest_service].");
 
     if (1 < sections.size())
       throw std::invalid_argument(

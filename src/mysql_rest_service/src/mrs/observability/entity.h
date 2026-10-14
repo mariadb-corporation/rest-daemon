@@ -47,6 +47,8 @@ class Entity : public Common {
   virtual std::string get_name() const = 0;
   virtual uint64_t get_value_and_reset() = 0;
   virtual void clear() = 0;
+  // restd: false for gauges (values are not deltas), see statusVariables
+  virtual bool is_resettable() const { return true; }
 };
 
 template <uint64_t counter_id>
@@ -80,6 +82,7 @@ class EntityCounterNotResetable : public EntityCounter<counter_id> {
   using Parent = EntityCounter<counter_id>;
   using Parent::EntityCounter;
   uint64_t get_value_and_reset() override { return Parent::value_.load(); }
+  bool is_resettable() const override { return false; }
 };
 
 template <uint64_t counter_id>

@@ -87,10 +87,9 @@ inline mysqlrouter::sqlstring get_user_id(rest::RequestContext *ctxt,
     return {};
   }
 
-  mysqlrouter::sqlstring sql("?");
-  sql << to_string(ctxt->user.user_id);
-
-  return sql;
+  // restd: X'<hex>', which fills a BINARY(16) as well as a UUID parameter
+  // (upstream bound the 32 hex digits as text, too long for BINARY(16))
+  return to_sqlstring(ctxt->user.user_id);
 }
 
 inline void check_input_parameters(

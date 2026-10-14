@@ -42,6 +42,23 @@ class EntitiesManager : private Common {
  public:
   using Snapshot = std::vector<std::pair<std::string, uint64_t>>;
 
+  // restd: the registered entities by id (for the statusVariables list)
+  struct Description {
+    uint32_t id;
+    std::string name;
+    bool resettable;
+  };
+
+  std::vector<Description> describe() const {
+    std::vector<Description> result;
+    for (const auto &e : entities_) {
+      if (!e) continue;
+      result.push_back({static_cast<uint32_t>(e->get_id()), e->get_name(),
+                        e->is_resettable()});
+    }
+    return result;
+  }
+
   void record_entity(std::unique_ptr<Entity> &&entity) {
     auto id = entity->get_id();
 

@@ -329,7 +329,7 @@ bool MetadataLogger::check_metadata_version_supported(
   if (!schema_ver.is_compatible({kCurrentMrsMetadataVersion})) {
     log_warning(
         metadata_sql("Logging to mariadb_rest_service metadata was configured but "
-        "MRS metadata version %s does not support metadata logging").c_str(),
+        "REST metadata version %s does not support metadata logging").c_str(),
         schema_ver.str().c_str());
     return false;
   }

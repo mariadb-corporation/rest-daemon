@@ -216,7 +216,7 @@ MysqlCacheManager::MysqlCacheCallbacks::new_connection_params(bool wait) {
 
   if (!node.has_value())
     throw std::runtime_error(
-        "Connection to MySQL is impossible, there are not destinations "
+        "Connection to MariaDB is impossible, there are not destinations "
         "configured.");
   log_debug("MysqlCacheManager::new_connection_params address:%s",
             node->str().c_str());

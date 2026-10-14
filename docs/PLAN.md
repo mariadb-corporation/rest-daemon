@@ -364,9 +364,20 @@ Verification: Mac unit/ctest/live/suite, then Ubuntu and Windows (11.8.9), smoke
 Left for M3.5: user ids on the wire, the raw-bytes role id, counter names +
 `statusVariables`, the "MySQL Internal" message and other texts. M3.6: Galera polling.
 
-### Phase M3.5: wire formats and texts
-- User ids on the wire, the raw-bytes role id bug, counters + `statusVariables`,
-  messages, README.
+### Phase M3.5: wire formats and texts ✅ done (2026-10-13)
+- Checked against the shell's and plugins' `main` first. User id in `/authentication/status`
+  and role ids as UUID text (role ids were raw bytes), `getCurrentMrsUserId()` as UUID text,
+  routine ownership parameters bound as `X'…'` (fills `BINARY(16)` and `UUID`; the 32-hex
+  text failed on `BINARY(16)`), `vendorId` kept `0x…` (the SDKs compare it). Counters
+  `mariadb…` and `statusVariables` published in `rest_daemon.attributes` from the counter
+  registry. Texts: REST metadata / MariaDB server / MariaDB REST Service / MariaDB Shell.
+  Tests: a unit test for the list, the status document and the published list (with
+  `rest_daemon_status_do_cleanup()`) in the suite; `scripting_base_tests`' `UNHEX(?)`
+  lookup fixed (its failure was hidden by the test's xfail).
+- Mac 13.2: unit 396/396, ctest 113/113, live 102/104, suite 108/0/4/5/1, smoke OK; Ubuntu
+  and Windows (11.8.9): ctest 113/113, live 102/104, suite 109/0/3/5/1 and 108/0/4/5/1,
+  smoke OK. Open items for later: the PLAN open point on ids and names shared with the
+  shell and plugins.
 
 ### Phase M3.6: Galera-safe audit polling
 - An overlap window by id and `changed_at` (clock-skew margin), a set of processed ids,
@@ -381,15 +392,39 @@ Left for M3.5: user ids on the wire, the raw-bytes role id, counter names +
 ("unverified on MariaDB"); it is solved, if needed, in the three repositories together.
 It only matters for deployments with read-only replicas.
 
-## Open point: row-ownership columns with UUID user ids
+## Open point: ids and names shared with the shell and plugins (review later)
 
-Metadata 5.0.0 made `mrs_user.id` a `UUID`; the owner columns of user tables are the
-user's own. The plugins' examples still use `BINARY(16)` (`mrs_notes`), which the daemon
-handles (`BINARY(16)` = `UUID` in `IN`/joins, M3.3 spike; live test `row_owner_root`).
-Likely the examples (and the docs) should move to `UUID` owner columns: to be confirmed
-on the plugins' side (user, 2026-10-13). Then: a `UUID`-owner variant of the live test,
-and settle how the script API hands the user id to scripts (M3.5; the `mrs_scripts`
-example looks users up with `UNHEX(?)` and still grants on `mysql_rest_service_metadata`).
+Collected in M3.5 (2026-10-13) from the shell's and plugins' `main`; each needs a decision or
+a change on their side, coordinated with the daemon:
+- **`vendorId` in `/authApps`** stays `0x…` (M3.5 decision): the TS/Python SDKs
+  (`MrsBaseClasses.ts:1571`, `mrs_base_classes.py:2291`, their tests) and `mrs_notes`'
+  WelcomePage compare `"0x3000…"`, any other value silently falls back to the
+  MariaDB-internal login. The shell's rule is UUID text for ids in JSON: switch together
+  with the SDKs (or after they accept both forms).
+- **The examples** are 4.x leftovers: `mrs_notes` (`BINARY(16)` owner columns and
+  `IN user_id BINARY(16)` procedures, `0x…` ids in `mrsNotes.mrs.json`, a 4.0 REST schema
+  dump nothing in 5.0 loads, and `mrs_notes.sql` fails on MariaDB at the view `notes_all`:
+  MySQL's six-argument `REGEXP_REPLACE` and ICU's nested set `[^[[:alnum:]]]`; the MariaDB
+  form `REGEXP_REPLACE(REGEXP_REPLACE(…, '[^[:alnum:]]', ' '), '[[:space:]]+', ' ')` deploys
+  on 13.2) and `mrs_scripts`
+  (grants on `mysql_rest_service_metadata`, `WHERE id = UNHEX(?)`, which no longer matches
+  the UUID text `getCurrentMrsUserId()` returns since M3.5). Likely to move to `UUID`
+  (user to confirm on the plugins' side); then a `UUID`-owner variant of the live test
+  `row_owner_root`. The daemon handles both owner types (`BINARY(16)` = `UUID` in
+  `IN`/joins; routine ownership binds `X'…'`, which fills either parameter type).
+- **Custom auth procedure** (`rest_object.auth_stored_procedure`): the shell's docs say
+  `IN user_id BINARY(16)`, an open point there too; the daemon loads the column but never
+  calls it (upstream neither), so nothing to align until it is implemented.
+- **Status variables**: the OPTIONS counter is named `kEntityCounterHttpRequestOptions`
+  in the daemon and in the schema's fallback list (an upstream slip); rename on both
+  sides together. The shell notes that `rest_daemon_status_downsample()` splices the names
+  into SQL unchecked (hardening on the shell side).
+- **Shell docs** still show `0x…` vendor ids (`python-client-api.md`,
+  `typescript-client-api.md`); they follow the `vendorId` decision.
+- **Product name**: "MariaDB REST Daemon" (shell, schema, landing page) vs this repo's
+  "MariaDB REST Service Daemon"; low priority (user, 2026-10-13).
+- Kept as is, matching the shell's docs: the session cookie names
+  `session_<32 hex digits of the auth app id>`; JWT `user_id`/`iss` hex (internal).
 
 ## Open point: JSON columns on MariaDB (review after Milestone 3)
 

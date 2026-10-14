@@ -47,7 +47,7 @@ exec $MRS_CLIENT_ARGS
 --echo # Set the server to offline mode, wait for the REST service to return 404
 set global offline_mode = 1;
 
---let $grep_pattern = .*ERROR .* MRS metadata refresh failed: .*The server is currently in offline mode.*
+--let $grep_pattern = .*ERROR .* REST metadata refresh failed: .*The server is currently in offline mode.*
 --let $grep_file = $MYSQLROUTER_LOGFILE
 --let $wait_timeout = 60
 --source ../include/wait_for_pattern_in_file.inc

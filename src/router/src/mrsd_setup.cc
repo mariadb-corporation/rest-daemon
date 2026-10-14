@@ -193,7 +193,7 @@ void MrsdSetup::prepare_command_options() {
       });
   arg_handler_.add_option(
       OptionNames({"--name"}),
-      "Name of this instance in the MRS metadata (default: "
+      "Name of this instance in the REST metadata (default: "
       "<hostname>:<HTTP port>).",
       CmdOptionValueReq::required, "name", [this](const std::string &value) {
         if (value.find_first_of("\r\n") != std::string::npos) {
@@ -207,7 +207,7 @@ void MrsdSetup::prepare_command_options() {
       });
   arg_handler_.add_option(
       OptionNames({"--report-host"}),
-      "Host name of this instance to store in the MRS metadata (default: the "
+      "Host name of this instance to store in the REST metadata (default: the "
       "local host name).",
       CmdOptionValueReq::required, "host", [this](const std::string &value) {
         if (value.empty()) {
@@ -217,13 +217,13 @@ void MrsdSetup::prepare_command_options() {
       });
   arg_handler_.add_option(
       OptionNames({"--socket"}),
-      "Connect to the MySQL server through this Unix socket (the server URI "
+      "Connect to the MariaDB server through this Unix socket (the server URI "
       "must use 'localhost'); also used by the configured instance.",
       CmdOptionValueReq::required, "path",
       [this](const std::string &value) { socket_ = value; });
   arg_handler_.add_option(
       OptionNames({"--connect-timeout"}),
-      "Timeout in seconds for connecting to the MySQL server (default: " +
+      "Timeout in seconds for connecting to the MariaDB server (default: " +
           std::to_string(MySQLSession::kDefaultConnectTimeout) + ").",
       CmdOptionValueReq::required, "seconds",
       [this](const std::string &value) {
@@ -232,7 +232,7 @@ void MrsdSetup::prepare_command_options() {
       });
   arg_handler_.add_option(
       OptionNames({"--read-timeout"}),
-      "Timeout in seconds for reading from the MySQL server (default: " +
+      "Timeout in seconds for reading from the MariaDB server (default: " +
           std::to_string(MySQLSession::kDefaultReadTimeout) + ").",
       CmdOptionValueReq::required, "seconds",
       [this](const std::string &value) {
@@ -298,7 +298,7 @@ void MrsdSetup::prepare_command_options() {
       });
   arg_handler_.add_option(
       OptionNames({"--metadata-account"}),
-      "MySQL account (user name) MRS uses to read its metadata; the password "
+      "MariaDB account (user name) the REST service uses to read its metadata; the password "
       "is prompted for. Created if it doesn't exist. Default: a generated "
       "account.",
       CmdOptionValueReq::required, "username",
@@ -311,7 +311,7 @@ void MrsdSetup::prepare_command_options() {
       });
   arg_handler_.add_option(
       OptionNames({"--data-account"}),
-      "MySQL account (user name) MRS uses to access the data it serves; the "
+      "MariaDB account (user name) the REST service uses to access the data it serves; the "
       "password is prompted for. Created if it doesn't exist. Default: the "
       "metadata account.",
       CmdOptionValueReq::required, "username",
@@ -324,7 +324,7 @@ void MrsdSetup::prepare_command_options() {
   arg_handler_.add_option(
       OptionNames({"--jwt-secret"}),
       "Secret for signing JSON Web Tokens; must be the same for all instances "
-      "serving the same MRS metadata. Prompted for if not given.",
+      "serving the same REST metadata. Prompted for if not given.",
       CmdOptionValueReq::required, "secret", [this](const std::string &value) {
         if (value.empty()) {
           throw std::runtime_error("Value for --jwt-secret can't be empty");
@@ -397,10 +397,10 @@ void MrsdSetup::show_help() {
   out_stream_ << MRSD_PROGRAM_NAME
       " --setup [<user>[:<password>]@]<host>[:<port>] [-d <directory>] "
       "[options]\n\n"
-      "Prepares a deployment directory for the MySQL REST Service of the "
-      "given\nMySQL server, which must have the MRS metadata schema. The "
+      "Prepares a deployment directory for the MariaDB REST Service of the "
+      "given\nMariaDB server, which must have the REST metadata schema. The "
       "account in the\nURI (default: root) needs to create accounts, grant "
-      "the MRS roles and\nwrite the MRS metadata. Its password is prompted "
+      "the REST service roles and\nwrite the REST metadata. Its password is prompted "
       "for if not in the URI.\n\n";
 
   out_stream_ << Vt100::render(Vt100::Render::Bold) << "# Options"
@@ -438,7 +438,7 @@ void MrsdSetup::init(const std::string &program_name,
 
   if (server_uri_.empty()) {
     throw std::runtime_error(
-        "--setup needs the URI of the MySQL server as its first argument: "
+        "--setup needs the URI of the MariaDB server as its first argument: "
         "--setup [<user>[:<password>]@]<host>[:<port>]");
   }
 #ifndef _WIN32
@@ -593,7 +593,7 @@ std::string MrsdSetup::mysql_destination() const {
 void MrsdSetup::connect() {
   if (target_uri_.password.empty()) {
     target_uri_.password = mysqlrouter::prompt_password(
-        "Please enter MySQL password for " + target_uri_.username);
+        "Please enter the MariaDB password for " + target_uri_.username);
   }
 
   mysql_ = std::make_unique<MySQLSession>();
@@ -615,7 +615,7 @@ void MrsdSetup::connect() {
                     target_uri_.password, socket_, "", connect_timeout_,
                     read_timeout_);
   } catch (const MySQLSession::Error &e) {
-    throw std::runtime_error("Unable to connect to the MySQL server at '" +
+    throw std::runtime_error("Unable to connect to the MariaDB server at '" +
                              mysql_destination() + "': " + e.what());
   }
 
@@ -629,11 +629,11 @@ void MrsdSetup::check_mrs_metadata() {
   } catch (const MySQLSession::Error &e) {
     if (e.code() == ER_BAD_DB_ERROR) {
       throw std::runtime_error(
-          "The MRS metadata schema (" + mrs::database::metadata_schema() +
-          ") was not found on the MySQL server. Create it first, e.g. with "
-          "MySQL Shell (\\sql CONFIGURE REST METADATA).");
+          "The REST metadata schema (" + mrs::database::metadata_schema() +
+          ") was not found on the MariaDB server. Create it first with "
+          "MariaDB Shell (\\sql CONFIGURE REST METADATA).");
     }
-    throw std::runtime_error("Could not read the MRS metadata version: "s +
+    throw std::runtime_error("Could not read the REST metadata version: "s +
                              e.what());
   }
 
@@ -844,7 +844,7 @@ std::string MrsdSetup::register_instance() {
   // the UUID the server generated (`UUID_v7()`), as text
   if (row && (*row)[0]) return std::string((*row)[0]);
   throw std::runtime_error(
-      "Could not determine the id of this instance in the MRS metadata");
+      "Could not determine the id of this instance in the REST metadata");
 }
 
 void MrsdSetup::store_developer(const std::string &rest_daemon_id) {
@@ -885,7 +885,7 @@ void MrsdSetup::create_accounts(const std::string &rest_daemon_id) {
     autogenerated = true;
   } else {
     metadata_account_.pass = mysqlrouter::prompt_password(
-        "Please enter MySQL password for MRS metadata account " +
+        "Please enter the MariaDB password for the REST metadata account " +
         metadata_account_.user);
   }
 
@@ -894,7 +894,7 @@ void MrsdSetup::create_accounts(const std::string &rest_daemon_id) {
       data_account_.user != metadata_account_.user;
   if (separate_data_account && !reuse_data_account_) {
     data_account_.pass = mysqlrouter::prompt_password(
-        "Please enter MySQL password for MRS data account " +
+        "Please enter the MariaDB password for the REST data account " +
         data_account_.user);
   } else {
     data_account_ = metadata_account_;
@@ -929,7 +929,7 @@ void MrsdSetup::create_accounts(const std::string &rest_daemon_id) {
       data_account_ = metadata_account_;
     }
   } catch (const MySQLSession::Error &e) {
-    throw std::runtime_error("Creating the MRS accounts failed: "s + e.what());
+    throw std::runtime_error("Creating the REST service accounts failed: "s + e.what());
   }
 }
 
@@ -982,7 +982,7 @@ void MrsdSetup::store_secrets_in_keyring(const std::string &rest_daemon_id) {
   while (jwt_secret_.empty()) {
     out_stream_
         << "\nPlease enter a secret for signing JSON Web Tokens (JWT).\n"
-           "All instances serving the same MRS metadata must use the same "
+           "All instances serving the same REST metadata must use the same "
            "secret;\nfor the first instance, enter a new random string.\n";
     jwt_secret_ = mysqlrouter::prompt_password("JWT secret");
     if (jwt_secret_.empty()) {
@@ -1197,7 +1197,7 @@ void MrsdSetup::print_report() const {
   out_stream_ << "\n"
               << Vt100::foreground(Vt100::Color::Green) << "# "
               << MRSD_PROGRAM_NAME << " '" << router_name()
-              << "' configured for the MySQL server at '"
+              << "' configured for the MariaDB server at '"
               << mysql_destination() << "'"
               << Vt100::render(Vt100::Render::ForegroundDefault) << "\n\n"
               << "Start it with\n\n";
@@ -1212,7 +1212,7 @@ void MrsdSetup::print_report() const {
     out_stream_ << "    systemctl start " MRSD_PROGRAM_NAME "\n\nor\n\n";
   }
   out_stream_ << "    " << program_path_ << " -c " << config_path_ << "\n\n"
-              << "The MySQL REST Service can then be reached at\n\n"
+              << "The MariaDB REST Service can then be reached at\n\n"
               << "    " << url << "\n";
 }
 
@@ -1230,7 +1230,7 @@ void MrsdSetup::run() {
 
   connect();
 
-  out_stream_ << "- Checking the MRS metadata\n";
+  out_stream_ << "- Checking the REST metadata\n";
   check_mrs_metadata();
 
   if (directory_.empty()) {
@@ -1239,11 +1239,11 @@ void MrsdSetup::run() {
     prepare_directory();
   }
 
-  out_stream_ << "- Registering the instance in the MRS metadata\n";
+  out_stream_ << "- Registering the instance in the REST metadata\n";
   const auto rest_daemon_id = register_instance();
   store_developer(rest_daemon_id);
 
-  out_stream_ << "- Creating the MRS account(s) if needed\n";
+  out_stream_ << "- Creating the REST service account(s) if needed\n";
   create_accounts(rest_daemon_id);
 
   prepare_tls_certificates();

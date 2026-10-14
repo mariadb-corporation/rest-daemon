@@ -13,7 +13,7 @@ Plan: [PLAN.md](PLAN.md). Current state and next steps: `.claude/PROJECT_CONTEXT
 | 3: MRS setup and cleanup | ✅ done 2026-10-05: branding (`mariadb-restd`), `--setup`, routing/cluster cleanup; tests pass on all three platforms |
 | 4: packaging and CI | ⏸ moved to Milestone 4 (2026-10-07): tar.gz (Linux, macOS), deb, rpm, Windows ZIP done and verified (unpacked); real deb/rpm installs need root; MSI deferred; CI last |
 
-**Milestone 1 (standalone daemon) is complete (2026-10-07). Milestone 2 (MariaDB) is complete (2026-10-13).** Milestone 3 (schema 5.0.0) is current. M3.0–M3.4 done (M3.4, the switch to 5.0.0, verified on macOS, Ubuntu and Windows 2026-10-13); M3.5 next.
+**Milestone 1 (standalone daemon) is complete (2026-10-07). Milestone 2 (MariaDB) is complete (2026-10-13).** Milestone 3 (schema 5.0.0) is current. M3.0–M3.5 done (5.0.0 served, wire formats and texts aligned with the shell; verified on macOS, Ubuntu and Windows 2026-10-13); M3.6 (Galera-safe audit polling) next.
 
 | Milestone 2 phase | Status |
 |---|---|
@@ -788,3 +788,27 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   (`<dev>/mrs_scripts-5`, `<win-home>\mrsd-deps\mrs_scripts-5`); the smoke wrappers on
   both VMs point at them (the 26.10.1 versions kept as `*.26101`). `win_sync.sh` takes
   `BRANCH=`. `m3.4` fast-forwarded to `main`.
+
+### 2026-10-13: session 8, continued (M3.5: wire formats, status variables, texts)
+- Surveyed the shell's and plugins' `main` first (ids in JSON are UUID text there; the SDKs
+  read only `status`/`user.name`/`user.email` from `/authentication/status` and compare
+  `vendorId` with `0x3000…`; the schema's `rest_daemon_status_do_cleanup()` reads
+  `statusVariables` `{name, column, nonResettable}` per daemon version, fallback names
+  `mariadb…`). Decisions (user): UUID text for the user id, role ids and the script user
+  id; `vendorId` stays `0x…`; routine ownership binds `X'…'` (tested: the 32-hex text fails
+  with 1406 on `BINARY(16)` parameters, `X'…'` fills both types); product name later.
+- Done on branch `m3.5`: the formats above; counters `mariadb…`; `statusVariables`
+  published at start and with the self-insert (`Entity::is_resettable()`,
+  `EntitiesManager::describe()`, `QueryStatistics::status_variables()`, one column table);
+  texts. Tests: unit test for the list; `authentication_session` shows the status document
+  (user UUID masked, Full Access role `31000000-…`), `mrs_schema_monitor` checks the
+  published list and runs `rest_daemon_status_do_cleanup()`; `scripting_base_tests`'
+  `helloUser` uses `WHERE id = ?` (its `UNHEX(?)` failure had been hidden by the xfail).
+- Verified: Mac 13.2 unit 396/396, ctest 113/113, live 102/104, suite 108/0/4/5/1, smoke incl.
+  MRS script; Ubuntu 113/113, 102/104, 109/0/3/5/1, smoke; Windows 113/113, 102/104,
+  108/0/4/5/1, smoke. `m3.5` fast-forwarded to `main`.
+- MRS Notes example: `mrs_notes.sql` fails on MariaDB at the view `notes_all` (MySQL's
+  six-argument `REGEXP_REPLACE`, ICU's nested set); the MariaDB form deploys on 13.2 and
+  was applied, uncommitted, to the user's plugins clone at their request. The example's
+  4.0 REST schema dump can't be loaded in 5.0 (the shell's docs say so): its objects have
+  to be created with REST SQL. Review-later list in PLAN.md.

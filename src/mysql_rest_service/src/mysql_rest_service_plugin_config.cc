@@ -157,12 +157,12 @@ class UserConfigurationInfo {
  public:
   void operator()(const char *variable) {
     log_error(
-        "MySQL Server account: '%s', set in configuration file "
-        "must have a password stored in `MySQLRouter's` keyring.",
+        "MariaDB server account: '%s', set in the configuration file, "
+        "must have a password stored in the keyring.",
         variable);
     log_info(
-        "Please consult the MRS documentation on: how to configure MySQL "
-        "Server accounts for MRS");
+        "Please consult the MariaDB REST Service documentation on how to "
+        "configure the server accounts for the REST service");
   }
 };
 

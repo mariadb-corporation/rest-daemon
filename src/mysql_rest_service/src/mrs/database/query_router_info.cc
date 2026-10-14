@@ -55,7 +55,7 @@ std::optional<std::string> QueryRouterInfo::find_existing_router_instances(
 void QueryRouterInfo::on_row(const ResultRow &r) {
   if (r.size() != 1) {
     throw std::runtime_error(
-        metadata_sql("Could not fetch router information from "
+        metadata_sql("Could not fetch the REST daemon's registration from "
         "`mariadb_rest_service`.`rest_daemon`"));
   }
 

@@ -91,5 +91,22 @@ delete from `mariadb_rest_service`.`audit_log`;
 
 --exec $MRS_CLIENT_ARGS --path /svc/basic_schema/tab3/1 --expected-status Ok --wait-until-status 60 --display none
 
+--echo
+--echo VI. The daemon publishes its status variables in rest_daemon.attributes, in
+--echo the format the metadata's status downsampling reads
+--echo
+eval SELECT JSON_LENGTH(JSON_EXTRACT(attributes, '$.statusVariables')) AS entries,
+  JSON_CONTAINS(JSON_EXTRACT(attributes, '$.statusVariables'),
+    '{"name": "mariadbConnectionsActive", "column": "active_mariadb_connections", "nonResettable": true}') AS active,
+  JSON_CONTAINS(JSON_EXTRACT(attributes, '$.statusVariables'),
+    '{"name": "mariadbQueries", "column": "mariadb_queries"}') AS queries,
+  JSON_CONTAINS(JSON_EXTRACT(attributes, '$.statusVariables'),
+    '{"name": "restCachedItems", "nonResettable": true}') AS cached_items
+  FROM mariadb_rest_service.rest_daemon WHERE id = '$extra_mrs_router_id';
+# the downsampling procedures run with the published names (rows older than
+# the kept intervals are aggregated; here it only has to run)
+CALL mariadb_rest_service.rest_daemon_status_do_cleanup(NOW());
+SELECT COUNT(*) > 0 AS status_rows FROM mariadb_rest_service.rest_daemon_status;
+
 # Cleanup
 --source ../include/mrs/cleanup.inc

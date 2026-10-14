@@ -324,7 +324,9 @@ HttpResult HandlerDbObjectScript::handle_script(
            // Get current MRS User ID Callback
            [&, ctxt]() -> std::optional<std::string> {
              if (ctxt->session) {
-               return ctxt->session->user.user_id.to_string();
+               // restd: UUID text, as scripts read mrs_user.id (upstream:
+               // 32 hex digits)
+               return ctxt->session->user.user_id.to_uuid_string();
              }
 
              return {};

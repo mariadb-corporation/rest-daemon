@@ -41,7 +41,19 @@ entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
   `router-<id>`). `--setup` names the accounts it creates
   `mariadb_restd_<random>` (MRS: `mysql_router<id>_<random>`).
 - **Status counters** are written to `rest_daemon_status` as
-  `mariadb_connections`, `mariadb_queries` and `active_mariadb_connections`.
+  `mariadb_connections`, `mariadb_queries` and `active_mariadb_connections`;
+  the counter names are `mariadbConnectionsCreated`, `mariadbQueries`, ...
+  (MRS: `mysql...`), and the daemon publishes the list (`statusVariables`:
+  name, column, nonResettable) in `rest_daemon.attributes`, which the
+  metadata's status downsampling reads.
+- **Ids on the wire** are UUID text, like everywhere in the 5.0 metadata: the
+  user's `id` and the role ids in `/authentication/status` (MRS: 32 hex
+  digits; role ids were raw bytes), and `getCurrentMrsUserId()` in MRS scripts
+  (MRS: 32 hex digits, so scripts that looked users up with `UNHEX(?)` use
+  `WHERE id = ?`). `vendorId` in `/authApps` stays `0x…`, as the client SDKs
+  compare it. A routine's ownership parameter gets the user id as a 16-byte
+  value, which fills a `BINARY(16)` or a `UUID` parameter (MRS bound the 32 hex
+  digits as text, too long for `BINARY(16)`).
 - The built-in authentication vendor is **MariaDB Internal** (MRS: MySQL
   Internal), identified by its id, as before.
 

@@ -28,7 +28,7 @@
 
 --perl
   use strict;
-  my $allowed_error="MRS metadata refresh failed";
+  my $allowed_error="REST metadata refresh failed";
   my $file = $ENV{'MYSQLROUTER_LOGFILE'} or die "grep_file is not set";
   my $pattern = "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9] [a-zA-Z0-9_]+ ERROR ";
   my $found = 0;

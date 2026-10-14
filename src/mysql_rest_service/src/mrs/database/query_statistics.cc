@@ -29,38 +29,90 @@
 
 #include <vector>
 
+#ifdef RAPIDJSON_NO_SIZETYPEDEFINE
+#include "my_rapidjson_size_t.h"
+#endif
+
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
 #include "helper/json/serializer_to_text.h"
 #include "mrs/router_observation_entities.h"
 
-#include "mysql/harness/utility/container/generic.h"
 
 namespace mrs {
 namespace database {
+
+namespace {
+
+// restd: the counters stored in their own rest_daemon_status columns, in the
+// order of the INSERT below (the others go to `details`, keyed by name)
+struct StatusColumn {
+  uint32_t id;
+  const char *column;
+};
+
+constexpr StatusColumn k_status_columns[]{
+    {kEntityCounterMySQLConnectionsCreated, "mariadb_connections"},
+    {kEntityCounterMySQLQueries, "mariadb_queries"},
+    {kEntityCounterHttpRequestGet, "http_requests_get"},
+    {kEntityCounterHttpRequestPost, "http_requests_post"},
+    {kEntityCounterHttpRequestPut, "http_requests_put"},
+    {kEntityCounterHttpRequestDelete, "http_requests_delete"},
+    {kEntityCounterMySQLConnectionsActive, "active_mariadb_connections"},
+};
+
+const char *status_column(uint32_t id) {
+  for (const auto &c : k_status_columns)
+    if (c.id == id) return c.column;
+  return nullptr;
+}
+
+}  // namespace
+
+std::string QueryStatistics::status_variables(
+    const observability::EntitiesManager &entities) {
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  writer.StartArray();
+  for (const auto &e : entities.describe()) {
+    writer.StartObject();
+    writer.Key("name");
+    writer.String(e.name.c_str());
+    if (const auto column = status_column(e.id)) {
+      writer.Key("column");
+      writer.String(column);
+    }
+    if (!e.resettable) {
+      writer.Key("nonResettable");
+      writer.Bool(true);
+    }
+    writer.EndObject();
+  }
+  writer.EndArray();
+  return buffer.GetString();
+}
 
 void QueryStatistics::update_statistics(MySQLSession *session,
                                         const std::string &rest_daemon_id,
                                         uint64_t timespan,
                                         const Snapshot &snap) {
-  query_.reset(
-      metadata_sql("INSERT INTO "
-      "mariadb_rest_service.rest_daemon_status("
-      "rest_daemon_id, timespan, mariadb_connections, mariadb_queries, "
-      "http_requests_get, "
-      "http_requests_post, "
-      "http_requests_put, http_requests_delete, active_mariadb_connections, "
-      "details) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").c_str());
-
-  std::vector<uint32_t> direct_ids{
-      kEntityCounterMySQLConnectionsCreated, kEntityCounterMySQLQueries,
-      kEntityCounterHttpRequestGet,          kEntityCounterHttpRequestPost,
-      kEntityCounterHttpRequestPut,          kEntityCounterHttpRequestDelete,
-      kEntityCounterMySQLConnectionsActive};
+  std::string columns;
+  std::string values;
+  for (const auto &c : k_status_columns) {
+    columns += std::string(c.column) + ", ";
+    values += "?, ";
+  }
+  query_.reset(metadata_sql("INSERT INTO mariadb_rest_service.rest_daemon_status("
+                            "rest_daemon_id, timespan, " +
+                            columns + "details) VALUES(?, ?, " + values + "?)")
+                   .c_str());
 
   helper::json::SerializerToText stt;
   {
     auto obj = stt.add_object();
     for (size_t i = 0; i < snap.size(); ++i) {
-      if (mysql_harness::utility::container::has(direct_ids, i)) continue;
+      if (status_column(static_cast<uint32_t>(i))) continue;
       if (snap[i].first.empty()) continue;
 
       obj->member_add_value(snap[i].first, snap[i].second);
@@ -68,8 +120,8 @@ void QueryStatistics::update_statistics(MySQLSession *session,
   }
 
   query_ << rest_daemon_id << timespan;
-  for (auto id : direct_ids) {
-    query_ << snap[id].second;
+  for (const auto &c : k_status_columns) {
+    query_ << snap[c.id].second;
   }
 
   query_ << stt.get_result();

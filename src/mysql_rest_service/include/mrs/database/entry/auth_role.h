@@ -48,9 +48,8 @@ inline std::string to_string(const AuthRole &entry) {
   helper::json::SerializerToText stt;
   {
     auto obj = stt.add_object();
-    stt.member_add_value("id",
-                         reinterpret_cast<const char *>(entry.id.raw.data()),
-                         entry.id.raw.size());
+    // restd: UUID text (upstream wrote the 16 raw bytes into the JSON)
+    stt.member_add_value("id", entry.id.to_uuid_string());
     stt.member_add_value("caption", entry.caption);
   }
 

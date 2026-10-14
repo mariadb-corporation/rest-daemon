@@ -26,6 +26,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "mrs/database/query_statistics.h"
 #include "mrs/observability/entities_manager.h"
 #include "mrs/router_observation_entities.h"
 
@@ -50,5 +51,35 @@ TEST(EntitiesManager, call_multiple_times) {
 
   mrs::observability::EntitiesManager em2;
   ASSERT_NO_FATAL_FAILURE(assertEntities(&em2));
-  ASSERT_EQ(1, get_counter(&em2, "mysqlConnectionsClosed"));
+  ASSERT_EQ(1, get_counter(&em2, "mariadbConnectionsClosed"));
+}
+
+// restd: the statusVariables list published in rest_daemon.attributes has the
+// format and the entries of metadata 5.0.0's fallback list
+// (rest_daemon_status_do_cleanup()'s old_status_variables)
+TEST(EntitiesManager, status_variables) {
+  mrs::observability::EntitiesManager em;
+  mrs::initialize_entities(&em);
+
+  const auto json = mrs::database::QueryStatistics::status_variables(em);
+
+  EXPECT_THAT(json, ::testing::StartsWith(
+                        "[{\"name\":\"httpRequestGet\",\"column\":"
+                        "\"http_requests_get\"},"));
+  EXPECT_THAT(json, ::testing::HasSubstr(
+                        "{\"name\":\"mariadbConnectionsCreated\",\"column\":"
+                        "\"mariadb_connections\"}"));
+  EXPECT_THAT(json, ::testing::HasSubstr(
+                        "{\"name\":\"mariadbConnectionsActive\",\"column\":"
+                        "\"active_mariadb_connections\",\"nonResettable\":true}"));
+  EXPECT_THAT(json, ::testing::HasSubstr(
+                        "{\"name\":\"mariadbQueries\",\"column\":"
+                        "\"mariadb_queries\"}"));
+  EXPECT_THAT(json, ::testing::HasSubstr(
+                        "{\"name\":\"restCachedItems\",\"nonResettable\":true}"));
+  EXPECT_THAT(json, ::testing::HasSubstr(
+                        "{\"name\":\"changesAuthentications\",\"nonResettable\":true}"));
+  EXPECT_THAT(json, ::testing::HasSubstr("{\"name\":\"mariadbRemoveStmt\"}"));
+  EXPECT_THAT(json, ::testing::EndsWith("{\"name\":\"sqlQueryTimeouts\"}]"));
+  EXPECT_THAT(json, ::testing::Not(::testing::HasSubstr("mysql")));
 }

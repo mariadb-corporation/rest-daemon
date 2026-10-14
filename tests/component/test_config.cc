@@ -478,7 +478,7 @@ TEST_F(RouterConfigTest, MetadataCacheBootstrapServerAddresses) {
   const std::string mdc_section = mysql_harness::ConfigBuilder::build_section(
       "metadata_cache:test",
       {{"cluster_type", "gr"},
-       {"router_id", "1"},
+       {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"},
        {"user", "mysql_router1_user"},
        {"metadata_cluster", "test"},
        {"bootstrap_server_addresses", "mysql://127.0.0.1:3060"},
@@ -705,16 +705,16 @@ INSTANTIATE_TEST_SUITE_P(
             "mysql_user_not_in_keyring",
             {{"mysql_user", "user_not_in_keying"},
              {"mysql_read_write_route", "rw"},
-             {"router_id", "1"}},
-            "mysql_rest_service ERROR .* MySQL Server account: "
-            "'user_not_in_keying', set in configuration file must have a "
-            "password stored in `MySQLRouter's` keyring."),
+             {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"}},
+            "mysql_rest_service ERROR .* MariaDB server account: "
+            "'user_not_in_keying', set in the configuration file, must have "
+            "a password stored in the keyring."),
         MRSConfigErrorParam(
             "mysql_user_data_access_not_in_keyring",
             {{"mysql_user", "mysql_user_mrs"},
              {"mysql_user_data_access", "user_not_in_keying"},
              {"mysql_read_write_route", "rw"},
-             {"router_id", "1"}},
+             {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"}},
             "main ERROR .* Could not fetch value for 'user_not_in_keying' "
             "from the keyring: (map::at.*|invalid map.*)"),
         MRSConfigErrorParam("mysql_read_write_route_missing",
@@ -726,14 +726,14 @@ INSTANTIATE_TEST_SUITE_P(
             "mysql_read_write_route_does_not_exist",
             {{"mysql_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "unknown"},
-             {"router_id", "1"}},
+             {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"}},
             "main ERROR .* Error: Route name 'unknown' specified for "
             "`mysql_read_write_route` option, doesn't exist or has unsupported "
             "protocol."),
         MRSConfigErrorParam("mysql_read_write_route_empty",
                             {{"mysql_user", "mysql_user_mrs"},
                              {"mysql_read_write_route", ""},
-                             {"router_id", "1"}},
+                             {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"}},
                             "main ERROR .* Configuration error: option "
                             "mysql_read_write_route in "
                             "\\[mysql_rest_service\\] needs a value"),
@@ -741,7 +741,7 @@ INSTANTIATE_TEST_SUITE_P(
             "mysql_read_write_route_x_protocol",
             {{"mysql_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "rwx"},
-             {"router_id", "1"}},
+             {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"}},
             "main ERROR .* Error: Route name 'rwx' specified for "
             "`mysql_read_write_route` option, doesn't exist or has unsupported "
             "protocol."),
@@ -750,7 +750,7 @@ INSTANTIATE_TEST_SUITE_P(
             {{"mysql_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "rw"},
              {"mysql_read_only_route", "unknown"},
-             {"router_id", "1"}},
+             {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"}},
             "main ERROR .* Error: Route name 'unknown' specified for "
             "`mysql_read_only_route` option, doesn't exist or has unsupported "
             "protocol."),
@@ -759,7 +759,7 @@ INSTANTIATE_TEST_SUITE_P(
             {{"mysql_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "rw"},
              {"mysql_read_only_route", "rox"},
-             {"router_id", "1"}},
+             {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"}},
             "main ERROR .* Error: Route name 'rox' specified for "
             "`mysql_read_only_route` option, doesn't exist or has unsupported "
             "protocol."),
@@ -791,7 +791,7 @@ INSTANTIATE_TEST_SUITE_P(
             {{"mysql_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "rw"},
              {"mysql_read_only_route", "ro"},
-             {"router_id", "1"},
+             {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"},
              {"metadata_refresh_interval", "-1"}},
             "main ERROR .* Configuration error: option "
             "metadata_refresh_interval in \\[mysql_rest_service\\] needs value "
@@ -800,7 +800,7 @@ INSTANTIATE_TEST_SUITE_P(
                             {{"mysql_user", "mysql_user_mrs"},
                              {"mysql_read_write_route", "rw"},
                              {"mysql_read_only_route", "ro"},
-                             {"router_id", "1"},
+                             {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"},
                              {"metadata_refresh_interval", "0"}},
                             "main ERROR .* Error: `metadata_refresh_interval` "
                             "option, must be greater than zero."),
@@ -809,7 +809,7 @@ INSTANTIATE_TEST_SUITE_P(
             {{"mysql_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "rw"},
              {"mysql_read_only_route", "ro"},
-             {"router_id", "1"},
+             {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"},
              {"metadata_refresh_interval", "nan"}},
             "Configuration error: option metadata_refresh_interval in "
             "\\[mysql_rest_service\\] needs value between 0 and "
@@ -819,7 +819,7 @@ INSTANTIATE_TEST_SUITE_P(
             {{"mysql_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "rw"},
              {"mysql_read_only_route", "ro"},
-             {"router_id", "1"},
+             {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"},
              {"metadata_refresh_interval", "foo"}},
             "Configuration error: option metadata_refresh_interval in "
             "\\[mysql_rest_service\\] needs value between 0 and "
@@ -828,7 +828,7 @@ INSTANTIATE_TEST_SUITE_P(
                             {{"mysql_user", "mysql_user_mrs"},
                              {"mysql_read_write_route", "rw"},
                              {"mysql_read_only_route", "ro"},
-                             {"router_id", "1"},
+                             {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"},
                              {"unknown", "1"}},
                             "main ERROR .* Error: option "
                             "'mysql_rest_service.unknown' is not supported")),

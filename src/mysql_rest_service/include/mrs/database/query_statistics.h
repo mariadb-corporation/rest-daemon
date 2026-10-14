@@ -42,6 +42,12 @@ class QueryStatistics : private Query {
  public:
   using Snapshot = observability::EntitiesManager::Snapshot;
 
+  // restd: the `statusVariables` list of rest_daemon.attributes (JSON array of
+  // {"name", "column"?, "nonResettable"?}), which the metadata's status
+  // downsampling reads per daemon version
+  static std::string status_variables(
+      const observability::EntitiesManager &entities);
+
   virtual void update_statistics(MySQLSession *session,
                                  const std::string &rest_daemon_id,
                                  uint64_t timespan, const Snapshot &snap);

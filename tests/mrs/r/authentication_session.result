@@ -115,6 +115,28 @@ GET /svc/authentication/status
     "status": "unauthorized"
 }
 OK
+
+#
+# II. The status document of an authorized user: ids are UUID text (the
+#     generated user id masked, the fixed "Full Access" role id shown)
+GET /svc/authentication/login
+
+OK
+GET /svc/authentication/status
+{
+    "status": "authorized",
+    "user": {
+        "name": "account1",
+        "id": "UUID",
+        "roles": [
+            {
+                "id": "31000000-0000-0000-0000-000000000000",
+                "caption": "Full Access"
+            }
+        ]
+    }
+}
+OK
 DROP USER account1@'%';
 DROP SCHEMA basic_schema;
 DROP SCHEMA mariadb_rest_service;

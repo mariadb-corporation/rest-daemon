@@ -62,7 +62,7 @@ MysqlHandler::MysqlHandler(const AuthApp &entry,
 
 const std::string &MysqlHandler::get_handler_name() const {
   static const std::string k_app_name{
-      "MySQL internal authentication application"};
+      "MariaDB internal authentication application"};
 
   return k_app_name;
 }

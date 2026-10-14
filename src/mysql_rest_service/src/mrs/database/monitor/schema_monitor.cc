@@ -32,6 +32,7 @@
 #include <chrono>
 
 #include "helper/string/contains.h"
+#include "helper/json/serializer_to_text.h"
 #include "helper/string/generic.h"
 
 #include "mrs/database/helper/query_audit_log_maxid.h"
@@ -82,7 +83,7 @@ void check_supported_mrs_version(
 
   std::stringstream error_message;
   if (mrs_version == mrs::database::kSchemaUpgradeMrsMetadataVersion) {
-    error_message << "MRS metadata schema upgrade detected: stopping the "
+    error_message << "REST metadata schema upgrade detected: stopping the "
                      "service until it's finished";
   } else {
     error_message << unsupported_metadata_version_message(mrs_version);
@@ -105,18 +106,24 @@ bool query_is_node_read_only(mysqlrouter::MySQLSession *session) {
 
 void update_router_attributes_on_start(mysqlrouter::MySQLSession *session,
                                        std::optional<std::string> rest_daemon_id_,
-                                       const std::string &developer) {
+                                       const std::string &developer,
+                                       const std::string &status_variables) {
   if (!rest_daemon_id_) return;
 
-  std::string sql = metadata_sql("UPDATE mariadb_rest_service.rest_daemon SET attributes=");
+  std::string attributes = "COALESCE(attributes, '{}')";
   if (developer.empty()) {
-    sql += "JSON_REMOVE(attributes, '$.developer')";
+    attributes = "JSON_REMOVE(" + attributes + ", '$.developer')";
   } else {
-    sql +=
-        "JSON_SET(attributes, '$.developer'," + session->quote(developer) + ")";
+    attributes = "JSON_SET(" + attributes + ", '$.developer'," +
+                 session->quote(developer) + ")";
   }
+  // restd: publish the counters for the metadata's status downsampling
+  attributes = "JSON_SET(" + attributes + ", '$.statusVariables', JSON_EXTRACT(" +
+               session->quote(status_variables) + ", '$'))";
 
-  sql += " WHERE id = " + session->quote(*rest_daemon_id_);
+  std::string sql = metadata_sql(
+      "UPDATE mariadb_rest_service.rest_daemon SET attributes=");
+  sql += attributes + " WHERE id = " + session->quote(*rest_daemon_id_);
 
   session->execute(sql);
 }
@@ -188,7 +195,7 @@ class MetadataSchemaVersionChange : public std::runtime_error {
 };
 
 void SchemaMonitor::run() {
-  log_system("Starting MySQL REST Metadata monitor");
+  log_system("Starting REST metadata monitor");
 
   bool force_clear{true};
   bool state{false};
@@ -202,9 +209,10 @@ void SchemaMonitor::run() {
       if (!session_check_version) continue;
 
       if (!attributes_updated_on_start) {
-        update_router_attributes_on_start((*session_check_version).get(),
-                                          configuration_.rest_daemon_id_,
-                                          configuration_.developer_);
+        update_router_attributes_on_start(
+            (*session_check_version).get(), configuration_.rest_daemon_id_,
+            configuration_.developer_,
+            QueryStatistics::status_variables(*entities_manager_));
         attributes_updated_on_start = true;
       }
 
@@ -219,7 +227,7 @@ void SchemaMonitor::run() {
       DbAccess fetcher(proxy_query_factory_, factory.get(),
                        configuration_.rest_daemon_id_);
 
-      log_system("Monitoring MySQL REST metadata (version: %s)",
+      log_system("Monitoring the REST metadata (version: %s)",
                  current_schema_version.str().c_str());
 
       auto last_stored_time = std::chrono::system_clock::now();
@@ -334,13 +342,22 @@ void SchemaMonitor::run() {
               "version=?, name=?, last_check_in=NOW()")};
 
           const auto [name, address] = get_router_name_and_address();
+          // restd: the attributes of a (re-)created row carry the
+          // statusVariables too; built as JSON (upstream concatenated the
+          // developer name into the text)
+          helper::json::SerializerToText attributes;
+          {
+            auto obj = attributes.add_object();
+            if (!configuration_.developer_.empty())
+              obj->member_add_value("developer", configuration_.developer_);
+            obj->member_add_value(
+                "statusVariables",
+                QueryStatistics::status_variables(*entities_manager_).c_str(),
+                helper::JsonType::kJson);
+          }
           update << configuration_.rest_daemon_id_ << name << address
                  << MYSQL_ROUTER_PACKAGE_NAME << MYSQL_ROUTER_VERSION
-                 << (configuration_.developer_.empty()
-                         ? "{}"
-                         : "{\"developer\": \"" + configuration_.developer_ +
-                               "\"}")
-                 << MYSQL_ROUTER_VERSION << name;
+                 << attributes.get_result() << MYSQL_ROUTER_VERSION << name;
           session->execute(update.str());
 
           try {
@@ -383,7 +400,7 @@ void SchemaMonitor::run() {
   // destroyed, the code must ensure the objects are always discarded.
   dbobject_manager_->clear();
   auth_manager_->clear();
-  log_system("Stopping MySQL REST Service monitor");
+  log_system("Stopping the REST metadata monitor");
 }
 
 bool SchemaMonitor::wait_until_next_refresh() {
@@ -460,10 +477,10 @@ bool SchemaMonitor::MetadataSourceDestination::handle_error() {
   try {
     throw;
   } catch (const mrs::database::QueryState::NoRows &exc) {
-    log_error("MRS metadata refresh failed: %s", exc.what());
+    log_error("REST metadata refresh failed: %s", exc.what());
     force_clear = true;
   } catch (const mysqlrouter::MySQLSession::Error &exc) {
-    log_error("MRS metadata refresh failed: %s", exc.what());
+    log_error("REST metadata refresh failed: %s", exc.what());
     if (exc.code() == ER_BAD_DB_ERROR || exc.code() == ER_NO_SUCH_TABLE) {
       force_clear = true;
     }
@@ -487,7 +504,7 @@ bool SchemaMonitor::MetadataSourceDestination::handle_error() {
         "metadata");
     force_clear = true;
   } catch (const std::exception &exc) {
-    log_error("MRS metadata refresh failed: %s", exc.what());
+    log_error("REST metadata refresh failed: %s", exc.what());
   }
 
   return force_clear;

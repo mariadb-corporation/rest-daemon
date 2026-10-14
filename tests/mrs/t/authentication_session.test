@@ -160,8 +160,24 @@ exec $MRS_CLIENT_ARGS
   --session-file $MYSQL_TMP_DIR/user1_session1.dat
   --json-pointer /status;
 
+--echo
+--echo #
+--echo # II. The status document of an authorized user: ids are UUID text (the
+--echo #     generated user id masked, the fixed "Full Access" role id shown)
+exec $MRS_CLIENT_ARGS
+  -a basic_json
+  --path /svc/authentication/login
+  -u account1 -p pwd1
+  --session-file $MYSQL_TMP_DIR/user1_session4.dat;
+
+--replace_regex /"id": "0[0-9a-f]{7}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"/"id": "UUID"/
+exec $MRS_CLIENT_ARGS
+  --path /svc/authentication/status
+  --session-file $MYSQL_TMP_DIR/user1_session4.dat;
+
 # Cleanup
 DROP USER account1@'%';
+remove_file $MYSQL_TMP_DIR/user1_session4.dat;
 remove_file $MYSQL_TMP_DIR/user1_session1.dat;
 remove_file $MYSQL_TMP_DIR/user1_session2.dat;
 remove_file $MYSQL_TMP_DIR/user1_session3.dat;

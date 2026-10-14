@@ -150,7 +150,7 @@ enum_field_types MysqlBind::to_mysql_type(DataType pdt) {
       assert(false &&
              "This should not happen, DB object should disable "
              "fields/parameters that are unknown.");
-      throw std::runtime_error("Unsupported MySQL type.");
+      throw std::runtime_error("Unsupported column type.");
     }
     case DataType::BINARY:
       return MYSQL_TYPE_BLOB;

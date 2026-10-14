@@ -93,6 +93,9 @@ class RegisterEntitesAndCheckIfAllAdded : public RegisterEntites {
 #endif
 };
 
+// restd: the mariadb* names of metadata 5.0.0's status variables (upstream:
+// mysql*); the OPTIONS counter keeps upstream's name, which the metadata's
+// fallback list repeats
 void initialize_entities(observability::EntitiesManager *manager) {
   RegisterEntitesAndCheckIfAllAdded reg(manager);
 
@@ -110,21 +113,21 @@ void initialize_entities(observability::EntitiesManager *manager) {
   reg.register_entity_with_id<kEntityCounterHttpConnectionsClosed>(
       "httpConnectionsClosed");
   reg.register_entity_with_id<kEntityCounterMySQLConnectionsReused>(
-      "mysqlConnectionsReused");
+      "mariadbConnectionsReused");
   reg.register_entity_with_id<kEntityCounterMySQLConnectionsCreated>(
-      "mysqlConnectionsCreated");
+      "mariadbConnectionsCreated");
   reg.register_entity_with_id<kEntityCounterMySQLConnectionsClosed>(
-      "mysqlConnectionsClosed");
+      "mariadbConnectionsClosed");
   reg.register_entity_with_id_not_resetable<
-      kEntityCounterMySQLConnectionsActive>("mysqlConnectionsActive");
-  reg.register_entity_with_id<kEntityCounterMySQLQueries>("mysqlQueries");
+      kEntityCounterMySQLConnectionsActive>("mariadbConnectionsActive");
+  reg.register_entity_with_id<kEntityCounterMySQLQueries>("mariadbQueries");
 
-  reg.register_entity_with_id<kEntityCounterMySQLChangeUser>("mysqlChangeUser");
-  reg.register_entity_with_id<kEntityCounterMySQLPrepare>("mysqlPrepareStmt");
+  reg.register_entity_with_id<kEntityCounterMySQLChangeUser>("mariadbChangeUser");
+  reg.register_entity_with_id<kEntityCounterMySQLPrepare>("mariadbPrepareStmt");
   reg.register_entity_with_id<kEntityCounterMySQLPrepareExecute>(
-      "mysqlExecuteStmt");
+      "mariadbExecuteStmt");
   reg.register_entity_with_id<kEntityCounterMySQLPrepareRemove>(
-      "mysqlRemoveStmt");
+      "mariadbRemoveStmt");
 
   reg.register_entity_with_id<kEntityCounterRestReturnedItems>(
       "restReturnedItems");

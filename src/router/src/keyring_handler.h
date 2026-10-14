@@ -66,7 +66,7 @@ class KeyringHandler {
 
   void init_keyring_using_prompted_password() {
     std::string master_key =
-        mysqlrouter::prompt_password("Encryption key for router keyring");
+        mysqlrouter::prompt_password("Encryption key for the keyring");
     if (master_key.length() > mysql_harness::kMaxKeyringKeyLength)
       throw std::runtime_error("Encryption key is too long");
     mysql_harness::init_keyring_with_key(ki_.get_keyring_file(), master_key,

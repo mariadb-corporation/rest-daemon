@@ -95,7 +95,9 @@ uint32_t HandlerAuthorizeStatus::get_access_rights() const {
 void HandlerAuthorizeStatus::fill_the_user_data(
     Object &ojson, const AuthUser &user, const std::vector<AuthRole> &roles) {
   ojson->member_add_value("name", user.name);
-  ojson->member_add_value("id", user.user_id.to_string());
+  // restd: the user id as UUID text, like every metadata id in 5.0.0 (upstream:
+  // 32 hex digits)
+  ojson->member_add_value("id", user.user_id.to_uuid_string());
 
   if (!user.email.empty()) ojson->member_add_value("email", user.email);
 

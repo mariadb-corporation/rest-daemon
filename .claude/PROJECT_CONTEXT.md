@@ -10,7 +10,7 @@
 |---|---|---|
 | 1 | Standalone daemon on MySQL (Linux, macOS, Windows) | done 2026-10-07 |
 | 2 | MariaDB: Connector/C, MariaDB server, metadata schema **4.1.6** | done 2026-10-13 |
-| 3 | Metadata schema **5.0.0** (`mariadb_rest_service`, prefix/postfix, renamed tables, `mariadb_rest_service_*` roles), now on the `main` branches of the shell and plugins. Spec: the shell repo's `.claude/context/rest-daemon-5.0.md` (read with `git show main:...`) | current: M3.0–M3.4 done (5.0.0 served, verified on all three platforms); M3.5 next |
+| 3 | Metadata schema **5.0.0** (`mariadb_rest_service`, prefix/postfix, renamed tables, `mariadb_rest_service_*` roles), now on the `main` branches of the shell and plugins. Spec: the shell repo's `.claude/context/rest-daemon-5.0.md` (read with `git show main:...`) | current: M3.0–M3.5 done (5.0.0 served, wire formats aligned with the shell, verified on all three platforms); M3.6 next |
 | 4 | GTID read-your-writes (`asof`, `_metadata.gtid`) on MariaDB GTIDs, together with the shell and plugins; the MySQL implementation is parked in the tree, `asof` is refused with a clear 400 | after 3 |
 | 5 | Packaging (real deb/rpm installs, MSI) and GitHub Actions CI | last |
 
@@ -38,11 +38,13 @@
 
 ## Next steps
 
-1. M3.5 (wire formats/texts: user ids as UUID text, the raw-bytes role id bug, counter names + `statusVariables`, remaining "MySQL"/"Router" texts such as "Monitoring MySQL REST metadata", "configured for the MySQL server") and M3.6 (Galera-safe audit polling).
+1. M3.6 (Galera-safe audit polling): an overlap window by id and `changed_at` (clock-skew margin), a set of processed ids, best-effort `wsrep_sync_wait` (PLAN.md phase M3.6; the shell's spec section 9). M3.5 is done (UUID text for the user id, role ids and the script user id; `X'…'` for routine ownership; `vendorId` stays `0x…`; `mariadb…` counters + `statusVariables`; texts).
    Spike facts to lean on (PLAN.md M3.3): `UUID` columns = text with the connection charset, `BINARY(16)` = charset 63; `X'…'` in canonical order matches `UUID`; `LAST_INSERT_ID()` is 0 for UUID keys.
-2. Open point (PLAN.md): owner columns with UUID user ids. The plugins' `mrs_notes` (`BINARY(16)` owners) and `mrs_scripts` (grants on `mysql_rest_service_metadata`, `UNHEX(?)` user lookup) look like 4.x leftovers; the user will confirm on the plugins' side, then: a `UUID`-owner live test, the script API's user id (M3.5).
-3. After Milestone 3: the JSON-columns open point; then Milestone 4 (GTID), 5 (packaging, CI).
-4. M2 final state verified: Ubuntu 110 passed / 0 failed / 6 skipped / 5 xfailed / 1 xpassed; Windows 109 / 0 / 7 / 5 / 1 (it skips `destination_socket`); ctest 113/113, live 102/104 on both.
+2. Review later (PLAN.md open point "ids and names shared with the shell and plugins"): `vendorId` stays `0x…` until the SDKs switch (coordinate); the `mrs_notes`/`mrs_scripts` examples are 4.x leftovers (UUID owners, `UNHEX(?)`, old schema name, a 4.0 dump nothing loads, `mrs_notes.sql`'s MySQL-only `REGEXP_REPLACE` in `notes_all`; user to confirm), then a `UUID`-owner live test; custom auth procedure id type (daemon never calls it); the `kEntityCounterHttpRequestOptions` name (daemon + schema fallback); stale `0x` vendor ids in the shell docs.
+3. Low priority (user, 2026-10-13): product name. The shell, the 5.0.0 schema comments (`rest_daemon.product_name` "e.g. 'MariaDB REST Daemon'") and the landing page say **MariaDB REST Daemon**; this repo registers "MariaDB REST Service Daemon" (`cmake/settings.cmake`, README title, `rest_daemon.product_name`, logs, recorded results). Decide and align later; `mariadb-restd` stays.
+4. Small items found 2026-10-13 (not started): the daemon logs an ERROR ("object_field ... Unknown datatype") for a *disabled* data-mapping field without a column, e.g. a reference the shell stores unselected (`filmActor` of a `sakila.actor` view): skip such fields, or align with the shell; `--setup` run from a build tree should write `plugin_folder` (else the daemon exits: plugins expected in `../lib/mariadb-restd`); optionally accept `--bootstrap` as an alias of `--setup` (the shell's schema comments/docs still say "bootstrapped"); README line "There are no packages yet" is stale (packages build with `--target package`, none published).
+5. After Milestone 3: the JSON-columns open point; then Milestone 4 (GTID), 5 (packaging, CI).
+6. M2 final state verified: Ubuntu 110 passed / 0 failed / 6 skipped / 5 xfailed / 1 xpassed; Windows 109 / 0 / 7 / 5 / 1 (it skips `destination_socket`); ctest 113/113, live 102/104 on both.
 
 ## Files that matter
 
@@ -57,6 +59,9 @@
 - VM scripts: `tools/vm/win.sh`, `win_sync.sh`, `win_wip.sh`; on the Windows VM `<win-home>\mrsd-win-mariadb.cmd`, `mrsd-smoke-mariadb.sh`, `mrsd-pytest-mariadb.ps1`; on the Ubuntu VM (`git push vm main`) `<dev>/mrsd-smoke-mariadb.sh`, `<dev>/mrsd-pytest-mariadb.sh` (MariaDB 11.8.9 and mariadb-shell 26.10.1 packages in `<downloads>`).
 
 ## Gotchas / things not to repeat
+
+- **State outside the repo (2026-10-13):** a user deployment `build-mariadb/runtime_output_directory/sample` (setup against the user's server `root:@localhost:3311`, MariaDB 12.3, service `/myService/v1`; `plugin_folder` added by hand, original in `mariadb-restd.conf.orig`; may still be running, `sample/stop.sh`); `<downloads>/mariadb-restd-quickstart.html` (the user's package quick-start page, kept outside the repo on purpose; update it there); `.vscode/settings.json` (CMake Tools, untracked, commit-or-ignore not decided); merged branches `m3.4`/`m3.5` (local and on `vm`) can be deleted; test daemons orphaned by earlier pytest runs may linger (`pgrep -f "mariadb-restd -c .*(pytest-of-<user>|scratchpad)"`, ask before killing).
+- **Packages:** `cmake --build <build> --target package` (STANDALONE layout: relocatable tarball, plugins in `lib/mariadb-restd/`, bundles Connector/C, OpenSSL, ICU, and libjitexecutor when built with JIT: ~90 MB with, ~20 MB without). A minimal macOS build (Homebrew cmake/ninja/mariadb-connector-c/openssl@3/icu4c, only `-DMARIADB_CONNECTOR_DIR`) was verified with the smoke test in package mode (`MRSD_INSTALL`). MRS-vendor auth apps log in with SCRAM (curl Basic fails with "Initial response required"); MariaDB Internal (the seeded `MariaDB` app) accepts Basic: login answers 307 to `/authentication/completed` with a cookie, or the token in the `Location` with `sessionType=bearer`.
 
 - `<dev>/shell` and `<dev>/mariadb-shell-plugins` may be used and built again (2026-10-13: their 5.0.0 work is merged, the checkouts are up to date and built; `<dev>/shell` was on branch `docker/mcp-image`, which contains `main` and has no REST-module changes). Don't commit there; patch copies (e.g. the `mrs_scripts` example) in a scratch dir.
 - **mysqltest `if` and UUIDs**: a value starting with `0` reads as false, and every UUID v7 starts with `0`. The suite's fixed daemon id is `10000000-0000-7000-8000-000000000001`; test id variables with `== ''` / `` `SELECT $v IS NOT NULL` ``. `HEX()` of a UUID is the hex of its 36 characters (don't round-trip ids through `HEX`/`UNHEX`).
@@ -77,4 +82,4 @@
 
 ## Git state
 
-- Branch `main` (fast-forwarded from `m3.4` after M3.4 passed everywhere; `m3.4` can be deleted). Ubuntu clone `<dev>/mrsd` on `main` (`28bd930`); Windows clone on the same commits through `win_sync.sh` (`BRANCH=` for a branch), `refs/win/synced` = `139f8c5`. Remotes `vm` (Ubuntu), `fedora` (VM clones); `origin` (GitHub) is reachable but **empty**: nothing has ever been pushed there (the user has not asked to). Tag `m2-pre-build-decision` = the state before the MySQL removal, also on `vm`.
+- Branch `main` (fast-forwarded from `m3.5` after M3.5 passed everywhere; `m3.4` and `m3.5` can be deleted). Ubuntu clone `<dev>/mrsd` on `main`; Windows clone on the same commits through `win_sync.sh` (`BRANCH=` for a branch), `refs/win/synced` = `2aca20d`. The user's plugins clone has one uncommitted change of theirs to keep: `mrs_notes.sql`'s `REGEXP_REPLACE` fix. Remotes `vm` (Ubuntu), `fedora` (VM clones); `origin` (GitHub) is reachable but **empty**: nothing has ever been pushed there (the user has not asked to). Tag `m2-pre-build-decision` = the state before the MySQL removal, also on `vm`.

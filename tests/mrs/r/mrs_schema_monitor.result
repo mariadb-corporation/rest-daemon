@@ -39,6 +39,24 @@ V. Verify that when there is a discrepancy in the audit_log table (index) the MR
 
 # Registred DB_OBJECT at path: /svc/basic_schema/tab3
 delete from `mariadb_rest_service`.`audit_log`;
+
+VI. The daemon publishes its status variables in rest_daemon.attributes, in
+the format the metadata's status downsampling reads
+
+SELECT JSON_LENGTH(JSON_EXTRACT(attributes, '$.statusVariables')) AS entries,
+JSON_CONTAINS(JSON_EXTRACT(attributes, '$.statusVariables'),
+'{"name": "mariadbConnectionsActive", "column": "active_mariadb_connections", "nonResettable": true}') AS active,
+JSON_CONTAINS(JSON_EXTRACT(attributes, '$.statusVariables'),
+'{"name": "mariadbQueries", "column": "mariadb_queries"}') AS queries,
+JSON_CONTAINS(JSON_EXTRACT(attributes, '$.statusVariables'),
+'{"name": "restCachedItems", "nonResettable": true}') AS cached_items
+FROM mariadb_rest_service.rest_daemon WHERE id = '10000000-0000-7000-8000-000000000001';
+entries	active	queries	cached_items
+43	1	1	1
+CALL mariadb_rest_service.rest_daemon_status_do_cleanup(NOW());
+SELECT COUNT(*) > 0 AS status_rows FROM mariadb_rest_service.rest_daemon_status;
+status_rows
+1
 DROP SCHEMA basic_schema;
 DROP SCHEMA mariadb_rest_service;
 DROP ROLE mariadb_rest_service_admin;
