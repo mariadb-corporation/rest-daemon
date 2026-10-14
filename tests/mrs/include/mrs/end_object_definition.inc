@@ -2,7 +2,7 @@
 --disable_result_log
 # workaround to force the MRS to do the full schema refresh when the next
 # tests starts
-INSERT INTO mysql_rest_service_metadata.audit_log(id, table_name,
+INSERT INTO mariadb_rest_service.audit_log(id, table_name,
             changed_by, changed_at) VALUES(1000, '', '', NOW());
 
 if (!$PB2WORKDIR)

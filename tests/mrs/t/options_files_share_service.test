@@ -3,7 +3,7 @@
 # Set the router-id, to generate statistics
 # this way we can wait until router detects
 # changes to DB_OBJECTS.
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/basic_schema.sql
 
@@ -26,7 +26,7 @@
 --echo #
 --echo
 
-UPDATE  `mysql_rest_service_metadata`.`config` SET data='{}';
+UPDATE  `mariadb_rest_service`.`config` SET data='{}';
 --source ../include/mrs/wait_mrs_read_metadata.inc
 
 --source ../include/mrs/start_object_definition.inc

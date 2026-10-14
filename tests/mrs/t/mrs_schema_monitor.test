@@ -3,7 +3,7 @@
 # we fiddle with metadata version view here so we want single view name
 --source ../include/mrs/is_mrs_schema_v5.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/basic_schema.sql
 
@@ -29,29 +29,29 @@
 --echo
 --echo I. Verify that the monitoring thread adds the router entry when it is missing in the metadata
 --echo
-DELETE from mysql_rest_service_metadata.router where id = 1;
+eval DELETE from mariadb_rest_service.rest_daemon where id = '$extra_mrs_router_id';
 
 --source ../include/mrs/wait_mrs_read_metadata.inc
-SELECT id from mysql_rest_service_metadata.router where id = 1;
+eval SELECT id from mariadb_rest_service.rest_daemon where id = '$extra_mrs_router_id';
 
 --exec $MRS_CLIENT_ARGS --path /svc/basic_schema/tab1/1 --wait-until-status 60 --display none
 
 --echo
 --echo II. Verify that when the monitoring thread sees incompatible metadata version it stops the service and restores it when it becomes compatible again.
 --echo
-DROP view `mysql_rest_service_metadata`.`msm_schema_version`;
+DROP view `mariadb_rest_service`.`msm_schema_version`;
 
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY INVOKER
-VIEW `mysql_rest_service_metadata`.`msm_schema_version`(`major`,`minor`,`patch`)
+VIEW `mariadb_rest_service`.`msm_schema_version`(`major`,`minor`,`patch`)
 AS select 1 AS `1`,0 AS `0`,0 AS `0`;
 
 --exec $MRS_CLIENT_ARGS --path /svc/basic_schema/tab1/1 --response-type RAW --expected-status 404 --wait-until-status 60 --display none
 
-DROP view `mysql_rest_service_metadata`.`msm_schema_version`;
+DROP view `mariadb_rest_service`.`msm_schema_version`;
 
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY INVOKER
-VIEW `mysql_rest_service_metadata`.`msm_schema_version`(`major`,`minor`,`patch`)
-AS select 4 AS `4`,0 AS `0`,0 AS `0`;
+VIEW `mariadb_rest_service`.`msm_schema_version`(`major`,`minor`,`patch`)
+AS select 5 AS `5`,0 AS `0`,0 AS `0`;
 
 --exec $MRS_CLIENT_ARGS --path /svc/basic_schema/tab1/1 --expected-status Ok --wait-until-status 60 --display none
 
@@ -59,21 +59,21 @@ AS select 4 AS `4`,0 AS `0`,0 AS `0`;
 --echo III. Verify that when the service_enabled flag is cleared in the metadata the mtr stops the service and restores it when it becomes enabled again.
 --echo
 
-update `mysql_rest_service_metadata`.`config` set service_enabled = 0;
+update `mariadb_rest_service`.`config` set service_enabled = 0;
 --exec $MRS_CLIENT_ARGS --path /svc/basic_schema/tab1/1 --response-type RAW --expected-status 404 --wait-until-status 60 --display none
-update `mysql_rest_service_metadata`.`config` set service_enabled = 1;
+update `mariadb_rest_service`.`config` set service_enabled = 1;
 --exec $MRS_CLIENT_ARGS --path /svc/basic_schema/tab1/1 --response-type RAW --expected-status Ok --wait-until-status 60 --display none
 
 --echo
 --echo IV. Verify that when the monitoring thread encounters invalid metadata (missing view) it stops the service and restores once it becomes available again
 --echo
-DROP view `mysql_rest_service_metadata`.`msm_schema_version`;
+DROP view `mariadb_rest_service`.`msm_schema_version`;
 
 --exec $MRS_CLIENT_ARGS --path /svc/basic_schema/tab1/1 --response-type RAW --expected-status 404 --wait-until-status 60 --display none
 
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY INVOKER
-VIEW `mysql_rest_service_metadata`.`msm_schema_version`(`major`,`minor`,`patch`)
-AS select 4 AS `4`,0 AS `0`,0 AS `0`;
+VIEW `mariadb_rest_service`.`msm_schema_version`(`major`,`minor`,`patch`)
+AS select 5 AS `5`,0 AS `0`,0 AS `0`;
 
 --exec $MRS_CLIENT_ARGS --path /svc/basic_schema/tab1/1 --expected-status Ok --wait-until-status 60 --display none
 
@@ -85,7 +85,7 @@ AS select 4 AS `4`,0 AS `0`,0 AS `0`;
 --let $mrs_add_db_object_path=/tab3
 --source ../include/mrs/db_object/add.inc
 
-delete from `mysql_rest_service_metadata`.`audit_log`;
+delete from `mariadb_rest_service`.`audit_log`;
 
 --source ../include/mrs/wait_mrs_read_metadata.inc
 

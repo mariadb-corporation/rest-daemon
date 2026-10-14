@@ -47,7 +47,7 @@ if (! $extra_route_rw_port)
 
 --eval SET @variable_extra_config = CONCAT(@variable_extra_config,"[metadata_cache:bootstrap]\n");
 --eval SET @variable_extra_config = CONCAT(@variable_extra_config,"cluster_type=gr\n");
---eval SET @variable_extra_config = CONCAT(@variable_extra_config,"router_id=1\n");
+--eval SET @variable_extra_config = CONCAT(@variable_extra_config,"rest_daemon_id=1\n");
 --eval SET @variable_extra_config = CONCAT(@variable_extra_config,"address=127.0.0.1\n");
 --eval SET @variable_extra_config = CONCAT(@variable_extra_config,"auth_cache_refresh_interval=4\n");
 --eval SET @variable_extra_config = CONCAT(@variable_extra_config,"ttl=10\n");

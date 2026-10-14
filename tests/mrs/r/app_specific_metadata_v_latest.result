@@ -41,13 +41,13 @@ Create a service requiring authentication
 # Registred DB_OBJECT at path: /svc_req_auth/basic_schema/view
 # Create a procedure endpoint with metadata defined on the object level
 # Registred DB_OBJECT at path: /svc_req_auth/basic_schema/proc_int
-insert into mysql_rest_service_metadata.mrs_user(id, auth_app_id, name,
+insert into mariadb_rest_service.mrs_user(id, auth_app_id, name,
 vendor_user_id, login_permitted)
 values (0x11EFD1DC9D62CD2E89FABBBF8E89057E,
-(select id from mysql_rest_service_metadata.auth_app limit 1),
+(select id from mariadb_rest_service.auth_app limit 1),
 "user_valid", "user_valid@%", 1);
-insert into mysql_rest_service_metadata.mrs_user_has_role(user_id, role_id)
-values (0x11EFD1DC9D62CD2E89FABBBF8E89057E, 0x31000000000000000000000000000000);
+insert into mariadb_rest_service.mrs_user_has_role(user_id, role_id)
+values (0x11EFD1DC9D62CD2E89FABBBF8E89057E, '31000000-0000-0000-0000-000000000000');
 GET /svc_md/basic_schema_md/proc_int_md
 
 1. Check the _metadata on service level
@@ -268,7 +268,7 @@ OK
 
 5. Check the _metadata for the service that requires authentication for not authorized user
 
-update mysql_rest_service_metadata.mrs_user set login_permitted = 0 where id = 0x11EFD1DC9D62CD2E89FABBBF8E89057E;
+update mariadb_rest_service.mrs_user set login_permitted = 0 where id = 0x11EFD1DC9D62CD2E89FABBBF8E89057E;
 GET /svc_req_auth/authentication/login
 
 OK
@@ -316,9 +316,9 @@ OK
 DROP USER user_valid@'%';
 DROP SCHEMA func_schema;
 DROP SCHEMA basic_schema;
-DROP SCHEMA mysql_rest_service_metadata;
-DROP ROLE mysql_rest_service_admin;
-DROP ROLE mysql_rest_service_schema_admin;
-DROP ROLE mysql_rest_service_meta_provider;
-DROP ROLE mysql_rest_service_data_provider;
-DROP ROLE mysql_rest_service_dev;
+DROP SCHEMA mariadb_rest_service;
+DROP ROLE mariadb_rest_service_admin;
+DROP ROLE mariadb_rest_service_schema_admin;
+DROP ROLE mariadb_rest_service_meta_provider;
+DROP ROLE mariadb_rest_service_data_provider;
+DROP ROLE mariadb_rest_service_dev;

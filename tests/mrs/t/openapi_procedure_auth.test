@@ -1,7 +1,7 @@
 --source include/have_router.inc
 --source ../include/mrs/is_mrs_schema_v5.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/procedures_schema.sql
 CREATE USER user_valid@'%' IDENTIFIED BY 'pwd';
@@ -50,7 +50,7 @@ CREATE USER user3@'%' IDENTIFIED BY 'secretpass3';
 
 # Auth
 --let $mrs_add_auth_app=default authentication
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/svc
 --source ../include/mrs/auth_app/add.inc
 
@@ -94,7 +94,7 @@ if ($mrs_schema_version>2)
 {
   --disable_query_log
   --disable_result_log
-  UPDATE `mysql_rest_service_metadata`.`service` SET name="" WHERE url_context_root="/svc";
+  UPDATE `mariadb_rest_service`.`service` SET name="" WHERE url_context_root="/svc";
   --enable_query_log
   --enable_result_log
 }

@@ -1,9 +1,9 @@
 # MySQL Rest Service schema created.
 CREATE USER mrs_setup_user IDENTIFIED BY 'pass';
-GRANT SELECT, INSERT, UPDATE on mysql_rest_service_metadata.* to mrs_setup_user;
-GRANT mysql_rest_service_data_provider TO mrs_setup_user WITH ADMIN OPTION;
+GRANT SELECT, INSERT, UPDATE on mariadb_rest_service.* to mrs_setup_user;
+GRANT mariadb_rest_service_data_provider TO mrs_setup_user WITH ADMIN OPTION;
 GRANT CREATE USER ON *.* TO mrs_setup_user WITH GRANT OPTION;
-GRANT mysql_rest_service_meta_provider TO mrs_setup_user WITH ADMIN OPTION;
+GRANT mariadb_rest_service_meta_provider TO mrs_setup_user WITH ADMIN OPTION;
 # Setting up mariadb-restd in 'DIRECTORY'
 
 - Checking the MRS metadata
@@ -47,29 +47,29 @@ ssl_key=DIRECTORY_FILE_OR_FOLDER
 
 [mysql_rest_service]
 mysql_read_write_destinations=ADDR:PORT
-mysql_user=mariadb_restd1_RANDOM
-router_id=1
+mysql_user=mariadb_restd_RANDOM
+rest_daemon_id=UUID
 
-select id, product_name, options from mysql_rest_service_metadata.router;
+select id, product_name, options from mariadb_rest_service.rest_daemon;
 id	product_name	options
-1	MariaDB REST Service Daemon	{}
-select router_name from mysql_rest_service_metadata.router;
-router_name
+UUID	MariaDB REST Service Daemon	{}
+select name from mariadb_rest_service.rest_daemon;
+name
 "Name found"
-select attributes from mysql_rest_service_metadata.router;
+select attributes from mariadb_rest_service.rest_daemon;
 attributes
-{"mrs_metadata_accounts": ["mariadb_restd1_RANDOM"]}
-select user AS user, host AS host from mysql.user where user like 'mariadb_restd1_%';
+{"mrs_metadata_accounts": ["mariadb_restd_RANDOM"]}
+select user AS user, host AS host from mysql.user where user like 'mariadb_restd_%';
 user	host
-mariadb_restd1_RANDOM	%
-SELECT Role AS from_user, User AS to_user FROM mysql.roles_mapping WHERE User LIKE 'mariadb_restd1_%' ORDER BY Role;
+mariadb_restd_RANDOM	%
+SELECT Role AS from_user, User AS to_user FROM mysql.roles_mapping WHERE User LIKE 'mariadb_restd_%' ORDER BY Role;
 from_user	to_user
-mysql_rest_service_data_provider	mariadb_restd1_RANDOM
-mysql_rest_service_meta_provider	mariadb_restd1_RANDOM
+mariadb_rest_service_data_provider	mariadb_restd_RANDOM
+mariadb_rest_service_meta_provider	mariadb_restd_RANDOM
 DROP USER 'mrs_setup_user'@'%';
-DROP SCHEMA mysql_rest_service_metadata;
-DROP ROLE mysql_rest_service_admin;
-DROP ROLE mysql_rest_service_schema_admin;
-DROP ROLE mysql_rest_service_meta_provider;
-DROP ROLE mysql_rest_service_data_provider;
-DROP ROLE mysql_rest_service_dev;
+DROP SCHEMA mariadb_rest_service;
+DROP ROLE mariadb_rest_service_admin;
+DROP ROLE mariadb_rest_service_schema_admin;
+DROP ROLE mariadb_rest_service_meta_provider;
+DROP ROLE mariadb_rest_service_data_provider;
+DROP ROLE mariadb_rest_service_dev;

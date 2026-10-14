@@ -13,7 +13,7 @@ if (!$mrs_sql_changes_field)
 
 eval SET $mrs_sql_changes_variable=(
            SELECT IF(v is NULL,NULL,v+0) FROM (SELECT JSON_UNQUOTE(JSON_EXTRACT(details,"$.$mrs_sql_changes_field")) as v
-           FROM mysql_rest_service_metadata.router_status
+           FROM mariadb_rest_service.rest_daemon_status
            ORDER BY id DESC LIMIT 0,1)as sub);
 
 --enable_query_log

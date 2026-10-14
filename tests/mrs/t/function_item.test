@@ -7,7 +7,7 @@
 --source include/have_router.inc
 --source ../include/mrs/is_mrs_schema_v5.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/functions_schema.sql
 
@@ -149,7 +149,7 @@ CREATE USER user_root@'%' IDENTIFIED BY 'secretpass';
 
 # Auth
 --let $mrs_add_auth_app=default authentication
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/svc
 --source ../include/mrs/auth_app/add.inc
 

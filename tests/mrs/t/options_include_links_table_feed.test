@@ -1,6 +1,6 @@
 --source include/have_router.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/basic_schema.sql
 

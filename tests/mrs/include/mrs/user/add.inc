@@ -58,9 +58,9 @@ if (!$mrs_add_user_login_permitted)
 
 --disable_query_log
 --disable_result_log
-eval  SET $mrs_sql_id_variable=mysql_rest_service_metadata.get_sequence_id();
+eval  SET $mrs_sql_id_variable=mariadb_rest_service.get_sequence_id();
 
-eval INSERT INTO `mysql_rest_service_metadata`.`mrs_user` (
+eval INSERT INTO `mariadb_rest_service`.`mrs_user` (
   `id`,
   `auth_app_id`,
   `name`,
@@ -81,18 +81,18 @@ eval INSERT INTO `mysql_rest_service_metadata`.`mrs_user` (
     NULL,
     IF(REGEXP_REPLACE($mrs_add_user_auth_string, '[[:space:]]', '') REGEXP '^[A-Za-z0-9+/]*={0,2}$' AND LENGTH(REGEXP_REPLACE($mrs_add_user_auth_string, '[[:space:]]', '')) % 4 = 0, FROM_BASE64($mrs_add_user_auth_string), NULL));
 
---let $mrs_add_user_role_id=`SELECT IFNULL(default_role_id,"") FROM mysql_rest_service_metadata.auth_app WHERE id=$mrs_sql_app_id_variable`
+--let $mrs_add_user_role_id=`SELECT IFNULL(default_role_id,"") FROM mariadb_rest_service.auth_app WHERE id=$mrs_sql_app_id_variable`
 
 if (`SELECT LENGTH("$mrs_add_user_role_id") and LENGTH("$mrs_add_user_role")=0`)
 {
-  eval INSERT INTO mysql_rest_service_metadata.mrs_user_has_role(user_id,role_id, comments)
+  eval INSERT INTO mariadb_rest_service.mrs_user_has_role(user_id,role_id, comments)
            VALUES($mrs_sql_id_variable, "$mrs_add_user_role_id","Default role");
 }
 
 if (`SELECT LENGTH("$mrs_add_user_role")`)
 {
-  eval INSERT INTO mysql_rest_service_metadata.mrs_user_has_role(user_id,role_id, comments)
-           VALUES($mrs_sql_id_variable, (select id from mysql_rest_service_metadata.mrs_role where caption rlike "$mrs_add_user_role"),"Assigned role");
+  eval INSERT INTO mariadb_rest_service.mrs_user_has_role(user_id,role_id, comments)
+           VALUES($mrs_sql_id_variable, (select id from mariadb_rest_service.mrs_role where caption rlike "$mrs_add_user_role"),"Assigned role");
 }
 
 --echo # Registred MRS USER: $mrs_add_user_name

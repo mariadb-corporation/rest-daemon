@@ -415,7 +415,8 @@ class Mrsd:
         cfg["mysql_rest_service"] = {
             "mysql_user": "root",
             "mysql_user_data_access": "root",
-            "router_id": "1",
+            # the fixed id the tests use ($extra_mrs_router_id)
+            "rest_daemon_id": "10000000-0000-7000-8000-000000000001",
             "mysql_read_write_destinations": f"127.0.0.1:{self.mysqld.port}",
             "metadata_refresh_interval": "1",
             # from mtr's include/default_my-router.cnf

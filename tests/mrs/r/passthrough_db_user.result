@@ -17,7 +17,7 @@ grant execute on procedure db1.p2 to user2@'%';
 grant execute on function db1.f2 to user2@'%';
 # MySQL Rest Service schema created.
 # MySQL Rest Service, server accounts configured.
-update mysql_rest_service_metadata.config set data = json_merge_patch(data, '{"passthroughDbUser": {"poolSize": 4, "maxSessionsPerUser":7}}');
+update mariadb_rest_service.config set data = json_merge_patch(data, '{"passthroughDbUser": {"poolSize": 4, "maxSessionsPerUser":7}}');
 # Registred SERVICE at path: /svc
 # Registred DB_SCHEMA at path: /svc/db
 # Registred DB_OBJECT at path: /svc/db/p
@@ -378,7 +378,7 @@ Timeout in wait_condition.inc for SELECT count(*)=0 FROM information_schema.proc
 #
 # III.2
 # switch off restriction to registered users and try again with user3
-update mysql_rest_service_metadata.auth_app set limit_to_registered_users=0;
+update mariadb_rest_service.auth_app set limit_to_registered_users=0;
 GET /svc/authentication/login
 
 OK
@@ -579,7 +579,7 @@ OK
 #
 # V.2
 # shrink limits and see if it refreshes
-update mysql_rest_service_metadata.config set data = json_merge_patch(data, '{"passthroughDbUser": {"poolSize": 2, "maxSessionsPerUser": 1}}');
+update mariadb_rest_service.config set data = json_merge_patch(data, '{"passthroughDbUser": {"poolSize": 2, "maxSessionsPerUser": 1}}');
 GET /svc/authentication/login
 
 OK
@@ -589,13 +589,13 @@ GET /svc/authentication/login
 OK
 GET /svc/db_no_auth/tbl2
 {
-    "message": "Service requires authentication with MySQL Internal, but user is authenticated with other authApp (or authentication was not configured)",
+    "message": "Service requires authentication with MariaDB Internal, but user is authenticated with other authApp (or authentication was not configured)",
     "status": 400
 }
 OK
 GET /svc/db_no_auth/tbl2
 {
-    "message": "Service requires authentication with MySQL Internal, but user is authenticated with other authApp (or authentication was not configured)",
+    "message": "Service requires authentication with MariaDB Internal, but user is authenticated with other authApp (or authentication was not configured)",
     "status": 400
 }
 OK
@@ -610,9 +610,9 @@ drop user user2@'%';
 drop user user3@'%';
 drop user user1role;
 drop schema db1;
-DROP SCHEMA mysql_rest_service_metadata;
-DROP ROLE mysql_rest_service_admin;
-DROP ROLE mysql_rest_service_schema_admin;
-DROP ROLE mysql_rest_service_meta_provider;
-DROP ROLE mysql_rest_service_data_provider;
-DROP ROLE mysql_rest_service_dev;
+DROP SCHEMA mariadb_rest_service;
+DROP ROLE mariadb_rest_service_admin;
+DROP ROLE mariadb_rest_service_schema_admin;
+DROP ROLE mariadb_rest_service_meta_provider;
+DROP ROLE mariadb_rest_service_data_provider;
+DROP ROLE mariadb_rest_service_dev;

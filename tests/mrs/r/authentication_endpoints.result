@@ -368,12 +368,12 @@ GET /c/authentication/authApps
 []
 OK
 DROP SCHEMA basic_schema;
-DROP SCHEMA mysql_rest_service_metadata;
-DROP ROLE mysql_rest_service_admin;
-DROP ROLE mysql_rest_service_schema_admin;
-DROP ROLE mysql_rest_service_meta_provider;
-DROP ROLE mysql_rest_service_data_provider;
-DROP ROLE mysql_rest_service_dev;
+DROP SCHEMA mariadb_rest_service;
+DROP ROLE mariadb_rest_service_admin;
+DROP ROLE mariadb_rest_service_schema_admin;
+DROP ROLE mariadb_rest_service_meta_provider;
+DROP ROLE mariadb_rest_service_data_provider;
+DROP ROLE mariadb_rest_service_dev;
 
 
 ## I. Create servcices that:
@@ -742,9 +742,9 @@ OK
 GET /c/custom/authApps
 []
 OK
-DROP SCHEMA mysql_rest_service_metadata;
-DROP ROLE mysql_rest_service_admin;
-DROP ROLE mysql_rest_service_schema_admin;
-DROP ROLE mysql_rest_service_meta_provider;
-DROP ROLE mysql_rest_service_data_provider;
-DROP ROLE mysql_rest_service_dev;
+DROP SCHEMA mariadb_rest_service;
+DROP ROLE mariadb_rest_service_admin;
+DROP ROLE mariadb_rest_service_schema_admin;
+DROP ROLE mariadb_rest_service_meta_provider;
+DROP ROLE mariadb_rest_service_data_provider;
+DROP ROLE mariadb_rest_service_dev;

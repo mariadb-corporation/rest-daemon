@@ -18,7 +18,7 @@
 # 5. remove all
 #
 
-UPDATE  `mysql_rest_service_metadata`.`config` SET data='{}';
+UPDATE  `mariadb_rest_service`.`config` SET data='{}';
 # Registred SERVICE at path: /svc1
 # Registred CONTENT_SET at path: /svc1/sch1
 SET @schema_id1=@content_set_id;
@@ -153,9 +153,9 @@ Not Found(404)
 GET /svc2/sch2/other.html
 Not Found(404)
 DROP SCHEMA basic_schema;
-DROP SCHEMA mysql_rest_service_metadata;
-DROP ROLE mysql_rest_service_admin;
-DROP ROLE mysql_rest_service_schema_admin;
-DROP ROLE mysql_rest_service_meta_provider;
-DROP ROLE mysql_rest_service_data_provider;
-DROP ROLE mysql_rest_service_dev;
+DROP SCHEMA mariadb_rest_service;
+DROP ROLE mariadb_rest_service_admin;
+DROP ROLE mariadb_rest_service_schema_admin;
+DROP ROLE mariadb_rest_service_meta_provider;
+DROP ROLE mariadb_rest_service_data_provider;
+DROP ROLE mariadb_rest_service_dev;

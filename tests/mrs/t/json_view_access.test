@@ -6,7 +6,7 @@
 # Solaris so we disable it until this is further investigated.
 --source include/not_solaris.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/sakila-schema.sql
 --source ../include/schema/sakila-data.sql

@@ -3,7 +3,7 @@
 # Set the router-id, to generate statistics
 # this way we can wait until router detects
 # changes to DB_OBJECTS.
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/basic_schema.sql
 
@@ -25,7 +25,7 @@
 
 --source ../include/mrs/start_object_definition.inc
 
-UPDATE  `mysql_rest_service_metadata`.`config` SET data='{}';
+UPDATE  `mariadb_rest_service`.`config` SET data='{}';
 
 --let $mrs_add_service_path="/svc2"
 --let $mrs_add_host_name=""
@@ -86,7 +86,7 @@ exec $MRS_CLIENT_ARGS
 --echo # II.1
 
 --source ../include/mrs/changes/fetch_object.inc
-UPDATE  `mysql_rest_service_metadata`.`config` SET data='{"defaultStaticContent":{"index.html":"first page", "other.html":"second page"}}';
+UPDATE  `mariadb_rest_service`.`config` SET data='{"defaultStaticContent":{"index.html":"first page", "other.html":"second page"}}';
 
 # Update of global configuration, causes all objects reconfiguration.
 # Thus we will wait for object update.
@@ -121,7 +121,7 @@ exec $MRS_CLIENT_ARGS
 
 --source ../include/mrs/changes/fetch_object.inc
 --echo ## Check Directory Index generation
-UPDATE  `mysql_rest_service_metadata`.`config` SET data='{"defaultStaticContent":{"index.html":"first page", "other.html":"second page"}, "directoryIndexDirective":["other.html"],"logging":{"exceptions":true, "request":{"headers":true, "body":true}, "response":{"headers":true, "body":true}}}';
+UPDATE  `mariadb_rest_service`.`config` SET data='{"defaultStaticContent":{"index.html":"first page", "other.html":"second page"}, "directoryIndexDirective":["other.html"],"logging":{"exceptions":true, "request":{"headers":true, "body":true}, "response":{"headers":true, "body":true}}}';
 # Update of global configuration, causes all objects reconfiguration.
 # Thus we will wait for object update.
 --source ../include/mrs/changes/wait_object.inc
@@ -153,7 +153,7 @@ exec $MRS_CLIENT_ARGS
 --echo # II.3
 --echo ## Check Redirect generation
 --source ../include/mrs/changes/fetch_object.inc
-UPDATE  `mysql_rest_service_metadata`.`config` SET data='{"defaultStaticContent":{"index.html":"first page", "other.html":"second page"}, "directoryIndexDirective":["other.html"],"defaultRedirects":{"redirect.html":"/svc1/sch1/obj1/1"}}';
+UPDATE  `mariadb_rest_service`.`config` SET data='{"defaultStaticContent":{"index.html":"first page", "other.html":"second page"}, "directoryIndexDirective":["other.html"],"defaultRedirects":{"redirect.html":"/svc1/sch1/obj1/1"}}';
 # Update of global configuration, causes all objects reconfiguration.
 # Thus we will wait for object update.
 --source ../include/mrs/changes/wait_object.inc
@@ -186,7 +186,7 @@ exec $MRS_CLIENT_ARGS
 --echo # II.4
 --echo ## Check that all files are removed
 --source ../include/mrs/changes/fetch_object.inc
-UPDATE  `mysql_rest_service_metadata`.`config` SET data=NULL;
+UPDATE  `mariadb_rest_service`.`config` SET data=NULL;
 # Update of global configuration, causes all objects reconfiguration.
 # Thus we will wait for object update.
 --source ../include/mrs/changes/wait_object.inc

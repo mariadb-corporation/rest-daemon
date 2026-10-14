@@ -7,42 +7,42 @@
 
 I. Verify that the monitoring thread adds the router entry when it is missing in the metadata
 
-DELETE from mysql_rest_service_metadata.router where id = 1;
-SELECT id from mysql_rest_service_metadata.router where id = 1;
+DELETE from mariadb_rest_service.rest_daemon where id = '10000000-0000-7000-8000-000000000001';
+SELECT id from mariadb_rest_service.rest_daemon where id = '10000000-0000-7000-8000-000000000001';
 id
-1
+10000000-0000-7000-8000-000000000001
 
 II. Verify that when the monitoring thread sees incompatible metadata version it stops the service and restores it when it becomes compatible again.
 
-DROP view `mysql_rest_service_metadata`.`msm_schema_version`;
+DROP view `mariadb_rest_service`.`msm_schema_version`;
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY INVOKER
-VIEW `mysql_rest_service_metadata`.`msm_schema_version`(`major`,`minor`,`patch`)
+VIEW `mariadb_rest_service`.`msm_schema_version`(`major`,`minor`,`patch`)
 AS select 1 AS `1`,0 AS `0`,0 AS `0`;
-DROP view `mysql_rest_service_metadata`.`msm_schema_version`;
+DROP view `mariadb_rest_service`.`msm_schema_version`;
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY INVOKER
-VIEW `mysql_rest_service_metadata`.`msm_schema_version`(`major`,`minor`,`patch`)
-AS select 4 AS `4`,0 AS `0`,0 AS `0`;
+VIEW `mariadb_rest_service`.`msm_schema_version`(`major`,`minor`,`patch`)
+AS select 5 AS `5`,0 AS `0`,0 AS `0`;
 
 III. Verify that when the service_enabled flag is cleared in the metadata the mtr stops the service and restores it when it becomes enabled again.
 
-update `mysql_rest_service_metadata`.`config` set service_enabled = 0;
-update `mysql_rest_service_metadata`.`config` set service_enabled = 1;
+update `mariadb_rest_service`.`config` set service_enabled = 0;
+update `mariadb_rest_service`.`config` set service_enabled = 1;
 
 IV. Verify that when the monitoring thread encounters invalid metadata (missing view) it stops the service and restores once it becomes available again
 
-DROP view `mysql_rest_service_metadata`.`msm_schema_version`;
+DROP view `mariadb_rest_service`.`msm_schema_version`;
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY INVOKER
-VIEW `mysql_rest_service_metadata`.`msm_schema_version`(`major`,`minor`,`patch`)
-AS select 4 AS `4`,0 AS `0`,0 AS `0`;
+VIEW `mariadb_rest_service`.`msm_schema_version`(`major`,`minor`,`patch`)
+AS select 5 AS `5`,0 AS `0`,0 AS `0`;
 
 V. Verify that when there is a discrepancy in the audit_log table (index) the MRS still notices the changes in the metadata by doing a full refresh
 
 # Registred DB_OBJECT at path: /svc/basic_schema/tab3
-delete from `mysql_rest_service_metadata`.`audit_log`;
+delete from `mariadb_rest_service`.`audit_log`;
 DROP SCHEMA basic_schema;
-DROP SCHEMA mysql_rest_service_metadata;
-DROP ROLE mysql_rest_service_admin;
-DROP ROLE mysql_rest_service_schema_admin;
-DROP ROLE mysql_rest_service_meta_provider;
-DROP ROLE mysql_rest_service_data_provider;
-DROP ROLE mysql_rest_service_dev;
+DROP SCHEMA mariadb_rest_service;
+DROP ROLE mariadb_rest_service_admin;
+DROP ROLE mariadb_rest_service_schema_admin;
+DROP ROLE mariadb_rest_service_meta_provider;
+DROP ROLE mariadb_rest_service_data_provider;
+DROP ROLE mariadb_rest_service_dev;

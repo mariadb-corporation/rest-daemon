@@ -3,7 +3,7 @@
 #
 --source include/have_router.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/basic_schema.sql
 CREATE USER user_valid@'%' IDENTIFIED BY 'pwd';
@@ -26,7 +26,7 @@ CREATE USER user_valid@'%' IDENTIFIED BY 'pwd';
 --source ../include/mrs/db_object/add.inc
 
 --let $mrs_add_auth_app=default authentication
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/svc1
 --let $mrs_add_auth_registered_users_only=1
 --source ../include/mrs/auth_app/add.inc
@@ -35,14 +35,14 @@ CREATE USER user_valid@'%' IDENTIFIED BY 'pwd';
 
 # add a "user_valid" user to mrs_users and assign a proper role to be able to access
 # defined object o1
-insert into mysql_rest_service_metadata.mrs_user(id, auth_app_id, name,
+insert into mariadb_rest_service.mrs_user(id, auth_app_id, name,
 vendor_user_id, login_permitted)
 values (0x11EFD1DC9D62CD2E89FABBBF8E89057E,
-(select id from mysql_rest_service_metadata.auth_app limit 1),
+(select id from mariadb_rest_service.auth_app limit 1),
 "user_valid", "user_valid@%", 1);
 
-insert into mysql_rest_service_metadata.mrs_user_has_role(user_id, role_id)
-values (0x11EFD1DC9D62CD2E89FABBBF8E89057E, 0x31000000000000000000000000000000);
+insert into mariadb_rest_service.mrs_user_has_role(user_id, role_id)
+values (0x11EFD1DC9D62CD2E89FABBBF8E89057E, '31000000-0000-0000-0000-000000000000');
 
 # Check that the user can access o1
 exec $MRS_CLIENT_ARGS
@@ -59,7 +59,7 @@ exec $MRS_CLIENT_ARGS
   --session-file $MYSQL_TMP_DIR/user1_session.dat;
 
 # Revoke login rights to that user and wait for MRS to notice change
-update mysql_rest_service_metadata.mrs_user set login_permitted = 0 where id = 0x11EFD1DC9D62CD2E89FABBBF8E89057E;
+update mariadb_rest_service.mrs_user set login_permitted = 0 where id = 0x11EFD1DC9D62CD2E89FABBBF8E89057E;
 --source ../include/mrs/wait_mrs_read_metadata.inc
 
 # Check that the user can't access o1 anymore
@@ -77,7 +77,7 @@ exec $MRS_CLIENT_ARGS
   --session-file $MYSQL_TMP_DIR/user1_session2.dat;
 
 # Restore login rights to that user and wait for MRS to notice change
-update mysql_rest_service_metadata.mrs_user set login_permitted = 1 where id = 0x11EFD1DC9D62CD2E89FABBBF8E89057E;
+update mariadb_rest_service.mrs_user set login_permitted = 1 where id = 0x11EFD1DC9D62CD2E89FABBBF8E89057E;
 --source ../include/mrs/wait_mrs_read_metadata.inc
 
 # Check that the user can access o1 again
@@ -95,7 +95,7 @@ exec $MRS_CLIENT_ARGS
   --session-file $MYSQL_TMP_DIR/user1_session3.dat;
 
 # Delete the user from metadata and wait for MRS to notice change
-delete from mysql_rest_service_metadata.mrs_user where id = 0x11EFD1DC9D62CD2E89FABBBF8E89057E;
+delete from mariadb_rest_service.mrs_user where id = 0x11EFD1DC9D62CD2E89FABBBF8E89057E;
 --source ../include/mrs/wait_mrs_read_metadata.inc
 
 # Check that the user can't access o1 anymore

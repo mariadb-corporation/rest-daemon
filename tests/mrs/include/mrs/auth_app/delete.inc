@@ -13,15 +13,15 @@ if (!$mrs_delete_auth_app)
 --disable_result_log
 START TRANSACTION;
 eval  SET $mrs_sql_id_variable=
-     (SELECT id FROM mysql_rest_service_metadata.auth_app WHERE name=$mrs_delete_auth_app);
+     (SELECT id FROM mariadb_rest_service.auth_app WHERE name=$mrs_delete_auth_app);
 
 if ($mrs_schema_version > 2)
 {
-  eval DELETE FROM `mysql_rest_service_metadata`.`service_has_auth_app`
+  eval DELETE FROM `mariadb_rest_service`.`service_has_auth_app`
      WHERE `auth_app_id`=$mrs_sql_id_variable;
 }
 
-eval DELETE FROM `mysql_rest_service_metadata`.`auth_app` WHERE id=$mrs_sql_id_variable;
+eval DELETE FROM `mariadb_rest_service`.`auth_app` WHERE id=$mrs_sql_id_variable;
 
 COMMIT;
 --echo # Removed AUTH APP at path: $mrs_add_auth_service

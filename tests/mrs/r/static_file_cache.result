@@ -1,7 +1,7 @@
 # MySQL Rest Service schema created.
 # MySQL Rest Service, server accounts configured.
 # DB `basic_schema` - created
-update mysql_rest_service_metadata.config set data = json_merge_patch(data, '{"responseCache":{"maxCacheSize":200}, "fileCache":{"maxCacheSize":80}}');
+update mariadb_rest_service.config set data = json_merge_patch(data, '{"responseCache":{"maxCacheSize":200}, "fileCache":{"maxCacheSize":80}}');
 # Registred SERVICE at path: /svc
 # Registred CONTENT_SET at path: /svc/static
 # Registred CONTENT_FILE at path: /svc/static/file1
@@ -25,7 +25,7 @@ END OF FILE
 
 stats
 {"endpoints": "2", "items": "0", "files": "2", "itemLoads": 0, "itemEjects": 0, "itemHits": 0, "itemMisses": 0, "fileLoads": 0, "fileEjects": 0, "fileHits": 2, "fileMisses": 0}
-truncate mysql_rest_service_metadata.router_status;
+truncate mariadb_rest_service.rest_daemon_status;
 # restart
 "FR4 - the cache must be reset when the content_set table changes"
 "update content_set table"
@@ -49,11 +49,11 @@ stats
 {"endpoints": "2", "items": "0", "files": "2", "itemLoads": 0, "itemEjects": 0, "itemHits": 0, "itemMisses": 0, "fileLoads": 0, "fileEjects": 0, "fileHits": 2, "fileMisses": 0}
 "========================"
 "update content_set table"
-truncate mysql_rest_service_metadata.router_status;
-UPDATE `mysql_rest_service_metadata`.`content_set` SET request_path = "/newpath";
+truncate mariadb_rest_service.rest_daemon_status;
+UPDATE `mariadb_rest_service`.`content_set` SET request_path = "/newpath";
 stats
 {"endpoints": "2", "items": "0", "files": "0", "itemLoads": 0, "itemEjects": 0, "itemHits": 0, "itemMisses": 0, "fileLoads": 0, "fileEjects": 0, "fileHits": 0, "fileMisses": 0}
-UPDATE `mysql_rest_service_metadata`.`content_set` SET request_path = "/static";
+UPDATE `mariadb_rest_service`.`content_set` SET request_path = "/static";
 "FR5 - oldest entries in the cache must be expunged to fit when maxCacheSize reduced"
 stats
 {"endpoints": "2", "items": "0", "files": "0", "itemLoads": 0, "itemEjects": 0, "itemHits": 0, "itemMisses": 0, "fileLoads": 0, "fileEjects": 0, "fileHits": 0, "fileMisses": 0}
@@ -67,14 +67,14 @@ END OF FILE
 stats
 {"endpoints": "2", "items": "0", "files": "2", "itemLoads": 0, "itemEjects": 0, "itemHits": 0, "itemMisses": 0, "fileLoads": 2, "fileEjects": 0, "fileHits": 0, "fileMisses": 2}
 "reduce maxCacheSize"
-update mysql_rest_service_metadata.config set data = json_merge_patch(data, '{"responseCache":{"maxCacheSize":200}, "fileCache":{"maxCacheSize":40}}');
+update mariadb_rest_service.config set data = json_merge_patch(data, '{"responseCache":{"maxCacheSize":200}, "fileCache":{"maxCacheSize":40}}');
 "access file2 from cache"
 TEST FILE 2 CONTENT
 END OF FILE
 
 stats
 {"endpoints": "2", "items": "0", "files": "1", "itemLoads": 0, "itemEjects": 0, "itemHits": 0, "itemMisses": 0, "fileLoads": 1, "fileEjects": 0, "fileHits": 0, "fileMisses": 1}
-truncate mysql_rest_service_metadata.router_status;
+truncate mariadb_rest_service.rest_daemon_status;
 # restart
 "FR6 - verify status variables"
 "cache file1"
@@ -90,7 +90,7 @@ END OF FILE
 stats
 {"endpoints": "2", "items": "0", "files": "1", "itemLoads": 0, "itemEjects": 0, "itemHits": 0, "itemMisses": 0, "fileLoads": 0, "fileEjects": 0, "fileHits": 1, "fileMisses": 0}
 "access file2, file1 will be evicted from cache"
-truncate mysql_rest_service_metadata.router_status;
+truncate mariadb_rest_service.rest_daemon_status;
 TEST FILE 2 CONTENT
 END OF FILE
 
@@ -103,9 +103,9 @@ END OF FILE
 stats
 {"endpoints": "2", "items": "0", "files": "1", "itemLoads": 0, "itemEjects": 0, "itemHits": 0, "itemMisses": 0, "fileLoads": 0, "fileEjects": 0, "fileHits": 1, "fileMisses": 0}
 DROP SCHEMA basic_schema;
-DROP SCHEMA mysql_rest_service_metadata;
-DROP ROLE mysql_rest_service_admin;
-DROP ROLE mysql_rest_service_schema_admin;
-DROP ROLE mysql_rest_service_meta_provider;
-DROP ROLE mysql_rest_service_data_provider;
-DROP ROLE mysql_rest_service_dev;
+DROP SCHEMA mariadb_rest_service;
+DROP ROLE mariadb_rest_service_admin;
+DROP ROLE mariadb_rest_service_schema_admin;
+DROP ROLE mariadb_rest_service_meta_provider;
+DROP ROLE mariadb_rest_service_data_provider;
+DROP ROLE mariadb_rest_service_dev;

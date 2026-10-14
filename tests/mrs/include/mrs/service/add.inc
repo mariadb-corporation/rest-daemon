@@ -16,7 +16,8 @@ if (!$mrs_sql_id_variable)
   --let $mrs_sql_id_variable=@service_id
 }
 
-if (!$mrs_host_id)
+# restd: a UUID (v7, starting with '0') reads as false in an `if`: compare
+if ($mrs_host_id == '')
 {
   if (!$mrs_add_host_name)
   {
@@ -64,12 +65,12 @@ if ($mrs_add_host_name)
    --source ../host/get_host.inc
 }
 
-if (!$mrs_host_id)
+if ($mrs_host_id == '')
 {
    --let $mrs_old_sql_id=$mrs_sql_id_variable
    --let $mrs_sql_id_variable=@temporary_host_id
    --source ../host/add_host.inc
-   --let $mrs_host_id=query_get_value(SELECT HEX($mrs_sql_id_variable) as c1, c1, 1)
+   --let $mrs_host_id=query_get_value(SELECT $mrs_sql_id_variable as c1, c1, 1)
    --let $mrs_sql_id_variable=$mrs_old_sql_id
 }
 
@@ -91,29 +92,29 @@ if (!$auth_completed_page_content)
 
 --disable_query_log
 --disable_result_log
-eval SET $mrs_sql_id_variable=mysql_rest_service_metadata.get_sequence_id();
+eval SET $mrs_sql_id_variable=mariadb_rest_service.get_sequence_id();
 
 if ($mrs_schema_version == 2)
 {
-  eval INSERT INTO mysql_rest_service_metadata.service(id, url_host_id, url_context_root, url_protocol, auth_completed_url_validation,
+  eval INSERT INTO mariadb_rest_service.service(id, url_host_id, url_context_root, url_protocol, auth_completed_url_validation,
                                                        options, auth_path, auth_completed_page_content $mrs_add_service_custom_fields)
-    VALUES($mrs_sql_id_variable, unhex("$mrs_host_id"),  $mrs_add_service_path, $mrs_add_service_protocol,
+    VALUES($mrs_sql_id_variable, "$mrs_host_id",  $mrs_add_service_path, $mrs_add_service_protocol,
            $mrs_add_service_url_validation, $mrs_add_service_options,$mrs_add_service_auth_path,$auth_completed_page_content $mrs_add_service_custom_values);
 }
 
 if ($mrs_schema_version > 2)
 {
-  eval INSERT INTO mysql_rest_service_metadata.service(id, url_host_id,
+  eval INSERT INTO mariadb_rest_service.service(id, url_host_id,
     url_context_root, url_protocol, options, published, in_development,
     auth_completed_url_validation, auth_path, auth_completed_page_content, metadata $mrs_add_service_custom_fields)
-    VALUES($mrs_sql_id_variable, unhex("$mrs_host_id"),  $mrs_add_service_path,
+    VALUES($mrs_sql_id_variable, "$mrs_host_id",  $mrs_add_service_path,
     $mrs_add_service_protocol, $mrs_add_service_options,
     $mrs_add_service_published, $mrs_add_service_in_development,
     $mrs_add_service_url_validation,$mrs_add_service_auth_path,
     $auth_completed_page_content, $mrs_add_service_metadata $mrs_add_service_custom_values);
 }
 
---let $_path=`SELECT CONCAT(s.url_context_root) FROM mysql_rest_service_metadata.service as s  WHERE s.id=$mrs_sql_id_variable;`
+--let $_path=`SELECT CONCAT(s.url_context_root) FROM mariadb_rest_service.service as s  WHERE s.id=$mrs_sql_id_variable;`
 --echo # Registred SERVICE at path: $_path
 
 --enable_query_log

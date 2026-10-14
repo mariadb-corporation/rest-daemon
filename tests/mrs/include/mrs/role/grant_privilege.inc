@@ -53,9 +53,9 @@ if (!$mrs_sql_role_id_variable)
 
 --disable_query_log
 --disable_result_log
-eval  SET $mrs_sql_id_variable=mysql_rest_service_metadata.get_sequence_id();
+eval  SET $mrs_sql_id_variable=mariadb_rest_service.get_sequence_id();
 
-eval INSERT INTO `mysql_rest_service_metadata`.`mrs_privilege` (
+eval INSERT INTO `mariadb_rest_service`.`mrs_privilege` (
   `id`,
   `role_id`,
   `crud_operations`,

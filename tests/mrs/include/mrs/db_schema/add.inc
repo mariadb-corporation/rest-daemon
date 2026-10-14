@@ -44,10 +44,10 @@ if (!$mrs_add_schema_metadata)
 --disable_query_log
 --disable_result_log
 
-eval SET $mrs_sql_id_variable=mysql_rest_service_metadata.get_sequence_id();
+eval SET $mrs_sql_id_variable=mariadb_rest_service.get_sequence_id();
 if ($mrs_schema_version == 2)
 {
-  eval INSERT INTO mysql_rest_service_metadata.db_schema(
+  eval INSERT INTO mariadb_rest_service.rest_schema(
                 id, service_id, name, request_path,
                 requires_auth, items_per_page, options)
         VALUES($mrs_sql_id_variable, $mrs_service_id_sql_variable,
@@ -58,7 +58,7 @@ if ($mrs_schema_version == 2)
 
 if ($mrs_schema_version > 2)
 {
-  eval INSERT INTO mysql_rest_service_metadata.db_schema(
+  eval INSERT INTO mariadb_rest_service.rest_schema(
                 id, service_id, name, request_path,
                 requires_auth, items_per_page, options, metadata)
         VALUES($mrs_sql_id_variable, $mrs_service_id_sql_variable,
@@ -67,7 +67,7 @@ if ($mrs_schema_version > 2)
               $mrs_add_schema_options, $mrs_add_schema_metadata);
 }
 
---let $_path=`SELECT CONCAT(s.url_context_root, db.request_path) FROM mysql_rest_service_metadata.db_schema as db JOIN mysql_rest_service_metadata.service as s ON  s.id = db.service_id  WHERE db.id=$mrs_sql_id_variable;`
+--let $_path=`SELECT CONCAT(s.url_context_root, db.request_path) FROM mariadb_rest_service.rest_schema as db JOIN mariadb_rest_service.service as s ON  s.id = db.service_id  WHERE db.id=$mrs_sql_id_variable;`
 --echo # Registred DB_SCHEMA at path: $_path
 
 --enable_query_log

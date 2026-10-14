@@ -74,7 +74,7 @@ OK
 
 #
 # III.1
-UPDATE mysql_rest_service_metadata.object_field
+UPDATE mariadb_rest_service.data_mapping_field
 SET allow_sorting=1 WHERE name = "id";
 GET /svc/basic/t2/1
 {
@@ -120,9 +120,9 @@ POST /svc/basic/t2 (payload-size:98)
 }
 OK
 DROP SCHEMA basic_schema;
-DROP SCHEMA mysql_rest_service_metadata;
-DROP ROLE mysql_rest_service_admin;
-DROP ROLE mysql_rest_service_schema_admin;
-DROP ROLE mysql_rest_service_meta_provider;
-DROP ROLE mysql_rest_service_data_provider;
-DROP ROLE mysql_rest_service_dev;
+DROP SCHEMA mariadb_rest_service;
+DROP ROLE mariadb_rest_service_admin;
+DROP ROLE mariadb_rest_service_schema_admin;
+DROP ROLE mariadb_rest_service_meta_provider;
+DROP ROLE mariadb_rest_service_data_provider;
+DROP ROLE mariadb_rest_service_dev;

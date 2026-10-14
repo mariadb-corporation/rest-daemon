@@ -19,7 +19,7 @@ if (!$mrs_changes_current_is)
 --let $old_value=`SELECT $mrs_sql_changes_variable`
 eval SET @_prv_wait_id=$mrs_sql_id_variable;
 let $wait_condition=SELECT SUM(IFNULL(details->>"$.restMetadataGtids",0)) $mrs_changes_current_is , $mrs_sql_id_variable:=max(id)
- FROM mysql_rest_service_metadata.router_status
+ FROM mariadb_rest_service.rest_daemon_status
  WHERE id > @_prv_wait_id;
 --source include/wait_condition_or_abort.inc
 

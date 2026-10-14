@@ -39,8 +39,8 @@ if (!$mrs_add_content_set_content_type)
 --disable_query_log
 --disable_result_log
 
-eval SET $mrs_sql_id_variable=mysql_rest_service_metadata.get_sequence_id();
-eval  INSERT INTO mysql_rest_service_metadata.content_set(
+eval SET $mrs_sql_id_variable=mariadb_rest_service.get_sequence_id();
+eval  INSERT INTO mariadb_rest_service.content_set(
                id, service_id, content_type, request_path,
                requires_auth, enabled, options)
       VALUES($mrs_sql_id_variable,
@@ -51,7 +51,7 @@ eval  INSERT INTO mysql_rest_service_metadata.content_set(
              $mrs_add_content_set_enabled,
              $mrs_add_content_set_options);
 
---let $_path=`SELECT CONCAT(s.url_context_root, db.request_path) FROM mysql_rest_service_metadata.content_set as db JOIN mysql_rest_service_metadata.service as s ON  s.id = db.service_id  WHERE db.id=$mrs_sql_id_variable;`
+--let $_path=`SELECT CONCAT(s.url_context_root, db.request_path) FROM mariadb_rest_service.content_set as db JOIN mariadb_rest_service.service as s ON  s.id = db.service_id  WHERE db.id=$mrs_sql_id_variable;`
 --echo # Registred CONTENT_SET at path: $_path
 
 --enable_query_log

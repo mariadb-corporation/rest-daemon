@@ -2,7 +2,7 @@
 --source include/have_router.inc
 --source ../include/mrs/is_mrs_schema_v5.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 
 create schema test_schema;
@@ -354,8 +354,8 @@ create function test_schema.fn() returns int return 42;
 
 --source ../include/mrs/end_object_definition.inc
 
-set @tmp=(select id from mysql_rest_service_metadata.mrs_role where caption='ular' limit 1);
-update mysql_rest_service_metadata.mrs_role set derived_from_role_id=@tmp where caption='circ';
+set @tmp=(select id from mariadb_rest_service.mrs_role where caption='ular' limit 1);
+update mariadb_rest_service.mrs_role set derived_from_role_id=@tmp where caption='circ';
 
 # Begin tests
 #############

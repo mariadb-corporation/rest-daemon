@@ -9,7 +9,7 @@ if (!$mrs_content_set_id_sql_variable) {
 
 --disable_query_log
 --disable_result_log
-eval DELETE FROM `mysql_rest_service_metadata`.`content_file` WHERE `request_path`='$mrs_add_content_file_path' AND `content_set_id`=$mrs_content_set_id_sql_variable;
+eval DELETE FROM `mariadb_rest_service`.`content_file` WHERE `request_path`='$mrs_add_content_file_path' AND `content_set_id`=$mrs_content_set_id_sql_variable;
 --enable_query_log
 --enable_result_log
 

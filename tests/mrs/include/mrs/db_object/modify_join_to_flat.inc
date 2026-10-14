@@ -4,7 +4,7 @@ if (!$mrs_sql_id_variable_object_ref)
   --let $mrs_sql_id_variable_object_ref=@object_ref
 }
 
-if (!`SELECT $mrs_sql_id_variable_object_ref`)
+if (!`SELECT $mrs_sql_id_variable_object_ref IS NOT NULL`)
 {
   die \$mrs_sql_id_variable_object_ref must be set to a valid value.;
 }
@@ -12,7 +12,7 @@ if (!`SELECT $mrs_sql_id_variable_object_ref`)
 --disable_query_log
 --disable_result_log
 --echo # Modified OBJECT_REFERENCE to be an unnested filed.
-eval UPDATE mysql_rest_service_metadata.object_reference SET 
+eval UPDATE mariadb_rest_service.data_mapping_reference SET 
                unnest=True WHERE id=$mrs_sql_id_variable_object_ref;
              
 --enable_query_log

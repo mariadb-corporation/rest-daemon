@@ -49,9 +49,9 @@ if ($mrs_add_db_object_join_columns)
 --disable_query_log
 --disable_result_log
 eval SET $mrs_sql_id_variable_object=(
-      SELECT object.id FROM mysql_rest_service_metadata.object
-        WHERE object.db_object_id=$mrs_sql_id_variable_db_object);
-eval SET $mrs_sql_id_variable_object_ref=mysql_rest_service_metadata.get_sequence_id();
+      SELECT data_mapping.id FROM mariadb_rest_service.data_mapping
+        WHERE data_mapping.rest_object_id=$mrs_sql_id_variable_db_object);
+eval SET $mrs_sql_id_variable_object_ref=mariadb_rest_service.get_sequence_id();
 
 --let $_columns1=$mrs_add_db_object_join_on_base
 --let $_columns2=$mrs_add_db_object_join_on_other
@@ -78,7 +78,7 @@ while($_columns1)
 if ($mrs_schema_version == 2)
 {
   --let $_mrs_do_default_object_ref=0
-  eval  INSERT INTO mysql_rest_service_metadata.object_reference(
+  eval  INSERT INTO mariadb_rest_service.data_mapping_reference(
                id, reference_mapping, unnest, crud_operations)
       VALUES($mrs_sql_id_variable_object_ref, JSON_OBJECT(
            "referenced_schema","$mrs_add_db_object_join_schema",
@@ -90,7 +90,7 @@ if ($mrs_schema_version == 2)
 
 if ($_mrs_do_default_object_ref)
 {
-  eval  INSERT INTO mysql_rest_service_metadata.object_reference(
+  eval  INSERT INTO mariadb_rest_service.data_mapping_reference(
                id, reference_mapping, unnest)
       VALUES($mrs_sql_id_variable_object_ref, JSON_OBJECT(
            "referenced_schema","$mrs_add_db_object_join_schema",
@@ -107,10 +107,10 @@ if (!$mrs_add_db_object_do_not_auto_register_columns)
     {
       --let $mrs_sql_id_variable_ob=@object_id
     }
-    eval INSERT INTO mysql_rest_service_metadata.object_field(
-           id, parent_reference_id, name, object_id, enabled, position, db_column)
+    eval INSERT INTO mariadb_rest_service.data_mapping_field(
+           id, parent_reference_id, name, data_mapping_id, enabled, position, db_column)
            SELECT
-            mysql_rest_service_metadata.get_sequence_id(), IF(INSTR(z.cname,"hidden"),NULL,$mrs_sql_id_variable_object_ref),
+            mariadb_rest_service.get_sequence_id(), IF(INSTR(z.cname,"hidden"),NULL,$mrs_sql_id_variable_object_ref),
             z.cname, $mrs_sql_id_variable_ob, IF(INSTR(z.cname,"hidden"),false,true), z.pos, z.js
            FROM (SELECT COLUMN_NAME as cname, ORDINAL_POSITION as pos,
                         JSON_SET("{}","$.name",column_name,"$.datatype",data_type,
@@ -122,12 +122,12 @@ if (!$mrs_add_db_object_do_not_auto_register_columns)
                            AND TABLE_NAME="$mrs_add_db_object_join_table"
                             $mrs_add_db_object_join_columns) as z;
 
-    let $_id=`SELECT max(position) + 1 FROM mysql_rest_service_metadata.object_field
-                     WHERE object_id=$mrs_sql_id_variable_object`;
-    eval INSERT INTO mysql_rest_service_metadata.object_field(
-               id, represents_reference_id, name, object_id, enabled, position, db_column)
+    let $_id=`SELECT max(position) + 1 FROM mariadb_rest_service.data_mapping_field
+                     WHERE data_mapping_id=$mrs_sql_id_variable_object`;
+    eval INSERT INTO mariadb_rest_service.data_mapping_field(
+               id, represents_reference_id, name, data_mapping_id, enabled, position, db_column)
                VALUES(
-                  mysql_rest_service_metadata.get_sequence_id(),
+                  mariadb_rest_service.get_sequence_id(),
                   $mrs_sql_id_variable_object_ref,
                   "something",
                   $mrs_sql_id_variable_object, 1,

@@ -10,7 +10,7 @@
 --source include/have_router.inc
 --source ../include/mrs/is_mrs_schema_v5.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/basic_schema.sql
 
@@ -130,7 +130,7 @@ SET @schema_id3=@schema_id;
 
 --let $mrs_sql_id_variable=@auth_app_mysql
 --let $mrs_add_auth_app=mysql
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/svc
 --source ../include/mrs/auth_app/add.inc
 
@@ -180,7 +180,7 @@ SET @schema_id3=@schema_id;
 --echo
 --echo #
 --echo # II.1
-UPDATE `mysql_rest_service_metadata`.`db_schema` SET requires_auth=1;
+UPDATE `mariadb_rest_service`.`rest_schema` SET requires_auth=1;
 --source ../include/mrs/wait_mrs_read_metadata.inc
 
 --let $mrs_client_arg_path='/svc/hostTests/tab'
@@ -292,7 +292,7 @@ UPDATE `mysql_rest_service_metadata`.`db_schema` SET requires_auth=1;
 --echo #
 --echo # III.1
 
-INSERT INTO `mysql_rest_service_metadata`.`service_has_auth_app`(service_id,auth_app_id) VALUES(@service_id4, @auth_app_mysql);
+INSERT INTO `mariadb_rest_service`.`service_has_auth_app`(service_id,auth_app_id) VALUES(@service_id4, @auth_app_mysql);
 --source ../include/mrs/wait_mrs_read_metadata.inc
 
 --let $mrs_client_arg_path='/update/authentication/authApps'

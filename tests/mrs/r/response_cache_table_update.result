@@ -9,7 +9,7 @@
 # 2. Show that after refering to the same object but by using other criteria/URL,
 #    the cache is missed and object for this new URL is fetched from database.
 #
-update mysql_rest_service_metadata.config set data = json_merge_patch(data, '{"responseCache":{"maxCacheSize":100200}}');
+update mariadb_rest_service.config set data = json_merge_patch(data, '{"responseCache":{"maxCacheSize":100200}}');
 # Registred SERVICE at path: /svc
 # Registred DB_SCHEMA at path: /svc/basic
 # Registred DB_OBJECT at path: /svc/basic/t2
@@ -169,9 +169,9 @@ GET /svc/basic/t2/?q=%7B%22name%22:%22Updated%20second%20row%22%7D
 }
 OK
 DROP SCHEMA basic_schema;
-DROP SCHEMA mysql_rest_service_metadata;
-DROP ROLE mysql_rest_service_admin;
-DROP ROLE mysql_rest_service_schema_admin;
-DROP ROLE mysql_rest_service_meta_provider;
-DROP ROLE mysql_rest_service_data_provider;
-DROP ROLE mysql_rest_service_dev;
+DROP SCHEMA mariadb_rest_service;
+DROP ROLE mariadb_rest_service_admin;
+DROP ROLE mariadb_rest_service_schema_admin;
+DROP ROLE mariadb_rest_service_meta_provider;
+DROP ROLE mariadb_rest_service_data_provider;
+DROP ROLE mariadb_rest_service_dev;

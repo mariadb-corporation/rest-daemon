@@ -1,7 +1,7 @@
 
 --source include/have_router.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/basic_schema.sql
 
@@ -115,7 +115,7 @@
 --echo #
 --echo # III.1
 
-UPDATE mysql_rest_service_metadata.object_field
+UPDATE mariadb_rest_service.data_mapping_field
    SET allow_sorting=1 WHERE name = "id";
 
 --source ../include/mrs/changes/wait_object.inc

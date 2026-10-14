@@ -10,8 +10,8 @@ if (!$mrs_sql_changes_variable)
 START TRANSACTION;
 eval SET $mrs_sql_changes_variable=(
            SELECT SUM(IF(v is NULL,0,v+0)) FROM (SELECT JSON_UNQUOTE(JSON_EXTRACT(details,"$.restAsofUsesRo")) as v
-           FROM mysql_rest_service_metadata.router_status)as sub);
-eval SET $mrs_sql_id_variable=(SELECT MAX(id) FROM mysql_rest_service_metadata.router_status);
+           FROM mariadb_rest_service.rest_daemon_status)as sub);
+eval SET $mrs_sql_id_variable=(SELECT MAX(id) FROM mariadb_rest_service.rest_daemon_status);
 COMMIT;
 
 --enable_query_log

@@ -65,42 +65,42 @@ if (!$mrs_add_auth_url_direct)
 
 --disable_query_log
 --disable_result_log
-eval  SET $mrs_sql_id_variable=mysql_rest_service_metadata.get_sequence_id();
+eval  SET $mrs_sql_id_variable=mariadb_rest_service.get_sequence_id();
 
 if ($mrs_schema_version > 2)
 {
-  eval INSERT INTO mysql_rest_service_metadata.auth_app
+  eval INSERT INTO mariadb_rest_service.auth_app
     (id, auth_vendor_id, name, enabled, limit_to_registered_users,
     default_role_id, app_id, access_token, url, url_direct_auth)
     VALUES($mrs_sql_id_variable,
-    (SELECT id FROM mysql_rest_service_metadata.auth_vendor WHERE name like "$mrs_add_auth_vendor"),
+    (SELECT id FROM mariadb_rest_service.auth_vendor WHERE name like "$mrs_add_auth_vendor"),
     "$mrs_add_auth_app",
     $mrs_add_auth_enabled,
     $mrs_add_auth_registered_users_only,
-    (SELECT id FROM mysql_rest_service_metadata.mrs_role WHERE caption like "$mrs_add_auth_role_name"),
+    (SELECT id FROM mariadb_rest_service.mrs_role WHERE caption like "$mrs_add_auth_role_name"),
     $mrs_add_auth_client_id,
     $mrs_add_auth_client_secret,
     $mrs_add_auth_url,
     $mrs_add_auth_url_direct
     );
-  eval INSERT INTO mysql_rest_service_metadata.service_has_auth_app(service_id, auth_app_id)
-    SELECT id,$mrs_sql_id_variable FROM mysql_rest_service_metadata.service WHERE url_context_root in $mrs_add_auth_services OR url_context_root rlike "$mrs_add_auth_service"
+  eval INSERT INTO mariadb_rest_service.service_has_auth_app(service_id, auth_app_id)
+    SELECT id,$mrs_sql_id_variable FROM mariadb_rest_service.service WHERE url_context_root in $mrs_add_auth_services OR url_context_root rlike "$mrs_add_auth_service"
          ;
 }
 if ($mrs_schema_version == 2)
 {
     `url` VARCHAR(255) NULL,
   `url_direct_auth` VARCHAR(255) NULL,
-  eval INSERT INTO mysql_rest_service_metadata.auth_app
+  eval INSERT INTO mariadb_rest_service.auth_app
     (id, auth_vendor_id, service_id, name, enabled, limit_to_registered_users,
     default_role_id, app_id, access_token, url, url_direct_auth)
     VALUES($mrs_sql_id_variable,
-    (SELECT id FROM mysql_rest_service_metadata.auth_vendor WHERE name like "$mrs_add_auth_vendor"),
-    (SELECT id FROM mysql_rest_service_metadata.service WHERE url_context_root rlike "$mrs_add_auth_service"),
+    (SELECT id FROM mariadb_rest_service.auth_vendor WHERE name like "$mrs_add_auth_vendor"),
+    (SELECT id FROM mariadb_rest_service.service WHERE url_context_root rlike "$mrs_add_auth_service"),
     "$mrs_add_auth_app",
     $mrs_add_auth_enabled,
     $mrs_add_auth_registered_users_only,
-    (SELECT id FROM mysql_rest_service_metadata.mrs_role WHERE caption like "$mrs_add_auth_role_name"),
+    (SELECT id FROM mariadb_rest_service.mrs_role WHERE caption like "$mrs_add_auth_role_name"),
     $mrs_add_auth_client_id,
     $mrs_add_auth_client_secret,
     $mrs_add_auth_url,

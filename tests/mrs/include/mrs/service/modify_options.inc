@@ -13,7 +13,7 @@ if (!$mrs_modify_options)
 --disable_query_log
 --disable_result_log
 
-eval UPDATE `mysql_rest_service_metadata`.`service` SET options = $mrs_modify_options WHERE `id`=$mrs_sql_id_variable;
+eval UPDATE `mariadb_rest_service`.`service` SET options = $mrs_modify_options WHERE `id`=$mrs_sql_id_variable;
 
 --enable_query_log
 --enable_result_log

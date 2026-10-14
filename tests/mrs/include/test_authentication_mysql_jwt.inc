@@ -15,7 +15,7 @@
 #
 --source include/have_router.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/basic_schema.sql
 
@@ -90,7 +90,7 @@ CREATE USER user_blocked@'%' IDENTIFIED BY 'pwd';
 --source ../include/mrs/db_object/add.inc
 
 --let $mrs_add_auth_app=default authentication-1
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/svc1
 --source ../include/mrs/auth_app/add.inc
 
@@ -116,7 +116,7 @@ CREATE USER user_blocked@'%' IDENTIFIED BY 'pwd';
 --source ../include/mrs/db_object/add.inc
 
 --let $mrs_add_auth_app=default authentication-2
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/svc2
 --source ../include/mrs/auth_app/add.inc
 
@@ -142,7 +142,7 @@ CREATE USER user_blocked@'%' IDENTIFIED BY 'pwd';
 --source ../include/mrs/db_object/add.inc
 
 --let $mrs_add_auth_app=app3
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/svc3
 --let $mrs_add_auth_registered_users_only=1
 --source ../include/mrs/auth_app/add.inc

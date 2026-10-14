@@ -27,30 +27,30 @@ if (!$mrs_sql_id_variable_ob)
   --let $mrs_sql_id_variable_ob=@object_id
 }
 
---let $_schema_name=`SELECT name FROM mysql_rest_service_metadata.db_schema WHERE id=$mrs_schema_id_sql_variable`
+--let $_schema_name=`SELECT name FROM mariadb_rest_service.rest_schema WHERE id=$mrs_schema_id_sql_variable`
 if ($mrs_sql_id_variable_ob)
 {
-  if (!`SELECT $mrs_sql_id_variable_ob`)
+  if (!`SELECT $mrs_sql_id_variable_ob IS NOT NULL`)
   {
-    eval SET $mrs_sql_id_variable_ob=mysql_rest_service_metadata.get_sequence_id();
+    eval SET $mrs_sql_id_variable_ob=mariadb_rest_service.get_sequence_id();
     
     if ($mrs_schema_version > 2)
     {
       let $_object_options=`SELECT JSON_MERGE_PATCH(JSON_OBJECT(), IF(FIND_IN_SET("INSERT","$mrs_add_db_object_with_flags"),'{"dataMappingViewInsert":true}',"{}"), IF(FIND_IN_SET("UPDATE","$mrs_add_db_object_with_flags"),'{"dataMappingViewUpdate":true}',"{}"), IF(FIND_IN_SET("DELETE","$mrs_add_db_object_with_flags"),'{"dataMappingViewDelete":true}',"{}"), IF(FIND_IN_SET("NOCHECK","$mrs_add_db_object_with_flags"),'{"dataMappingViewNoCheck":true}',"{}"))`;
-      eval INSERT INTO mysql_rest_service_metadata.object(id, db_object_id, name, options) VALUES($mrs_sql_id_variable_ob, $mrs_sql_id_variable, "$mrs_add_db_object", '$_object_options');
+      eval INSERT INTO mariadb_rest_service.data_mapping(id, rest_object_id, name, options) VALUES($mrs_sql_id_variable_ob, $mrs_sql_id_variable, "$mrs_add_db_object", '$_object_options');
     }
     if ($mrs_schema_version == 2)
     {
-      eval INSERT INTO mysql_rest_service_metadata.object(id, db_object_id, name) VALUES($mrs_sql_id_variable_ob, $mrs_sql_id_variable, "$mrs_add_db_object");
+      eval INSERT INTO mariadb_rest_service.data_mapping(id, rest_object_id, name) VALUES($mrs_sql_id_variable_ob, $mrs_sql_id_variable, "$mrs_add_db_object");
     }
   }
 }
 
 
 
-eval INSERT INTO mysql_rest_service_metadata.object_field
-       (id, name, object_id, enabled, position, db_column)
-       SELECT mysql_rest_service_metadata.get_sequence_id(), z.cname, $mrs_sql_id_variable_ob, IF(INSTR(z.cname,"hidden"),false,true), z.pos, z.js
+eval INSERT INTO mariadb_rest_service.data_mapping_field
+       (id, name, data_mapping_id, enabled, position, db_column)
+       SELECT mariadb_rest_service.get_sequence_id(), z.cname, $mrs_sql_id_variable_ob, IF(INSTR(z.cname,"hidden"),false,true), z.pos, z.js
        FROM
          (SELECT COLUMN_NAME as cname,
                  ORDINAL_POSITION as pos,
@@ -70,16 +70,16 @@ if ($mrs_schema_version >2)
   if ($mrs_add_db_object_user_ownership_column)
   {
      if (`SELECT 1<>count(id)
-             FROM mysql_rest_service_metadata.object_field
-             WHERE object_id=$mrs_sql_id_variable_ob and name=$mrs_add_db_object_user_ownership_column;`)
+             FROM mariadb_rest_service.data_mapping_field
+             WHERE data_mapping_id=$mrs_sql_id_variable_ob and name=$mrs_add_db_object_user_ownership_column;`)
     {
        die Not existing column name, set in $mrs_add_db_object_user_ownership_column;
     }
-    eval UPDATE mysql_rest_service_metadata.object 
+    eval UPDATE mariadb_rest_service.data_mapping 
         SET row_ownership_field_id=
             (SELECT id
-             FROM mysql_rest_service_metadata.object_field
-             WHERE object_id=$mrs_sql_id_variable_ob and name=$mrs_add_db_object_user_ownership_column)
+             FROM mariadb_rest_service.data_mapping_field
+             WHERE data_mapping_id=$mrs_sql_id_variable_ob and name=$mrs_add_db_object_user_ownership_column)
         WHERE id=$mrs_sql_id_variable_ob;
   }
 }

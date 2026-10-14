@@ -7,7 +7,7 @@ if (!$mrs_modify_enabled)
 --disable_query_log
 --disable_result_log
 
-eval UPDATE `mysql_rest_service_metadata`.`config` SET service_enabled = $mrs_modify_enabled;
+eval UPDATE `mariadb_rest_service`.`config` SET service_enabled = $mrs_modify_enabled;
 
 --enable_query_log
 --enable_result_log

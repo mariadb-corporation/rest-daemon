@@ -13,7 +13,7 @@
 --error 1
 --exec $MYSQLROUTER --setup localhost -d setup_x --conf-set-option=foo 2>&1
 --error 1
---exec $MYSQLROUTER --setup localhost -d setup_x --conf-set-option=mysql_rest_service.router_id=5 2>&1
+--exec $MYSQLROUTER --setup localhost -d setup_x --conf-set-option=mysql_rest_service.rest_daemon_id=5 2>&1
 --error 1
 --exec $MYSQLROUTER --setup localhost -d setup_x --ssl-mode=SOMETIMES 2>&1
 --error 1
@@ -74,7 +74,7 @@ select count(*) from mysql.user where user like 'mariadb\_restd%';
 --source setup_mrs_replace.inc
 --exec $MYSQLROUTER --setup setup_admin:pass@127.0.0.1:$MASTER_MYPORT -d $MYSQL_TMP_DIR/setup_folder --conf-set-option=DEFAULT.plugin_folder=$ROUTER_PLUGIN_DIRECTORY --force
 --file_exists $MYSQL_TMP_DIR/setup_folder/mariadb-restd.conf.bak
-select id, product_name from mysql_rest_service_metadata.router;
+select id, product_name from mariadb_rest_service.rest_daemon;
 --let $second_user=`SELECT user FROM mysql.user WHERE user LIKE 'mariadb\_restd%'`
 --let $assert_text= --force reuses the account of the existing deployment
 --let $assert_cond= "$first_user" = "$second_user"

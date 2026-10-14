@@ -1,6 +1,6 @@
 --source include/have_router.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/basic_schema.sql
 --source ../include/schema/functions_schema.sql
@@ -90,7 +90,7 @@ CREATE USER user_valid@'%' IDENTIFIED BY 'pwd';
 --source ../include/mrs/service/add.inc
 
 --let $mrs_add_auth_app=default authentication
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/svc_req_auth
 --let $mrs_add_auth_registered_users_only=1
 --source ../include/mrs/auth_app/add.inc
@@ -133,14 +133,14 @@ CREATE USER user_valid@'%' IDENTIFIED BY 'pwd';
 
 # add a "root" user to mrs_users and assign a proper role to be able to access
 # REST objects
-insert into mysql_rest_service_metadata.mrs_user(id, auth_app_id, name,
+insert into mariadb_rest_service.mrs_user(id, auth_app_id, name,
 vendor_user_id, login_permitted)
 values (0x11EFD1DC9D62CD2E89FABBBF8E89057E,
-(select id from mysql_rest_service_metadata.auth_app limit 1),
+(select id from mariadb_rest_service.auth_app limit 1),
 "user_valid", "user_valid@%", 1);
 
-insert into mysql_rest_service_metadata.mrs_user_has_role(user_id, role_id)
-values (0x11EFD1DC9D62CD2E89FABBBF8E89057E, 0x31000000000000000000000000000000);
+insert into mariadb_rest_service.mrs_user_has_role(user_id, role_id)
+values (0x11EFD1DC9D62CD2E89FABBBF8E89057E, '31000000-0000-0000-0000-000000000000');
 
 exec $MRS_CLIENT_ARGS --path /svc_md/basic_schema_md/proc_int_md
     --wait-until-status=60 --display REQUEST;
@@ -306,7 +306,7 @@ exec $MRS_CLIENT_ARGS
 --echo
 
 # Revoke login rights to that user and wait for MRS to notice change
-update mysql_rest_service_metadata.mrs_user set login_permitted = 0 where id = 0x11EFD1DC9D62CD2E89FABBBF8E89057E;
+update mariadb_rest_service.mrs_user set login_permitted = 0 where id = 0x11EFD1DC9D62CD2E89FABBBF8E89057E;
 --source ../include/mrs/wait_mrs_read_metadata.inc
 
 # get the session file

@@ -831,9 +831,10 @@ HandlerDbObjectTable::CachedSession HandlerDbObjectTable::get_session(
           "Request to service with passthroughDbUser from a user authenticated "
           " through auth app '%s', which does not support it",
           ctxt->user.app_id.to_string().c_str());
+      // restd: the vendor is "MariaDB Internal" in metadata 5.0.0
       throw http::Error(HttpStatusCode::BadRequest,
                         "Service requires authentication with "
-                        "MySQL Internal, but user is authenticated with "
+                        "MariaDB Internal, but user is authenticated with "
                         "other authApp (or authentication was not configured)");
     }
 

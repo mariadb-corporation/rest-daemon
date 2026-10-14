@@ -14,7 +14,7 @@ if (!$overwrite_schema_version)
 
 echo # Checking that version=$overwrite_schema_version is incompatible for bootstrap;
 eval CREATE OR REPLACE SQL SECURITY INVOKER VIEW
-    mysql_rest_service_metadata.schema_version (major, minor, patch)
+    mariadb_rest_service.schema_version (major, minor, patch)
     AS SELECT $overwrite_schema_version;
 
 replace_regex

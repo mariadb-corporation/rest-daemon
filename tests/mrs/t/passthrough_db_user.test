@@ -31,12 +31,12 @@ grant execute on function db1.f2 to user2@'%';
 
 --source include/have_router.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 
 # set size of the passthroughDbUser db session pool
-update mysql_rest_service_metadata.config set data = json_merge_patch(data, '{"passthroughDbUser": {"poolSize": 4, "maxSessionsPerUser":7}}');
+update mariadb_rest_service.config set data = json_merge_patch(data, '{"passthroughDbUser": {"poolSize": 4, "maxSessionsPerUser":7}}');
 
 --source ../include/mrs/start_object_definition.inc
 
@@ -92,10 +92,10 @@ update mysql_rest_service_metadata.config set data = json_merge_patch(data, '{"p
 --let $mrs_add_db_object_path=/tbl2
 --source ../include/mrs/db_object/add.inc
 
-# add user1 and user2 as MySQL Internal accounts
+# add user1 and user2 as MariaDB Internal accounts
 --let $mrs_add_auth_app=default authentication
 --let $mrs_add_auth_registered_users_only=1
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/svc
 --source ../include/mrs/auth_app/add.inc
 
@@ -319,7 +319,7 @@ exec $MRS_CLIENT_ARGS
 --echo #
 --echo # III.2
 --echo # switch off restriction to registered users and try again with user3
-update mysql_rest_service_metadata.auth_app set limit_to_registered_users=0;
+update mariadb_rest_service.auth_app set limit_to_registered_users=0;
 
 --source ../include/mrs/wait_mrs_read_metadata.inc
 
@@ -492,7 +492,7 @@ exec $MRS_CLIENT_ARGS
 --echo # V.2
 
 --echo # shrink limits and see if it refreshes
-update mysql_rest_service_metadata.config set data = json_merge_patch(data, '{"passthroughDbUser": {"poolSize": 2, "maxSessionsPerUser": 1}}');
+update mariadb_rest_service.config set data = json_merge_patch(data, '{"passthroughDbUser": {"poolSize": 2, "maxSessionsPerUser": 1}}');
 --source ../include/mrs/wait_mrs_read_metadata.inc
 
 exec $MRS_CLIENT_ARGS

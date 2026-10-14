@@ -13,7 +13,7 @@
 #
 --source include/have_router.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/paging_schema.sql
 
@@ -74,7 +74,7 @@ exec $MRS_CLIENT_ARGS
 # Update `items_per_page`, additionally rename the object
 # to be able to dectec when router fetches the change by
 # accessing the object by new name.
-UPDATE `mysql_rest_service_metadata`.`db_object`
+UPDATE `mariadb_rest_service`.`rest_object`
   SET request_path="/m25", items_per_page=NULL
   WHERE request_path="/m2";
 

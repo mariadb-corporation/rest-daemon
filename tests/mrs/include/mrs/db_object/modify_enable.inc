@@ -13,7 +13,7 @@ if (!$mrs_modify_enabled)
 --disable_query_log
 --disable_result_log
 
-eval UPDATE `mysql_rest_service_metadata`.`db_object` SET enabled = $mrs_modify_enabled WHERE `id`=$mrs_sql_id_variable;
+eval UPDATE `mariadb_rest_service`.`rest_object` SET enabled = $mrs_modify_enabled WHERE `id`=$mrs_sql_id_variable;
 
 --enable_query_log
 --enable_result_log

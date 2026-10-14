@@ -4,7 +4,7 @@
 # mrs metadata logging is only enabled when md version is >= 4.0.2
 --source ../include/mrs/is_mrs_schema_v5.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/basic_schema.sql
 
@@ -65,19 +65,19 @@
 --echo #
 --echo # I.2
 --echo Check that all the fields that the Router is supposed to set are not null (we only check those that are not forced NOT NULL by the schema definition)
---assert(`select count(*) = 0 from mysql_rest_service_metadata.router_general_log where domain IS NULL OR message IS NULL OR thread_id IS NULL`)
+--assert(`select count(*) = 0 from mariadb_rest_service.rest_daemon_general_log where domain IS NULL OR message IS NULL OR thread_id IS NULL`)
 
 --echo
 --echo #
 --echo # I.3
 --echo Check that there are no SQL logs caused by the metadata logger itself
---assert(`select count(*) = 0 from mysql_rest_service_metadata.router_general_log where message LIKE '%router_general_log%'`)
+--assert(`select count(*) = 0 from mariadb_rest_service.rest_daemon_general_log where message LIKE '%rest_daemon_general_log%'`)
 
 --echo
 --echo #
 --echo # I.4
 --echo Set the log_level in the global config to INFO, also set the bufferSize to invalid value to trigger WARNING messages
-UPDATE mysql_rest_service_metadata.config SET data =
+UPDATE mariadb_rest_service.config SET data =
         JSON_SET(IFNULL(data, "{}"), "$.mrsMetadataLogger",
                         JSON_OBJECT("logLevel", "INFO", "flushInterval", 1, "bufferSize", "inv"));
 
@@ -88,18 +88,18 @@ UPDATE mysql_rest_service_metadata.config SET data =
 --source ../include/mrs/changes/wait_logs_flushed.inc
 
 --echo Delete all the logs so far
-truncate mysql_rest_service_metadata.router_general_log;
+truncate mariadb_rest_service.rest_daemon_general_log;
 
 --echo Wait for the MRS schema monitor to do another round so that there are some new debug logs triggered
 --source ../include/mrs/wait_mrs_read_metadata.inc
 
 --echo Make sure there are no DEBUG level logs
---assert(`select count(*) = 0 from mysql_rest_service_metadata.router_general_log where log_type = "DEBUG"`)
+--assert(`select count(*) = 0 from mariadb_rest_service.rest_daemon_general_log where log_type = "DEBUG"`)
 
 --echo
 --echo #
 --echo # II.1
-UPDATE mysql_rest_service_metadata.config SET data =
+UPDATE mariadb_rest_service.config SET data =
     JSON_SET(IFNULL(data, "{}"),
                     "$.mrsMetadataLogger", JSON_OBJECT("logLevel", "INVALID",
                                                        "flushInterval", 1));
@@ -111,7 +111,7 @@ UPDATE mysql_rest_service_metadata.config SET data =
 --echo
 --echo #
 --echo # II.2
-UPDATE mysql_rest_service_metadata.config SET data =
+UPDATE mariadb_rest_service.config SET data =
     JSON_SET(IFNULL(data, "{}"),
                     "$.mrsMetadataLogger", JSON_OBJECT("logLevel", "INFO",
                                                        "flushInterval", "inv",
@@ -124,7 +124,7 @@ UPDATE mysql_rest_service_metadata.config SET data =
 --echo
 --echo #
 --echo # II.3
-UPDATE mysql_rest_service_metadata.config SET data =
+UPDATE mariadb_rest_service.config SET data =
     JSON_SET(IFNULL(data, "{}"),
                     "$.mrsMetadataLogger", JSON_OBJECT("logLevel", "INFO",
                                                        "flushInterval", 0,
@@ -137,7 +137,7 @@ UPDATE mysql_rest_service_metadata.config SET data =
 --echo
 --echo #
 --echo # II.4
-UPDATE mysql_rest_service_metadata.config SET data =
+UPDATE mariadb_rest_service.config SET data =
     JSON_SET(IFNULL(data, "{}"),
                     "$.mrsMetadataLogger", JSON_OBJECT("logLevel", "INFO",
                                                        "flushInterval", 86401,
@@ -150,7 +150,7 @@ UPDATE mysql_rest_service_metadata.config SET data =
 --echo
 --echo #
 --echo # II.5
-UPDATE mysql_rest_service_metadata.config SET data =
+UPDATE mariadb_rest_service.config SET data =
     JSON_SET(IFNULL(data, "{}"),
                     "$.mrsMetadataLogger", JSON_OBJECT("logLevel", "INFO",
                                                        "flushInterval", "1",
@@ -163,7 +163,7 @@ UPDATE mysql_rest_service_metadata.config SET data =
 --echo
 --echo #
 --echo # II.6
-UPDATE mysql_rest_service_metadata.config SET data =
+UPDATE mariadb_rest_service.config SET data =
     JSON_SET(IFNULL(data, "{}"),
                     "$.mrsMetadataLogger", JSON_OBJECT("logLevel", "INFO",
                                                        "flushInterval", 1,
@@ -176,7 +176,7 @@ UPDATE mysql_rest_service_metadata.config SET data =
 --echo
 --echo #
 --echo # II.7
-UPDATE mysql_rest_service_metadata.config SET data =
+UPDATE mariadb_rest_service.config SET data =
     JSON_SET(IFNULL(data, "{}"),
                     "$.mrsMetadataLogger", JSON_OBJECT("logLevel", "INFO",
                                                        "flushInterval", 1,
@@ -191,7 +191,7 @@ UPDATE mysql_rest_service_metadata.config SET data =
 --echo # III.
 
 --echo set the options to valid values again (buffer size to a small value)
-UPDATE mysql_rest_service_metadata.config SET data =
+UPDATE mariadb_rest_service.config SET data =
     JSON_SET(IFNULL(data, "{}"),
                     "$.mrsMetadataLogger", JSON_OBJECT("logLevel", "DEBUG",
                                                        "flushInterval", 1,
@@ -201,7 +201,7 @@ UPDATE mysql_rest_service_metadata.config SET data =
 --source ../include/mrs/wait_mrs_read_metadata.inc
 
 --echo Delete all the logs so far
-truncate mysql_rest_service_metadata.router_general_log;
+truncate mariadb_rest_service.rest_daemon_general_log;
 
 --echo Set the global mode to read-only to make the logging to metadata impossible
 SET GLOBAL read_only = 1;

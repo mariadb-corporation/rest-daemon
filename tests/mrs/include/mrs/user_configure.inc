@@ -28,12 +28,12 @@ if (!$mrs_user_meta)
 
 if ($mrs_user_meta)
 {
-  eval GRANT 'mysql_rest_service_meta_provider' TO $mrs_user_meta;
+  eval GRANT 'mariadb_rest_service_meta_provider' TO $mrs_user_meta;
 }
 
 if ($mrs_user_data)
 {
-  eval GRANT 'mysql_rest_service_data_provider' TO $mrs_user_data;
+  eval GRANT 'mariadb_rest_service_data_provider' TO $mrs_user_data;
 }
 
 --enable_query_log

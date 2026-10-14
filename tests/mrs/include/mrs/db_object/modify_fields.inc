@@ -40,7 +40,7 @@ while($_columns)
   let $_fileds_element=`SELECT TRIM(REPLACE(SUBSTRING_INDEX("$_fileds", ",", 1),"\n",""))`;
   let $_fileds=`SELECT TRIM(SUBSTRING("$_fileds", LENGTH("$_fileds_element") + 2))`;
 
-  eval UPDATE mysql_rest_service_metadata.object_field
+  eval UPDATE mariadb_rest_service.data_mapping_field
      SET name="$_fileds_element"
      WHERE JSON_UNQUOTE(JSON_EXTRACT(db_column,"\$.name"))="$_column_element";
 }

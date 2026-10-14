@@ -131,7 +131,7 @@ OK
 II. Verify that value of field configured as no_check is not used for etag calculation
 
 Configure 'cvarchar' field as no_check
-update `mysql_rest_service_metadata`.`object_field` set no_check = 1 where name = "cvarchar";
+update `mariadb_rest_service`.`data_mapping_field` set no_check = 1 where name = "cvarchar";
 Check the initial etag for document id=1
 {
     "id": 1,
@@ -590,9 +590,9 @@ VIII. Verify that the PUT request containing etag that is string but not a valid
     "status": 412
 }
 DROP SCHEMA basic_schema;
-DROP SCHEMA mysql_rest_service_metadata;
-DROP ROLE mysql_rest_service_admin;
-DROP ROLE mysql_rest_service_schema_admin;
-DROP ROLE mysql_rest_service_meta_provider;
-DROP ROLE mysql_rest_service_data_provider;
-DROP ROLE mysql_rest_service_dev;
+DROP SCHEMA mariadb_rest_service;
+DROP ROLE mariadb_rest_service_admin;
+DROP ROLE mariadb_rest_service_schema_admin;
+DROP ROLE mariadb_rest_service_meta_provider;
+DROP ROLE mariadb_rest_service_data_provider;
+DROP ROLE mariadb_rest_service_dev;

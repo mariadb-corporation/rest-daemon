@@ -13,8 +13,8 @@ if (!$mrs_sql_id_variable)
 
 --disable_query_log
 --disable_result_log
-eval SET $mrs_sql_id_variable=mysql_rest_service_metadata.get_sequence_id();
-eval  INSERT INTO mysql_rest_service_metadata.url_host(id, name)
+eval SET $mrs_sql_id_variable=mariadb_rest_service.get_sequence_id();
+eval  INSERT INTO mariadb_rest_service.url_host(id, name)
       VALUES($mrs_sql_id_variable, $mrs_add_host_name);
 --enable_query_log
 --enable_result_log

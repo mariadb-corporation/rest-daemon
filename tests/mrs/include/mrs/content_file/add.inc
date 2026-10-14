@@ -25,8 +25,8 @@ if (!$mrs_add_content_file_auth)
 
 --disable_query_log
 --disable_result_log
-eval SET $mrs_sql_id_variable=mysql_rest_service_metadata.get_sequence_id();
-eval  INSERT INTO mysql_rest_service_metadata.content_file(
+eval SET $mrs_sql_id_variable=mariadb_rest_service.get_sequence_id();
+eval  INSERT INTO mariadb_rest_service.content_file(
                id, content_set_id, request_path,
                requires_auth, content $mrs_add_content_custom_fields)
       VALUES($mrs_sql_id_variable,  $mrs_content_set_id_sql_variable,
@@ -35,7 +35,7 @@ eval  INSERT INTO mysql_rest_service_metadata.content_file(
              $mrs_add_content
              $mrs_add_content_custom_values);
 
---let $_path=`SELECT CONCAT(s.url_context_root, db.request_path, o.request_path) FROM mysql_rest_service_metadata.content_file as o JOIN mysql_rest_service_metadata.content_set as db on db.id=o.content_set_id JOIN mysql_rest_service_metadata.service as s ON  s.id = db.service_id  WHERE o.id=$mrs_sql_id_variable;`
+--let $_path=`SELECT CONCAT(s.url_context_root, db.request_path, o.request_path) FROM mariadb_rest_service.content_file as o JOIN mariadb_rest_service.content_set as db on db.id=o.content_set_id JOIN mariadb_rest_service.service as s ON  s.id = db.service_id  WHERE o.id=$mrs_sql_id_variable;`
 --echo # Registred CONTENT_FILE at path: $_path
 
 --enable_query_log

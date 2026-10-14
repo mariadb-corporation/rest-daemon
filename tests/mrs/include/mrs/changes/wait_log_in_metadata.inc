@@ -11,8 +11,8 @@ if (!$mrs_log_expected_level)
 --disable_query_log
 --disable_result_log
 
-let $wait_condition=SELECT id FROM mysql_rest_service_metadata.router_general_log 
-WHERE router_id=$extra_mrs_router_id and log_type = $mrs_log_expected_level 
+let $wait_condition=SELECT id FROM mariadb_rest_service.rest_daemon_general_log 
+WHERE rest_daemon_id='$extra_mrs_router_id' and log_type = $mrs_log_expected_level 
 AND message LIKE $mrs_log_expected_message;
 --source include/wait_condition_or_abort.inc
 

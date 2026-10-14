@@ -29,8 +29,8 @@ if (!$mrs_sql_object_id_variable)
 --disable_query_log
 --disable_result_log
 
-eval SET $mrs_sql_object_id_variable=(SELECT mysql_rest_service_metadata.get_sequence_id());
-eval INSERT INTO `mysql_rest_service_metadata`.`object`(`id`, `db_object_id`, `kind`, `name`)
+eval SET $mrs_sql_object_id_variable=(SELECT mariadb_rest_service.get_sequence_id());
+eval INSERT INTO `mariadb_rest_service`.`data_mapping`(`id`, `rest_object_id`, `kind`, `name`)
        VALUES(
           $mrs_sql_object_id_variable,
           $mrs_sql_db_object_id_variable,
@@ -55,9 +55,9 @@ while($name)
   let $type_element=`SELECT TRIM(REPLACE(SUBSTRING_INDEX("$type", ",", 1),"\n",""))`;
   let $type=`SELECT TRIM(SUBSTRING("$type", LENGTH("$type_element") + 2))`;
 
-   eval INSERT INTO `mysql_rest_service_metadata`.`object_field`(`id`, `object_id`, `name`, `db_column`, `position`)
+   eval INSERT INTO `mariadb_rest_service`.`data_mapping_field`(`id`, `data_mapping_id`, `name`, `db_column`, `position`)
           VALUES(
-             mysql_rest_service_metadata.get_sequence_id(),
+             mariadb_rest_service.get_sequence_id(),
               $mrs_sql_object_id_variable,
               '$name_element',
               JSON_SET("{}",

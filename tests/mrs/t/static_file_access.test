@@ -4,7 +4,7 @@
 # Set the router-id, to generate statistics
 # this way we can wait until router detects
 # changes.
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/basic_schema.sql
 
@@ -39,7 +39,7 @@ CREATE USER user2@'%' IDENTIFIED BY 'secretpass2';
 
 # Auth
 --let $mrs_add_auth_app=default authentication
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/svc1
 --source ../include/mrs/auth_app/add.inc
 

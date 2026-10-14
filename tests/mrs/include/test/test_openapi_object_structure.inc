@@ -99,7 +99,7 @@ if ($mrs_schema_version>2)
 {
   --disable_query_log
   --disable_result_log
-  UPDATE `mysql_rest_service_metadata`.`service` SET name="" WHERE url_context_root="/svc";
+  UPDATE `mariadb_rest_service`.`service` SET name="" WHERE url_context_root="/svc";
   --enable_query_log
   --enable_result_log
 }

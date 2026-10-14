@@ -99,16 +99,16 @@ if ($mrs_add_db_object_type==FUNCTION)
 
 --disable_query_log
 --disable_result_log
-eval SET $mrs_sql_id_variable=mysql_rest_service_metadata.get_sequence_id();
-eval  INSERT INTO mysql_rest_service_metadata.db_object(
-               id, object_type, db_schema_id, name, request_path,
+eval SET $mrs_sql_id_variable=mariadb_rest_service.get_sequence_id();
+eval  INSERT INTO mariadb_rest_service.rest_object(
+               id, object_type, rest_schema_id, name, request_path,
                requires_auth, items_per_page, options, crud_operations, format $_mrs_tmp_columns $mrs_add_db_object_custom_fields)
       VALUES($mrs_sql_id_variable, "$mrs_add_db_object_type", $mrs_schema_id_sql_variable,
              "$mrs_add_db_object", "$mrs_add_db_object_path",
              $mrs_add_db_object_auth, $mrs_add_db_object_items_on_page,
              $mrs_add_db_object_options, "$mrs_add_db_object_op", "$mrs_add_db_object_format" $_mrs_tmp_values $mrs_add_db_object_custom_values);
              
---let $_path=`SELECT CONCAT(s.url_context_root, db.request_path, o.request_path) FROM mysql_rest_service_metadata.db_object as o JOIN mysql_rest_service_metadata.db_schema as db on db.id=o.db_schema_id JOIN mysql_rest_service_metadata.service as s ON  s.id = db.service_id  WHERE o.id=$mrs_sql_id_variable;`
+--let $_path=`SELECT CONCAT(s.url_context_root, db.request_path, o.request_path) FROM mariadb_rest_service.rest_object as o JOIN mariadb_rest_service.rest_schema as db on db.id=o.rest_schema_id JOIN mariadb_rest_service.service as s ON  s.id = db.service_id  WHERE o.id=$mrs_sql_id_variable;`
 --echo # Registred DB_OBJECT at path: $_path
 
 
@@ -141,14 +141,14 @@ if (!$mrs_add_db_object_do_not_auto_register_columns)
 
  if ($_is_procedure_or_function==1)
  {
-    --let $_schema_name=`SELECT name FROM mysql_rest_service_metadata.db_schema WHERE id=$mrs_schema_id_sql_variable`
-    eval SET @_proc_id=(SELECT mysql_rest_service_metadata.get_sequence_id());
-    eval INSERT INTO `mysql_rest_service_metadata`.`object`(id, db_object_id, name, kind)
+    --let $_schema_name=`SELECT name FROM mariadb_rest_service.rest_schema WHERE id=$mrs_schema_id_sql_variable`
+    eval SET @_proc_id=(SELECT mariadb_rest_service.get_sequence_id());
+    eval INSERT INTO `mariadb_rest_service`.`data_mapping`(id, rest_object_id, name, kind)
       VALUE(@_proc_id, $mrs_sql_id_variable, "$_schema_name.$mrs_add_db_object PARAMS", "PARAMETERS");
 
-    eval INSERT INTO `mysql_rest_service_metadata`.`object_field` (
-       `id`, `object_id`, `position`, `name`, `db_column`)
-    SELECT mysql_rest_service_metadata.get_sequence_id(), 
+    eval INSERT INTO `mariadb_rest_service`.`data_mapping_field` (
+       `id`, `data_mapping_id`, `position`, `name`, `db_column`)
+    SELECT mariadb_rest_service.get_sequence_id(), 
            @_proc_id,
            ORDINAL_POSITION, PARAMETER_NAME,
            JSON_SET("{}",
@@ -160,11 +160,11 @@ if (!$mrs_add_db_object_do_not_auto_register_columns)
      WHERE SPECIFIC_NAME="$mrs_add_db_object" and SPECIFIC_SCHEMA="$_schema_name" and PARAMETER_NAME is not NULL;
 
     if ($mrs_add_db_object_user_variables) {
-      set @_position=(SELECT MAX(position) FROM `mysql_rest_service_metadata`.`object_field` WHERE object_id=@_proc_id);
+      set @_position=(SELECT MAX(position) FROM `mariadb_rest_service`.`data_mapping_field` WHERE data_mapping_id=@_proc_id);
 
-      eval INSERT INTO `mysql_rest_service_metadata`.`object_field` (
-        `id`, `object_id`, `position`, `name`, `db_column`)
-      SELECT mysql_rest_service_metadata.get_sequence_id(),
+      eval INSERT INTO `mariadb_rest_service`.`data_mapping_field` (
+        `id`, `data_mapping_id`, `position`, `name`, `db_column`)
+      SELECT mariadb_rest_service.get_sequence_id(),
             @_proc_id,
             @_position+position, name,
             JSON_SET("{}",

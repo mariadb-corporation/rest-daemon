@@ -9,7 +9,7 @@
 eval INSTALL PLUGIN mysql_no_login SONAME '$MYSQL_NO_LOGIN';
 
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --let $mrs_user_meta=mrs_user@'%'
 --let $mrs_user_data=mrs_user@'%'
 --source ../include/predefined_setup/configure_router_mrs_root.inc
@@ -57,7 +57,7 @@ GRANT ALL ON *.* TO user_locked@'%';
 
 
 --let $mrs_add_auth_app=default authentication1
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/svc
 --source ../include/mrs/auth_app/add.inc
 
@@ -141,7 +141,7 @@ remove_file $MYSQL_TMP_DIR/user2_session.dat;
 # Using 'init-file' option in a test is trouble some, the cleanup must be done exactly to the state
 # like it was set by the file. Additionally all entries in mysql.user table, have a timestamp thus
 # the test can't drop the data and recreate it.
-REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'mysql_rest_service_meta_provider';
-REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'mysql_rest_service_data_provider';
-GRANT mysql_rest_service_meta_provider TO mrs_user WITH ADMIN OPTION;
-GRANT mysql_rest_service_data_provider TO mrs_user WITH ADMIN OPTION;
+REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'mariadb_rest_service_meta_provider';
+REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'mariadb_rest_service_data_provider';
+GRANT mariadb_rest_service_meta_provider TO mrs_user WITH ADMIN OPTION;
+GRANT mariadb_rest_service_data_provider TO mrs_user WITH ADMIN OPTION;

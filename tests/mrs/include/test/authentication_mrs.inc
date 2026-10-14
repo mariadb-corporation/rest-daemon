@@ -24,7 +24,7 @@ if (!$test_scram)
 }
 
 --let $_test_auth_app=
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../predefined_setup/configure_router_mrs_root.inc
 --source ../schema/basic_schema.sql
 

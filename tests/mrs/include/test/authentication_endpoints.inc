@@ -73,7 +73,7 @@ if ($test_param_authentication)
 --source ../mrs/service/add.inc
 
 --let $mrs_add_auth_app=b_one
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/b
 --source ../mrs/auth_app/add.inc
 
@@ -87,7 +87,7 @@ if ($test_param_authentication)
 --source ../mrs/service/add.inc
 
 --let $mrs_add_auth_app=c_one-of-two
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/c
 --source ../mrs/auth_app/add.inc
 
@@ -131,7 +131,7 @@ if ($test_param_authentication)
 --source ../mrs/db_object/add.inc
 
 --let $mrs_add_auth_app=e_one
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/e
 --source ../mrs/auth_app/add.inc
 
@@ -153,7 +153,7 @@ if ($test_param_authentication)
 --source ../mrs/db_object/add.inc
 
 --let $mrs_add_auth_app=f_one-of-two
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/f
 --source ../mrs/auth_app/add.inc
 
@@ -199,7 +199,7 @@ if ($test_param_authentication)
 --source ../mrs/db_object/add.inc
 
 --let $mrs_add_auth_app=h_one
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/h
 --source ../mrs/auth_app/add.inc
 
@@ -222,7 +222,7 @@ if ($test_param_authentication)
 --source ../mrs/db_object/add.inc
 
 --let $mrs_add_auth_app=i_one-of-two
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/i
 --source ../mrs/auth_app/add.inc
 

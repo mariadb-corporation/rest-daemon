@@ -97,7 +97,7 @@ if ($extra_mrs_meta_user) {
     }
     
     if ($extra_mrs_router_id) {
-        --eval SET @variable_extra_config = CONCAT(@variable_extra_config,"router_id=$extra_mrs_router_id\n");
+        --eval SET @variable_extra_config = CONCAT(@variable_extra_config,"rest_daemon_id=$extra_mrs_router_id\n");
     }
     
     if (!$extra_mrs_read_write_route)

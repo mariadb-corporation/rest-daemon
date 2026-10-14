@@ -71,8 +71,8 @@ create function test_schema.fn() returns int return 42;
 # Registred MRS USER: 'BanySvc'
 # Registred MRS USER: 'Bsvc2Only'
 # Registred MRS USER: 'FR6User'
-set @tmp=(select id from mysql_rest_service_metadata.mrs_role where caption='ular' limit 1);
-update mysql_rest_service_metadata.mrs_role set derived_from_role_id=@tmp where caption='circ';
+set @tmp=(select id from mariadb_rest_service.mrs_role where caption='ular' limit 1);
+update mariadb_rest_service.mrs_role set derived_from_role_id=@tmp where caption='circ';
 GET /svc/db/tbl
 {
     "message": "Unauthorized",
@@ -2296,10 +2296,10 @@ OK
 POST /svc/authentication/login (payload-size:71)
 
 OK
-DROP SCHEMA mysql_rest_service_metadata;
-DROP ROLE mysql_rest_service_admin;
-DROP ROLE mysql_rest_service_schema_admin;
-DROP ROLE mysql_rest_service_meta_provider;
-DROP ROLE mysql_rest_service_data_provider;
-DROP ROLE mysql_rest_service_dev;
+DROP SCHEMA mariadb_rest_service;
+DROP ROLE mariadb_rest_service_admin;
+DROP ROLE mariadb_rest_service_schema_admin;
+DROP ROLE mariadb_rest_service_meta_provider;
+DROP ROLE mariadb_rest_service_data_provider;
+DROP ROLE mariadb_rest_service_dev;
 drop schema test_schema;

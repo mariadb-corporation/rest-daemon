@@ -34,10 +34,10 @@ let $_fileds=$mrs_modify_fields;
 
 if ($mrs_sql_id_variable_ob)
 {
-  if (!`SELECT $mrs_sql_id_variable_ob`)
+  if (!`SELECT $mrs_sql_id_variable_ob IS NOT NULL`)
   {
-    eval SET $mrs_sql_id_variable_ob=mysql_rest_service_metadata.get_sequence_id();
-    eval INSERT INTO mysql_rest_service_metadata.object(id, db_object_id, name, kind) VALUES($mrs_sql_id_variable_ob, $mrs_sql_id_variable, "$mrs_modify_name", "RESULT");
+    eval SET $mrs_sql_id_variable_ob=mariadb_rest_service.get_sequence_id();
+    eval INSERT INTO mariadb_rest_service.data_mapping(id, rest_object_id, name, kind) VALUES($mrs_sql_id_variable_ob, $mrs_sql_id_variable, "$mrs_modify_name", "RESULT");
   }
 }
 
@@ -55,10 +55,10 @@ while($_columns)
   let $_fileds_element=`SELECT TRIM(REPLACE(SUBSTRING_INDEX("$_fileds", ",", 1),"\n",""))`;
   let $_fileds=`SELECT TRIM(SUBSTRING("$_fileds", LENGTH("$_fileds_element") + 2))`;
 
-  eval INSERT INTO mysql_rest_service_metadata.object_field
-       (id, name, object_id, enabled, position, db_column)
+  eval INSERT INTO mariadb_rest_service.data_mapping_field
+       (id, name, data_mapping_id, enabled, position, db_column)
        VALUE(
-         mysql_rest_service_metadata.get_sequence_id(),
+         mariadb_rest_service.get_sequence_id(),
          "$_fileds_element",
          $mrs_sql_id_variable_ob,1,0,JSON_SET("{}","$.name","$_column_element", "$.datatype", "TEXT"));
 }

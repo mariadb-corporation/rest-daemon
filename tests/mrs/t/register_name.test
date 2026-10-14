@@ -8,7 +8,7 @@ EOF
 # Set the router-id, to generate statistics
 # this way we can wait until router detects
 # changes to DB_OBJECTS.
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 
 
@@ -45,7 +45,7 @@ EOF
 --echo #
 --echo # I.1
 --replace_regex /^.+:\d+$/"Name found"/
-select router_name from mysql_rest_service_metadata.router;
+select name from mariadb_rest_service.rest_daemon;
 
 
 --echo
@@ -57,7 +57,7 @@ select router_name from mysql_rest_service_metadata.router;
 --source ../include/mysqlrouter_restart.inc
 --source ../include/mrs/wait_mrs_read_metadata.inc
 
-select router_name from mysql_rest_service_metadata.router;
+select name from mariadb_rest_service.rest_daemon;
 
 
 # Cleanup

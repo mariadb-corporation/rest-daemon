@@ -39,8 +39,8 @@ if (!$mrs_object_def_options)
 --disable_query_log
 --disable_result_log
 
-eval  INSERT INTO mysql_rest_service_metadata.content_set_has_obj_def(
-               content_set_id, db_object_id, kind, language,
+eval  INSERT INTO mariadb_rest_service.content_set_has_rest_object(
+               content_set_id, rest_object_id, kind, language,
                name, class_name, options)
       VALUES($mrs_object_def_content_set_id,
              $mrs_object_def_db_object_id,

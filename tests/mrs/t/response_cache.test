@@ -3,7 +3,7 @@
 
 --source ../include/mrs/is_mrs_schema_v5.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/basic_schema.sql
 
@@ -26,7 +26,7 @@ end$$
 delimiter ;$$
 
 # Set cache size for files and data
-update mysql_rest_service_metadata.config set data = json_merge_patch(data, '{"responseCache":{"maxCacheSize":1000}, "fileCache":{"maxCacheSize":40}}');
+update mariadb_rest_service.config set data = json_merge_patch(data, '{"responseCache":{"maxCacheSize":1000}, "fileCache":{"maxCacheSize":40}}');
 
 INSERT INTO `basic_schema`.`table4` (`id`, `first_name`, `last_name`)
   VALUES(42, "Big row", repeat('X', 1000));
@@ -167,12 +167,12 @@ INSERT INTO `basic_schema`.`table4` (`id`, `first_name`, `last_name`)
 --source ../include/mrs/end_object_definition.inc
 
 --source ../include/mrs/wait_mrs_read_metadata.inc
---let $last_id=`SELECT id FROM mysql_rest_service_metadata.router_status ORDER BY id DESC LIMIT 1`
+--let $last_id=`SELECT id FROM mariadb_rest_service.rest_daemon_status ORDER BY id DESC LIMIT 1`
 --let $old_event_enabled=`SELECT enabled FROM performance_schema.setup_consumers  where name='events_statements_history_long'`
 update performance_schema.setup_consumers set enabled=1 where name='events_statements_history_long';
 TRUNCATE TABLE performance_schema.events_statements_history_long;
 
-select http_requests_get, http_requests_post, http_requests_put, http_requests_delete, json_object('endpoints', (JSON_EXTRACT(details,'$.restCachedEndpoints')), 'itemLoads', (JSON_EXTRACT(details,'$.restCacheItemLoads')), 'itemEjects', (JSON_EXTRACT(details,'$.restCacheItemEjects')), 'itemHits', (JSON_EXTRACT(details,'$.restCacheItemHits')), 'itemMisses', (JSON_EXTRACT(details,'$.restCacheItemMisses')), 'items', (JSON_EXTRACT(details,'$.restCachedItems')), 'fileLoads', (JSON_EXTRACT(details,'$.restCacheFileLoads')), 'fileEjects', (JSON_EXTRACT(details,'$.restCacheFileEjects')), 'fileHits', (JSON_EXTRACT(details,'$.restCacheFileHits')), 'fileMisses', (JSON_EXTRACT(details,'$.restCacheFileMisses')), 'files', (JSON_EXTRACT(details,'$.restCachedFiles'))) as stats from mysql_rest_service_metadata.router_status order by id desc limit 1;
+select http_requests_get, http_requests_post, http_requests_put, http_requests_delete, json_object('endpoints', (JSON_EXTRACT(details,'$.restCachedEndpoints')), 'itemLoads', (JSON_EXTRACT(details,'$.restCacheItemLoads')), 'itemEjects', (JSON_EXTRACT(details,'$.restCacheItemEjects')), 'itemHits', (JSON_EXTRACT(details,'$.restCacheItemHits')), 'itemMisses', (JSON_EXTRACT(details,'$.restCacheItemMisses')), 'items', (JSON_EXTRACT(details,'$.restCachedItems')), 'fileLoads', (JSON_EXTRACT(details,'$.restCacheFileLoads')), 'fileEjects', (JSON_EXTRACT(details,'$.restCacheFileEjects')), 'fileHits', (JSON_EXTRACT(details,'$.restCacheFileHits')), 'fileMisses', (JSON_EXTRACT(details,'$.restCacheFileMisses')), 'files', (JSON_EXTRACT(details,'$.restCachedFiles'))) as stats from mariadb_rest_service.rest_daemon_status order by id desc limit 1;
 
 # Login
 
@@ -333,7 +333,7 @@ do sleep(3);
 --let $mrs_check_session_file=$MYSQL_TMP_DIR/rolet1_session.dat
 --source ../include/mrs/check_mrs_response_caching.inc
 
-update mysql_rest_service_metadata.mrs_privilege set crud_operations='DELETE' where object_path='/t1auth';
+update mariadb_rest_service.mrs_privilege set crud_operations='DELETE' where object_path='/t1auth';
 --source ../include/mrs/wait_mrs_read_metadata.inc
 
 --let $mrs_client_arg_path='/svc/basic/t1auth/100'
@@ -411,7 +411,7 @@ eval select json_object(
         'fileEjects', SUM(JSON_EXTRACT(details,'$.restCacheFileEjects')),
         'fileHits', SUM(JSON_EXTRACT(details,'$.restCacheFileHits')),
         'fileMisses', SUM(JSON_EXTRACT(details,'$.restCacheFileMisses'))
-        ) as stats from mysql_rest_service_metadata.router_status WHERE  id > $last_id;
+        ) as stats from mariadb_rest_service.rest_daemon_status WHERE  id > $last_id;
 --enable_query_log
 
 eval update performance_schema.setup_consumers set enabled="$old_event_enabled" where name='events_statements_history_long';

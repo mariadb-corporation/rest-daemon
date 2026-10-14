@@ -3,7 +3,7 @@
 #
 --source include/have_router.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 
@@ -30,7 +30,7 @@
 --echo
 --echo #
 --echo # I.1
-UPDATE mysql_rest_service_metadata.config SET `data` = '{
+UPDATE mariadb_rest_service.config SET `data` = '{
        "responseCache": {
          "maxCacheSize": "xyz"
        }
@@ -47,7 +47,7 @@ UPDATE mysql_rest_service_metadata.config SET `data` = '{
 --echo
 --echo #
 --echo # I.2
-UPDATE mysql_rest_service_metadata.config SET `data` = '{
+UPDATE mariadb_rest_service.config SET `data` = '{
        "fileCache": {
          "maxCacheSize": "xyz"
        }
@@ -64,7 +64,7 @@ UPDATE mysql_rest_service_metadata.config SET `data` = '{
 --echo
 --echo #
 --echo # I.3
-UPDATE mysql_rest_service_metadata.config SET `data` = '{
+UPDATE mariadb_rest_service.config SET `data` = '{
        "session": {
          "expiration": "xyz"
        }
@@ -81,7 +81,7 @@ UPDATE mysql_rest_service_metadata.config SET `data` = '{
 --echo
 --echo #
 --echo # I.4
-UPDATE mysql_rest_service_metadata.config SET `data` = '{
+UPDATE mariadb_rest_service.config SET `data` = '{
        "session": {
          "inactivity": "xyz"
        }
@@ -98,7 +98,7 @@ UPDATE mysql_rest_service_metadata.config SET `data` = '{
 --echo
 --echo #
 --echo # I.5
-UPDATE mysql_rest_service_metadata.config SET `data` = '{
+UPDATE mariadb_rest_service.config SET `data` = '{
        "jwt": {
          "expiration": "xyz"
        }
@@ -116,7 +116,7 @@ UPDATE mysql_rest_service_metadata.config SET `data` = '{
 --echo
 --echo #
 --echo # II.1
-UPDATE mysql_rest_service_metadata.config SET `data` = '{
+UPDATE mariadb_rest_service.config SET `data` = '{
        "session": {
          "expiration": 100000000000
         }
@@ -133,7 +133,7 @@ UPDATE mysql_rest_service_metadata.config SET `data` = '{
 --echo
 --echo #
 --echo # II.2
-UPDATE mysql_rest_service_metadata.config SET `data` = '{
+UPDATE mariadb_rest_service.config SET `data` = '{
        "session": {
          "inactivity": 100000000000
        }
@@ -150,7 +150,7 @@ UPDATE mysql_rest_service_metadata.config SET `data` = '{
 --echo
 --echo #
 --echo # II.3
-UPDATE mysql_rest_service_metadata.config SET `data` = '{
+UPDATE mariadb_rest_service.config SET `data` = '{
        "jwt": {
          "expiration": 100000000000
        }

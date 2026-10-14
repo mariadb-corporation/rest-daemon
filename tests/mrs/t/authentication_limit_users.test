@@ -8,7 +8,7 @@
 #
 --source include/have_router.inc
 
---let $extra_mrs_router_id=1
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
 --source ../include/predefined_setup/configure_router_mrs_root.inc
 --source ../include/schema/basic_schema.sql
 
@@ -47,14 +47,14 @@ CREATE USER 'u3'@'%' IDENTIFIED BY 'p3';
 --source ../include/mrs/db_object/add.inc
 
 --let $mrs_add_auth_app=default authentication
---let $mrs_add_auth_vendor=MySQL Internal
+--let $mrs_add_auth_vendor=MariaDB Internal
 --let $mrs_add_auth_service=/svc1
 --source ../include/mrs/auth_app/add.inc
 
 --echo # Limit max-attempts per user to "1"
 
 
-UPDATE  `mysql_rest_service_metadata`.`config` SET data=
+UPDATE  `mariadb_rest_service`.`config` SET data=
   '{"authentication":{"throttling":{"perAccount":{"maximumAttemptsPerMinute":1}}}}';
 
 --source ../include/mrs/end_object_definition.inc
@@ -117,7 +117,7 @@ exec $MRS_CLIENT_ARGS
   --session-file $MYSQL_TMP_DIR/user2_3_session.dat;
 
 --echo # change the maximumAttemptsPerMinute and check if it is applied.
-UPDATE  `mysql_rest_service_metadata`.`config` SET data=
+UPDATE  `mariadb_rest_service`.`config` SET data=
   '{"authentication":{"throttling":{"perAccount":{"maximumAttemptsPerMinute":2},"blockWhenAttemptsExceededInSeconds":2}}}';
 
 --source ../include/mrs/wait_mrs_read_metadata.inc
@@ -158,7 +158,7 @@ remove_file $MYSQL_TMP_DIR/user3_3_session.dat;
 remove_file $MYSQL_TMP_DIR/user3_4_session.dat;
 
 --echo # minimumTimeBetweenRequestsInMs (TSFR_1_2_1)
-UPDATE  `mysql_rest_service_metadata`.`config` SET data=
+UPDATE  `mariadb_rest_service`.`config` SET data=
   '{"authentication":{"throttling":{"perAccount":{"minimumTimeBetweenRequestsInMs":1000}}}}';
 
 --source ../include/mrs/wait_mrs_read_metadata.inc
