@@ -45,9 +45,11 @@
 #define CONFIG_FILES R"cfg(@CONFIG_FILES@)cfg"
 #define MYSQL_ROUTER_BINARY_FOLDER "@ROUTER_BINDIR@"
 #define MYSQL_ROUTER_PLUGIN_FOLDER "@ROUTER_PLUGINDIR@"
-/* restd: MariaDB Connector/C's client auth plugin directory (empty: the
-   library's own default) */
+/* restd: MariaDB Connector/C's client auth plugin directory of the build
+   (empty: the library's own default), and the directory next to the bundled
+   libmariadb the packages install them to, which takes precedence */
 #define MRSD_CLIENT_PLUGIN_DIR "@MARIADB_CLIENT_PLUGIN_DIR@"
+#define MRSD_CLIENT_PLUGIN_SUBDIR "@MRSD_CLIENT_PLUGIN_SUBDIR@"
 #define MYSQL_ROUTER_CONFIG_FOLDER "@ROUTER_CONFIGDIR@"
 #define MYSQL_ROUTER_RUNTIME_FOLDER "@ROUTER_RUNTIMEDIR@"
 #define MYSQL_ROUTER_LOGGING_FOLDER "@ROUTER_LOGDIR@"
