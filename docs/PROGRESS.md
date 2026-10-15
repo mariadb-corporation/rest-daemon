@@ -21,7 +21,7 @@ repository.
 | 3: MRS setup and cleanup | ✅ done 2026-10-05: branding (`mariadb-restd`), `--setup`, routing/cluster cleanup; tests pass on all three platforms |
 | 4: packaging and CI | ⏸ moved to Milestone 4 (2026-10-07): tar.gz (Linux, macOS), deb, rpm, Windows ZIP done and verified (unpacked); real deb/rpm installs need root; MSI deferred; CI last |
 
-**Milestone 1 (standalone daemon) is complete (2026-10-07). Milestone 2 (MariaDB) is complete (2026-10-13).** **Milestone 3 (schema 5.0.0) is complete (2026-10-14).** Next: the JSON-columns open point, then Milestone 4.
+**Milestone 1 (standalone daemon) is complete (2026-10-07). Milestone 2 (MariaDB) is complete (2026-10-13).** **Milestone 3 (schema 5.0.0) is complete (2026-10-14).** Milestone 5's release pipeline (builds, verification, publishing) is in place (2026-10-15). Next: the JSON-columns open point, then Milestone 4.
 
 | Milestone 2 phase | Status |
 |---|---|
@@ -891,3 +891,30 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   Release tarball, with the build's plugin directory hidden, loads the package's
   `client_ed25519.so`; from the build tree, the vcpkg one; ctest 96/96; smoke test with
   `MRSD_INSTALL`.
+
+### 2026-10-15: session 10 (release packages on GitHub-hosted runners, verification, publishing)
+
+- Build fixes for the hosted runners (`27aebcc`): ICU from vcpkg (`vcpkg.json` feature
+  `icu`; Rocky 9 has ICU 67, restd needs 69); `cmake/bootstrap_vcpkg.cmake` takes
+  `VCPKG_ROOT` only when it is a vcpkg git checkout and never replaces a directory that
+  isn't one (a Visual Studio developer environment points it at VS's bundled vcpkg under
+  "Program Files"); plugin PDBs installed `OPTIONAL`; the bundler sets
+  `CMAKE_POLICY(VERSION 3.24)` (CMake 3.x on `windows-2022`); the `-W` prefix regex; vcpkg's
+  `z.dll` bundled; RUNPATH `$ORIGIN` for `libjitexecutor.so`.
+- `rest-daemon-release.yml` (`866ae32`): STANDALONE packages for macOS, Windows and Linux
+  (Rocky 9 container), x64 and arm64, on a push to `release/candidate`; the JIT executor
+  library is cached per platform. GraalVM CE has no Windows ARM64 build (checked up to
+  `graal-25.4.4.1.1` and the 25.5 dev builds), so the `windows-arm64` leg builds the x64
+  package on an ARM64 runner and only the x64 leg's copy is published.
+  `verify-packages.yml` checks each package on a pristine runner
+  (`tools/release/verify_package.sh`) and leaves `verified-build-<run id>`.
+- `publish-release.yml` (`fbb5913`): creates the GitHub release from a verified run.
+  Release run `38669748749` and its verification `38671210624` passed on all six legs;
+  published `v26.10.0` as a pre-release (5 packages + `SHA256SUMS`). Its notes said MariaDB
+  Server 10.11 or later; corrected to 11.7 in the workflow (`2b4c73c`), the release itself
+  is fixed by running Publish Release for the same run again.
+- The self-hosted CI workflow (all suites) is drafted but parked until IT-23080 (GCP
+  workload-identity access, the GCP secrets, the org runner group).
+- `/checkpoint` and `/read-checkpoint` follow MariaDB Shell's: the context keeps only what
+  stays true (no git state, session history or machine details); `/read-checkpoint` reads
+  open PRs and dangling branches live.
