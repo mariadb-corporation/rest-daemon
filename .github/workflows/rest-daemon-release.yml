@@ -167,8 +167,11 @@ jobs:
           LOG_DIR: ${{ github.workspace }}/logs
         run: tools/release/build_package.sh
 
+      # As soon as the library is there (build_package.sh copies it right
+      # after the build), also when a later step fails: it takes the longest
+      # to build.
       - name: Save JIT executor library
-        if: steps.jit.outputs.cache-hit != 'true'
+        if: always() && steps.jit.outputs.cache-hit != 'true' && hashFiles('jit-cache/polyglot_api.h') != ''
         uses: actions/cache/save@v4
         with:
           path: jit-cache
@@ -315,8 +318,11 @@ jobs:
         if: always()
         run: sudo chown -R "$(id -u):$(id -g)" "${{ github.workspace }}"
 
+      # As soon as the library is there (build_package.sh copies it right
+      # after the build), also when a later step fails: it takes the longest
+      # to build.
       - name: Save JIT executor library
-        if: steps.jit.outputs.cache-hit != 'true'
+        if: always() && steps.jit.outputs.cache-hit != 'true' && hashFiles('jit-cache/polyglot_api.h') != ''
         uses: actions/cache/save@v4
         with:
           path: jit-cache

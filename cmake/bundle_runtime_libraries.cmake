@@ -30,6 +30,10 @@
 #                        Connector/C's client plugins, a subdirectory of
 #                        BUNDLE_DEST: they find the bundled libraries in ..
 
+# cmake_install.cmake runs with no policy settings of the project: without
+# this, a CMake 3.x takes IN_LIST (CMP0057) as an unknown argument
+CMAKE_POLICY(VERSION 3.24)
+
 SET(_prefix "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}")
 SET(_dest "${_prefix}/${BUNDLE_DEST}")
 SET(_client_plugins)
