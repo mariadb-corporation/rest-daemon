@@ -24,7 +24,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "mysqlrouter/router_openssl_export.h"
+#include "mysqlrouter/restd_openssl_export.h"
 
 #include <memory>
 
@@ -45,7 +45,7 @@ static void deinit(mysql_harness::PluginFuncEnv *) {
   tls_library_context.reset();
 }
 
-mysql_harness::Plugin ROUTER_OPENSSL_EXPORT harness_plugin_router_openssl = {
+mysql_harness::Plugin RESTD_OPENSSL_EXPORT harness_plugin_restd_openssl = {
     mysql_harness::PLUGIN_ABI_VERSION, mysql_harness::ARCHITECTURE_DESCRIPTOR,
     "openssl init plugin", VERSION_NUMBER(0, 0, 1),
     // requires

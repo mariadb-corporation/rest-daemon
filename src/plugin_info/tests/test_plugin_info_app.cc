@@ -307,7 +307,7 @@ const Plugin_data router_plugins[]{
     // restd: upstream checks the routing and metadata_cache plugins
     {"http_server", "HTTP_SERVER", "0.0.1", R"(
         "logger",
-        "router_openssl",
+        "restd_openssl",
         "io"
     )",
      ""},

@@ -36,7 +36,7 @@ ROUTER_ADD_SHARED_LIBRARY(router_utils
   uri.cc
   router_config_utils.cc
 
-  OUTPUT_NAME "mysqlrouter_utils"
+  OUTPUT_NAME "restd_utils"
 
   LINK_LIBRARIES
   PUBLIC
@@ -51,7 +51,7 @@ ROUTER_ADD_SHARED_LIBRARY(router_mysql
   common/server_compatibility.cc
   common/utils_sqlstring.cc
 
-  OUTPUT_NAME "mysqlrouter_mysql"
+  OUTPUT_NAME "restd_client"
 
   LINK_LIBRARIES
   PUBLIC
@@ -63,10 +63,12 @@ IF(MY_COMPILER_IS_GNU AND (WITH_LTO OR CMAKE_COMPILER_FLAG_WITH_LTO))
   TARGET_LINK_OPTIONS(router_mysql PRIVATE -Wno-error=stringop-overflow)
 ENDIF()
 
+# restd: the shared libraries are named librestd_*; the plugins and the
+# executables keep their own names
 IF(WIN32)
-  SET(router_lib_output_name "mysqlrouter_lib")
+  SET(router_lib_output_name "restd_lib")
 ELSE()
-  SET(router_lib_output_name "mysqlrouter")
+  SET(router_lib_output_name "restd")
 ENDIF()
 
 ROUTER_ADD_SHARED_LIBRARY(router_lib

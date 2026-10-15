@@ -493,9 +493,14 @@ with those repositories.
   `mrs_metadata_accounts`/`mrs_data_accounts`.
 - The old names are removed in the next major release.
 
-### Phase R3: package file names (optional)
-- `libmysqlrouter*`/`libmysqlharness*` (12 libraries), plugins `mysql_rest_service`,
-  `rest_router`, `router_openssl`; the rpm requires-exclude list. CMake output names only.
+### Phase R3: package file names ✅ done (2026-10-15)
+- The shared libraries are `librestd_*`: `librestd` (Windows `restd_lib.dll`),
+  `librestd_harness`, `librestd_harness_stdx`, `librestd_harness_tls`, `librestd_http`,
+  `librestd_http_auth_backend`, `librestd_http_auth_realm`, `librestd_http_client`,
+  `librestd_http_server`, `librestd_io_component`, `librestd_client` (was
+  `libmysqlrouter_mysql`), `librestd_utils` (CMake `OUTPUT_NAME`s; the targets keep their
+  names). The plugin `router_openssl` is `restd_openssl` (its name is in the other plugins'
+  requires lists). The rpm requires-exclude list follows.
 
 ### Verification
 Per phase: unit and component tests, the MRS suite (re-record only the results whose

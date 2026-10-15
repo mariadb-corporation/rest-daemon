@@ -918,3 +918,29 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
 - `/checkpoint` and `/read-checkpoint` follow MariaDB Shell's: the context keeps only what
   stays true (no git state, session history or machine details); `/read-checkpoint` reads
   open PRs and dangling branches live.
+
+### 2026-10-15: session 10, continued (rebranding round, PLAN.md "Rebranding round")
+
+- Decisions (user): product name **MariaDB REST Daemon** (as the shell, the schema
+  comments and the landing page); help banner as the shell's welcome banner; the
+  configuration section and its `mysql_*` keys renamed; package vendor/contact as the
+  shell's; no "Router" term in anything user-visible, internals (namespaces, directories,
+  include paths, CMake target names) untouched; changes touching the shell or the plugins
+  made in sync with those repositories.
+- R1 (`43e89ce`): product name, banner (`compat/include/mrsd/copyright_notice.h`),
+  `--help` wording, the client session's and other messages, certificate CNs, the HTTP
+  client's User-Agent, `LICENSE` (was `LICENSE.router`), upstream READMEs dropped.
+- R2 (`8d9a490`): `[mariadb_rest_service]` with `metadata_user`, `data_user`,
+  `read_write_destinations`, `read_only_destinations`, `ssl_*`, `tls_version`;
+  `MARIADB_RESTD_PID`; `restd-key.pem`/`restd-cert.pem`; `[rest_daemon]` /
+  `/daemon/status`. The old section, keys and variable are read with deprecation
+  warnings (`MySQLRouter::rename_deprecated_sections`, `PluginConfig`); `--setup --force`
+  reads an old deployment. Plugins (`restd.py`, its unit test, `rest.md`) read both
+  names and set both variables (uncommitted in that clone).
+- R3: shared libraries `librestd_*` (`librestd`, `_harness`, `_harness_stdx`,
+  `_harness_tls`, `_http*`, `_io_component`, `_client`, `_utils`), plugin `restd_openssl`,
+  the suite's client `mariadb-restd-mrs-client` (no longer installed: it was in the
+  package's component). Verified with ctest, the suite, an old-style configuration
+  (four deprecation warnings), the package and the smoke test on the unpacked package.
+- Kept on purpose: "MRS scripts", the `mrs_*` log domains, the OpenAPI scheme
+  `mrs_login`, the `rest_daemon.attributes` keys (the shell's own terms).

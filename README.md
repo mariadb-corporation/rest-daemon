@@ -138,7 +138,7 @@ In the build directory:
 - `runtime_output_directory/`: `mariadb-restd` (the daemon), `mariadb-restd-keyring`
   (keyring tool), `mariadb-restd-passwd` (password file tool for HTTP basic
   auth), `mariadb-restd-plugin-info` and, with the tests, `mysql_server_mock` and
-  `mysqlrouter_mrs_client`
+  `mariadb-restd-mrs-client` (the REST functional suite's client)
 - `plugin_output_directory/`: the plugins (`mariadb_rest_service`,
   `http_server`, `jit_executor`, ...)
 

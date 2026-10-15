@@ -118,7 +118,7 @@ class Paths:
         self.program = m.group(1)
         self.mrsd = self.bin / f"{self.program}{EXE}"
         self.keyring = self.bin / f"{self.program}-keyring{EXE}"
-        self.mrs_client = self.bin / f"mysqlrouter_mrs_client{EXE}"
+        self.mrs_client = self.bin / f"mariadb-restd-mrs-client{EXE}"
         if self.mariadb_package:
             self.mysqld = self.package / "bin" / f"mariadbd{EXE}"
             # Windows' installer is a program; Unix packages have the script

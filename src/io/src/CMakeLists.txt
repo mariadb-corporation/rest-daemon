@@ -30,7 +30,7 @@ ROUTER_ADD_SHARED_LIBRARY(io_component
   io_thread.cc
   thread_affinity.cc
 
-  OUTPUT_NAME "mysqlrouter_io_component"
+  OUTPUT_NAME "restd_io_component"
 
   LINK_LIBRARIES
   PUBLIC

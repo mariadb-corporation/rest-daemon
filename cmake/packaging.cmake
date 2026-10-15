@@ -87,7 +87,7 @@ IF(INSTALL_LAYOUT STREQUAL "SYSTEM")
   # (libmariadb, libjitexecutor, the internal libraries and the plugins)
   SET(CPACK_RPM_SPEC_MORE_DEFINE
 "%global __provides_exclude_from ^${CMAKE_INSTALL_PREFIX}/lib/${MRSD_PROGRAM_NAME}/.*$
-%global __requires_exclude ^(lib(mariadb|jitexecutor|mysqlharness|mysqlrouter)[^(]*|[a-z_]+[.]so)[(]")
+%global __requires_exclude ^(lib(mariadb|jitexecutor|restd)[^(]*|[a-z_]+[.]so)[(]")
   SET(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
     /usr/lib/systemd /usr/lib/systemd/system /usr/lib/sysusers.d
     /usr/lib/tmpfiles.d /usr/share/doc)
