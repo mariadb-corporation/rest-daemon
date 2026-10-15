@@ -434,10 +434,64 @@ a change on their side, coordinated with the daemon:
   into SQL unchecked (hardening on the shell side).
 - **Shell docs** still show `0x…` vendor ids (`python-client-api.md`,
   `typescript-client-api.md`); they follow the `vendorId` decision.
-- **Product name**: "MariaDB REST Daemon" (shell, schema, landing page) vs this repo's
-  "MariaDB REST Service Daemon"; low priority (user, 2026-10-13).
+- **Product name**: "MariaDB REST Daemon", as the shell, the schema comments and the landing
+  page (decided 2026-10-15; see "Rebranding round").
 - Kept as is, matching the shell's docs: the session cookie names
   `session_<32 hex digits of the auth app id>`; JWT `user_id`/`iss` hex (internal).
+
+## Rebranding round (started 2026-10-15)
+
+What a user still sees as MySQL / Router / MRS / Oracle, and the plan to remove it. Scope:
+user-visible parts only (help screens, messages, configuration, generated files, packages,
+docs); internal namespaces, directories, include paths and CMake target names stay.
+
+Decisions (2026-10-15): product name **MariaDB REST Daemon**; the help-screen banner worded
+as MariaDB Shell's welcome banner ("Copyright (c) <first year>, <year>, Oracle, MariaDB plc
+and others."); the configuration section and its `mysql_*` keys are renamed; package vendor
+and contact as the shell's ("MariaDB Corporation <info@mariadb.com>"); the "Router" term goes
+from everything user-visible; changes that touch the shell or the plugins are made in sync
+with those repositories.
+
+### Phase R1: text only, no compatibility impact ✅ done (2026-10-15)
+- `cmake/settings.cmake`: product name, package summary/description, vendor, contact.
+- The banner (`compat/include/mrsd/copyright_notice.h`, `MRSD_WELCOME_COPYRIGHT_NOTICE`) in
+  the four help screens; `--help` wording ("MariaDB server", plugin-info's examples).
+- Messages: `mysql_session.cc` ("Error executing query", "Error connecting to the MariaDB
+  server at", reaching REST clients in the `what` field of error bodies),
+  `bootstrap_mysql_account.cc`, the SCRAM handler's name ("MRS vendor authentication
+  application"), the AppArmor hint, `main.cc`, systemd `STATUS`, the thread name, the HTTP
+  client's User-Agent (`mariadb-restd/<version>`).
+- Generated certificates: CN/issuer `MariaDB_REST_Daemon_Auto_Generated_*` (new deployments).
+- `LICENSE` (was `LICENSE.router`, header as the shell's `LICENSE`); `README.router` and
+  `MRS_README.router` dropped; README and release notes.
+- "MRS scripts" stays: it is the shell's name for the feature.
+
+### Phase R2: names with compatibility impact (in sync with the plugins)
+- `[mysql_rest_service]` → new section name, `mysql_user` → `user`-style keys (12 `mysql_*`
+  keys). The section name is also the plugin's file name (the harness loads `<section>.so`):
+  either a section-to-plugin alias in the harness or the plugin file renamed with it. The
+  old names are accepted with a deprecation warning for one release.
+- `ROUTER_PID` (read by the daemon, written to `start.sh`/`start.ps1`, set by the plugins'
+  `restd.py`) → `MARIADB_RESTD_PID`, both read; `router-key.pem`/`router-cert.pem` →
+  `restd-*.pem` (new deployments; existing configs name the paths); `[rest_router]`'s
+  `/api/20190715/router/status`; log domains `mrs_*` (also stored in
+  `rest_daemon_general_log.domain`: check the shell's views first); the OpenAPI security
+  scheme `mrs_login`; the `rest_daemon.attributes` keys `mrs_metadata_accounts` /
+  `mrs_data_accounts` (nothing in the shell or plugins reads them).
+- The plugins read section `mysql_rest_service`, keys `mysql_user`/`mysql_user_data_access`
+  (`mcp_plugin/lib/restd.py`) and set `ROUTER_PID`: the daemon accepts both names first,
+  the plugins switch in the same round, the old names go a release later.
+- Docs: README (configuration, "Differences from MySQL Router's MRS configuration"),
+  `docs/mariadb-differences.md`, the plugins' `rest.md`.
+
+### Phase R3: package file names (optional)
+- `libmysqlrouter*`/`libmysqlharness*` (12 libraries), plugins `mysql_rest_service`,
+  `rest_router`, `router_openssl`; the rpm requires-exclude list. CMake output names only.
+
+### Verification
+Per phase: unit and component tests, the MRS suite (re-record only the results whose
+output changed), the smoke test, a release build checked with `verify_package.sh`; for R2
+also the plugins' tests against the new daemon.
 
 ## Open point: JSON columns on MariaDB (review after Milestone 3)
 
@@ -606,3 +660,8 @@ mrsd/
   `if`); id-valued variables are tested with `== ''` / `IS NOT NULL`. `--setup` now goes
   through `metadata_sql()` for its `rest_daemon` statements (missed in M3.2). The shell and
   plugins checkouts may be used and built again (their 5.0.0 work is merged).
+- 2026-10-15: rebranding round (user): product name "MariaDB REST Daemon" (as the shell,
+  the schema comments and the landing page); help banner as the shell's welcome banner;
+  `[mysql_rest_service]` and its `mysql_*` keys to be renamed (R2); package vendor/contact
+  as the shell's; no "Router" term in anything user-visible, internals untouched; changes
+  touching the shell or the plugins in sync with those repositories. R1 done.

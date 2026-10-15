@@ -109,7 +109,7 @@ MySQLSession::MySQLSession() {
   connected_ = false;
   if (!mysql_init(connection_)) {
     // not supposed to happen
-    throw std::logic_error("Error initializing MySQL connection structure");
+    throw std::logic_error("Error initializing the client connection structure");
   }
 
   // restd: libmariadb 3.4 defaults to TLS with certificate verification, which
@@ -178,36 +178,36 @@ void MySQLSession::set_ssl_options(mysql_ssl_mode ssl_mode,
                                    const std::string &crl,
                                    const std::string &crlpath) {
   if (!ssl_cipher.empty() && !set_option(SslCipher(ssl_cipher.c_str()))) {
-    throw Error(("Error setting SSL_CIPHER option for MySQL connection: " +
+    throw Error(("Error setting SSL_CIPHER option for the server connection: " +
                  std::string(mysql_error(connection_))),
                 mysql_errno(connection_));
   }
 
   if (!tls_version.empty() && !set_option(TlsVersion(tls_version.c_str()))) {
-    throw Error("Error setting TLS_VERSION option for MySQL connection",
+    throw Error("Error setting TLS_VERSION option for the server connection",
                 mysql_errno(connection_));
   }
 
   if (!ca.empty() && !set_option(SslCa(ca.c_str()))) {
-    throw Error(("Error setting SSL_CA option for MySQL connection: " +
+    throw Error(("Error setting SSL_CA option for the server connection: " +
                  std::string(mysql_error(connection_))),
                 mysql_errno(connection_));
   }
 
   if (!capath.empty() && !set_option(SslCaPath(capath.c_str()))) {
-    throw Error(("Error setting SSL_CAPATH option for MySQL connection: " +
+    throw Error(("Error setting SSL_CAPATH option for the server connection: " +
                  std::string(mysql_error(connection_))),
                 mysql_errno(connection_));
   }
 
   if (!crl.empty() && !set_option(SslCrl(crl.c_str()))) {
-    throw Error(("Error setting SSL_CRL option for MySQL connection: " +
+    throw Error(("Error setting SSL_CRL option for the server connection: " +
                  std::string(mysql_error(connection_))),
                 mysql_errno(connection_));
   }
 
   if (!crlpath.empty() && !set_option(SslCrlPath(crlpath.c_str()))) {
-    throw Error(("Error setting SSL_CRLPATH option for MySQL connection: " +
+    throw Error(("Error setting SSL_CRLPATH option for the server connection: " +
                  std::string(mysql_error(connection_))),
                 mysql_errno(connection_));
   }
@@ -409,7 +409,7 @@ void MySQLSession::connect(const std::string &host, unsigned int port,
 
   if (!do_connect()) {
     std::stringstream ss;
-    ss << "Error connecting to MySQL server at " << endpoint_str;
+    ss << "Error connecting to the MariaDB server at " << endpoint_str;
     ss << ": " << mysql_error(connection_) << " (" << mysql_errno(connection_)
        << ")";
     throw Error(ss.str(), mysql_errno(connection_));
@@ -421,7 +421,7 @@ void MySQLSession::connect(const std::string &host, unsigned int port,
       mysql_get_ssl_cipher(connection_) == nullptr) {
     mysql_close(connection_);
     mysql_init(connection_);
-    throw Error("Error connecting to MySQL server at " + endpoint_str +
+    throw Error("Error connecting to the MariaDB server at " + endpoint_str +
                     ": SSL is required, but the server does not support it",
                 CR_SSL_CONNECTION_ERROR);
   }
@@ -463,7 +463,7 @@ void MySQLSession::connect(const MySQLSession &other,
 void MySQLSession::reset() {
   if (mysql_reset_connection(connection_)) {
     std::stringstream ss;
-    ss << "Error while resetting session, MySQL server at "
+    ss << "Error while resetting session, MariaDB server at "
        << connection_address_;
     ss << ": " << mysql_error(connection_) << " (" << mysql_errno(connection_)
        << ")";
@@ -483,7 +483,7 @@ void MySQLSession::change_user(const std::string &user,
   if (mysql_change_user(connection_, user.c_str(), password.c_str(),
                         db.c_str())) {
     std::stringstream ss;
-    ss << "Error while changing user, MySQL server at " << connection_address_;
+    ss << "Error while changing user, MariaDB server at " << connection_address_;
     ss << ": " << mysql_error(connection_) << " (" << mysql_errno(connection_)
        << ")";
     throw Error(ss.str(), mysql_errno(connection_));
@@ -588,7 +588,7 @@ uint64_t MySQLSession::prepare(const std::string &query) {
     auto err_no = mysql_stmt_errno(stmt);
     std::string err_msg = mysql_stmt_error(stmt);
     std::stringstream ss;
-    ss << "Error preparing MySQL query \"" << get_log_filter().filter(query);
+    ss << "Error preparing query \"" << get_log_filter().filter(query);
     ss << "\": " << err_msg << " (" << err_no << ")";
     prepare_remove(current);
     throw Error(ss.str(), err_no, err_msg);
@@ -714,7 +714,7 @@ void MySQLSession::execute(const std::string &q) {
     auto ec = query_res.error();
 
     std::stringstream ss;
-    ss << "Error executing MySQL query \"" << get_log_filter().filter(q);
+    ss << "Error executing query \"" << get_log_filter().filter(q);
     ss << "\": " << ec.message() << " (" << ec.value() << ")";
     throw Error(ss.str(), ec.value(), ec.message());
   }
@@ -767,7 +767,7 @@ void MySQLSession::query(const std::string &q,
     auto ec = query_res.error();
 
     std::stringstream ss;
-    ss << "Error executing MySQL query \"" << get_log_filter().filter(q);
+    ss << "Error executing query \"" << get_log_filter().filter(q);
     ss << "\": " << ec.message() << " (" << ec.value() << ")";
     throw Error(ss.str(), ec.value(), ec.message());
   }
@@ -804,7 +804,7 @@ std::unique_ptr<MySQLSession::ResultRow> MySQLSession::query_one(
     auto ec = query_res.error();
 
     std::stringstream ss;
-    ss << "Error executing MySQL query \"" << get_log_filter().filter(q);
+    ss << "Error executing query \"" << get_log_filter().filter(q);
     ss << "\": " << ec.message() << " (" << ec.value() << ")";
     throw Error(ss.str(), ec.value(), ec.message());
   }

@@ -959,7 +959,7 @@ TEST_P(NotifyBootstrapNotAffectedTest, NotifyBootstrapNotAffected) {
 INSTANTIATE_TEST_SUITE_P(
     NotifyBootstrapNotAffected, NotifyBootstrapNotAffectedTest,
     ::testing::Values("READY=1",
-                      "STOPPING=1\nSTATUS=Router shutdown in progress\n"));
+                      "STOPPING=1\nSTATUS=Shutdown in progress\n"));
 
 /**
  * @test TS_R5_5

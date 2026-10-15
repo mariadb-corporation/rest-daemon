@@ -70,7 +70,7 @@
 #include "print_version.h"
 #include "router_config.h"  // MYSQL_ROUTER_VERSION
 #include "scope_guard.h"
-#include "welcome_copyright_notice.h"
+#include "mrsd/copyright_notice.h"
 
 #ifndef _WIN32
 #include <fcntl.h>
@@ -779,7 +779,7 @@ void MySQLRouter::prepare_command_options() noexcept {
   // restd: --setup is handled in main.cc when it is the first argument
   arg_handler_.add_option(
       OptionNames({"--setup"}),
-      "Prepare a deployment directory for a MySQL server and exit; must be "
+      "Prepare a deployment directory for a MariaDB server and exit; must be "
       "the first option. See --setup --help.",
       CmdOptionValueReq::none, "", [](const std::string &) {
         throw std::runtime_error("--setup must be the first option");
@@ -812,7 +812,7 @@ static void markup_configfile(std::ostream &os, const std::string &filename) {
 
 void MySQLRouter::show_help() {
   out_stream_ << get_version_line() << std::endl;
-  out_stream_ << ORACLE_WELCOME_COPYRIGHT_NOTICE("2015") << std::endl;
+  out_stream_ << MRSD_WELCOME_COPYRIGHT_NOTICE("2015") << std::endl;
 
   for (auto line : wrap_string(
            "Configuration read from the following files in the given order"
@@ -928,7 +928,7 @@ void MySQLRouter::show_usage(bool include_options) noexcept {
               << Vt100::render(Vt100::Render::Bold) << "# Examples"
               << Vt100::render(Vt100::Render::Normal) << "\n\n";
 
-  out_stream_ << "Set up a deployment directory for a MySQL server\n\n"
+  out_stream_ << "Set up a deployment directory for a MariaDB server\n\n"
               << "    " << kProgramName << " --setup admin@db1:3306 -d myconfig"
               << "\n\n"
               << "Start with a configuration file\n\n"

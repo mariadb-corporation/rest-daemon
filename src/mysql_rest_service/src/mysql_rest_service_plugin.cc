@@ -351,7 +351,7 @@ static void init(mysql_harness::PluginFuncEnv *env) {
 }
 
 static void run(mysql_harness::PluginFuncEnv *env) {
-  my_thread_self_setname("MRS main");
+  my_thread_self_setname("restd main");
   log_debug("run");
   using namespace std::chrono_literals;
   try {

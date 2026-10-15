@@ -122,7 +122,7 @@ TEST_F(RouterStacktraceTest, bootstrap_with_core_file) {
 
   // as the mock-server doesn't run a bootstrap script, the SQL will fail.
   EXPECT_THAT(r.get_full_output(),
-              ::testing::HasSubstr("Error executing MySQL query"));
+              ::testing::HasSubstr("Error executing query"));
 }
 
 // TS_1_2

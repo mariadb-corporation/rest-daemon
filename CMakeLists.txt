@@ -139,14 +139,13 @@ ADD_SUBDIRECTORY(compat)
 # ---------------------------------------------------------------------------
 # from here on: upstream router/CMakeLists.txt (trimmed)
 # ---------------------------------------------------------------------------
-SET(ROUTER_LICENSE_FILE "${CMAKE_SOURCE_DIR}/LICENSE.router")
+SET(ROUTER_LICENSE_FILE "${CMAKE_SOURCE_DIR}/LICENSE")
 SET(ROUTER_README_FILE "${CMAKE_SOURCE_DIR}/README.md")
 INSTALL(FILES
   ${CMAKE_SOURCE_DIR}/README.md
-  ${CMAKE_SOURCE_DIR}/MRS_README.router
   DESTINATION ${ROUTER_INSTALL_DOCDIR} COMPONENT Router)
 INSTALL(FILES ${ROUTER_LICENSE_FILE}
-  DESTINATION ${ROUTER_INSTALL_DOCDIR} RENAME LICENSE COMPONENT Router)
+  DESTINATION ${ROUTER_INSTALL_DOCDIR} COMPONENT Router)
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/packaging/sample.conf
   DESTINATION ${ROUTER_INSTALL_DOCDIR}
   RENAME ${MRSD_PROGRAM_NAME}.conf.sample COMPONENT Router)

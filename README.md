@@ -1,4 +1,4 @@
-# mariadb-restd: MariaDB REST Service Daemon
+# mariadb-restd: MariaDB REST Daemon
 
 mariadb-restd ("restd" for short) is the **MariaDB REST Service** daemon: it
 serves REST endpoints for MariaDB tables, views, stored procedures, functions
@@ -314,8 +314,7 @@ Router.
 
 REST services, schemas and objects are defined in the REST metadata schema with
 the MariaDB shell's REST SQL (`CREATE REST SERVICE ...`) or its VS Code
-extension. REST scripts: see [MRS_README.router](MRS_README.router) (upstream's
-description, which still applies).
+extension.
 
 ## Testing
 
@@ -372,9 +371,6 @@ parameters.
 | `tools/` | smoke test, analysis scripts (dependency closure, the suite's schema generator and converter) |
 | `docs/` | plan, progress log, inventories, differences from the MySQL REST Service |
 
-[README.router](README.router) and [MRS_README.router](MRS_README.router) are
-MySQL Router's documentation, kept from upstream.
-
 ## License
 
-GPLv2, see [LICENSE.router](LICENSE.router).
+GPLv2, see [LICENSE](LICENSE).

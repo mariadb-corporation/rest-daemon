@@ -80,9 +80,9 @@ class ROUTER_LIB_EXPORT CertificateHandler {
   mysql_harness::Path ca_cert_path_;
   mysql_harness::Path router_key_path_;
   mysql_harness::Path router_cert_path_;
-  const std::string k_CA_CN{"MySQL_Router_Auto_Generated_CA_Certificate"};
+  const std::string k_CA_CN{"MariaDB_REST_Daemon_Auto_Generated_CA_Certificate"};
   const std::string k_router_CN{
-      "MySQL_Router_Auto_Generated_Router_Certificate"};
+      "MariaDB_REST_Daemon_Auto_Generated_Daemon_Certificate"};
 };
 
 #endif  // ROUTER_CERTIFICATE_HANDLER_INCLUDED

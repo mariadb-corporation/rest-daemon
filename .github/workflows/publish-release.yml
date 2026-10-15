@@ -258,7 +258,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          NOTES="MariaDB REST Service Daemon (mariadb-restd) $VERSION, built from
+          NOTES="MariaDB REST Daemon (mariadb-restd) $VERSION, built from
           \`$SHA\` (build run $RUN_ID, verified by run $VERIFY_RUN_ID).
 
           ## Packages

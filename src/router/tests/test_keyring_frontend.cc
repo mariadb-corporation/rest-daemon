@@ -51,7 +51,7 @@
 #include "mysqlrouter/utils.h"             // set_prompt_password
 #include "print_version.h"                 // build_version
 #include "router_config.h"                 // MYSQL_ROUTER_PACKAGE_NAME
-#include "welcome_copyright_notice.h"      // ORACLE_WELCOME_COPYRIGHT_NOTICE
+#include "mrsd/copyright_notice.h"  // MRSD_WELCOME_COPYRIGHT_NOTICE
 
 constexpr const char kAppExeFileName[]{MRSD_PROGRAM_NAME "-keyring"};
 
@@ -222,7 +222,7 @@ static std::string version_builder() {
 
   std::stringstream os;
   os << version_string << std::endl
-     << ORACLE_WELCOME_COPYRIGHT_NOTICE("2019") << std::endl;
+     << MRSD_WELCOME_COPYRIGHT_NOTICE("2019") << std::endl;
 
   return os.str();
 }

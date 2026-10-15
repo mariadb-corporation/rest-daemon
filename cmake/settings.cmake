@@ -22,7 +22,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-# Settings for building MySQL Router
+# Settings for building the daemon
 
 # General
 # restd: the program and product names are set here only; the executables,
@@ -30,20 +30,20 @@
 # MRS metadata registration derive from them. Plain variables, so that a
 # change also reaches existing build directories.
 SET(MRSD_PROGRAM_NAME "mariadb-restd")
-SET(MYSQL_ROUTER_NAME "MariaDB REST Service Daemon")
+SET(MYSQL_ROUTER_NAME "MariaDB REST Daemon")
 SET(MYSQL_ROUTER_INI "${MRSD_PROGRAM_NAME}.conf")
 
 # package metadata (cmake/packaging.cmake)
-SET(MRSD_PACKAGE_VENDOR "MariaDB plc")
-SET(MRSD_PACKAGE_CONTACT "MariaDB plc <maintainer address not set yet>"
+SET(MRSD_PACKAGE_VENDOR "MariaDB Corporation")
+SET(MRSD_PACKAGE_CONTACT "MariaDB Corporation <info@mariadb.com>"
   CACHE STRING "Maintainer of the packages: Name <email>")
 SET(MRSD_PACKAGE_SUMMARY
-  "standalone daemon for the MySQL REST Service (MRS)")
+  "${MYSQL_ROUTER_NAME} ${MRSD_VERSION}, the REST service daemon for MariaDB")
 SET(MRSD_PACKAGE_DESCRIPTION
-  "${MYSQL_ROUTER_NAME} serves REST endpoints for MySQL tables, views, \
-stored procedures, functions and scripts, as defined in the MySQL REST \
-Service metadata schema of a MySQL server.")
-SET(MRSD_PACKAGE_HOMEPAGE "https://mariadb.com"
+  "${MYSQL_ROUTER_NAME} serves REST endpoints for MariaDB tables, views, \
+stored procedures, functions and scripts, as defined in the MariaDB REST \
+Service metadata schema of a MariaDB server.")
+SET(MRSD_PACKAGE_HOMEPAGE "https://mariadb.com/"
   CACHE STRING "Homepage shown in the packages")
 
 # MySQL Harness

@@ -53,7 +53,7 @@ rest_daemon_id=UUID
 
 select id, name, product_name, options from mariadb_rest_service.rest_daemon;
 id	name	product_name	options
-UUID	MyName	MariaDB REST Service Daemon	{}
+UUID	MyName	MariaDB REST Daemon	{}
 select attributes from mariadb_rest_service.rest_daemon;
 attributes
 {"mrs_metadata_accounts": ["mariadb_restd_RANDOM"]}

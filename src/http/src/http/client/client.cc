@@ -316,7 +316,7 @@ void Client::async_send_request(http::client::Request *request) {
     auto &headers = request->get_output_headers();
     impl::headers_add_if_not_present(&headers, "Host", endpoint.host.c_str());
     impl::headers_add_if_not_present(
-        &headers, "User-Agent", "router-http-client/" MYSQL_ROUTER_VERSION);
+        &headers, "User-Agent", MRSD_PROGRAM_NAME "/" MYSQL_ROUTER_VERSION);
     impl::headers_add_if_not_present(&headers, "Accept", "*/*");
 
     if (use_http2_) {

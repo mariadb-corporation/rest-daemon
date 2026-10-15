@@ -415,7 +415,7 @@ TEST_F(RouterCmdlineTest, help_output_is_sane) {
               ::testing::StartsWith(MYSQL_ROUTER_PACKAGE_NAME "  Ver "));
   EXPECT_THAT(
       router.get_full_output(),
-      ::testing::HasSubstr("Oracle is a registered trademark of Oracle"));
+      ::testing::HasSubstr(", Oracle, MariaDB plc and others."));
 
   EXPECT_THAT(
       router.get_full_output(),

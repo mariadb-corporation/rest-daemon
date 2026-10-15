@@ -124,7 +124,7 @@ ScramHandler::ScramHandler(const AuthApp &entry, const std::string &random_data,
 }
 
 const std::string &ScramHandler::get_handler_name() const {
-  static const std::string k_app_name{"MRS authentication application"};
+  static const std::string k_app_name{"MRS vendor authentication application"};
 
   return k_app_name;
 }

@@ -52,7 +52,7 @@ rest_daemon_id=UUID
 
 select id, product_name, options from mariadb_rest_service.rest_daemon;
 id	product_name	options
-UUID	MariaDB REST Service Daemon	{}
+UUID	MariaDB REST Daemon	{}
 select name from mariadb_rest_service.rest_daemon;
 name
 "Name found"

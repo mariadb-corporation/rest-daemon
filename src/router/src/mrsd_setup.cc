@@ -51,7 +51,7 @@
 #include "random_generator.h"
 #include "router_config.h"  // MRSD_PROGRAM_NAME, MYSQL_ROUTER_PACKAGE_NAME
 #include "socket_operations.h"
-#include "welcome_copyright_notice.h"
+#include "mrsd/copyright_notice.h"
 
 using mysql_harness::Path;
 using mysqlrouter::MySQLSession;
@@ -240,7 +240,7 @@ void MrsdSetup::prepare_command_options() {
             value, "--read-timeout", 1);
       });
 
-  // TLS to the MySQL server: used for the setup connection and written to
+  // TLS to the MariaDB server: used for the setup connection and written to
   // the configuration as the mysql_ssl_* options of [mysql_rest_service]
   const std::vector<std::tuple<std::string, std::string, std::string>>
       ssl_options{
@@ -343,7 +343,7 @@ void MrsdSetup::prepare_command_options() {
       });
   arg_handler_.add_option(
       OptionNames({"--developer-debug-port"}),
-      "TCP port of a debug server for JavaScript MRS endpoints (needs "
+      "TCP port of a debug server for the REST endpoints of MRS scripts (needs "
       "--developer).",
       CmdOptionValueReq::required, "port", [this](const std::string &value) {
         mysql_harness::option_as_uint<uint16_t>(value, "--developer-debug-port",
@@ -390,7 +390,7 @@ void MrsdSetup::prepare_command_options() {
 
 void MrsdSetup::show_help() {
   out_stream_ << get_version_line() << "\n"
-              << ORACLE_WELCOME_COPYRIGHT_NOTICE("2015") << "\n\n";
+              << MRSD_WELCOME_COPYRIGHT_NOTICE("2015") << "\n\n";
 
   out_stream_ << Vt100::render(Vt100::Render::Bold) << "# Usage"
               << Vt100::render(Vt100::Render::Normal) << "\n\n";

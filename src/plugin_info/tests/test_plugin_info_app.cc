@@ -41,7 +41,7 @@
 #include "print_version.h"
 #include "router_config.h"  // MYSQL_ROUTER_PACKAGE_NAME
 #include "router_test_helpers.h"
-#include "welcome_copyright_notice.h"
+#include "mrsd/copyright_notice.h"
 
 using mysql_harness::Path;
 
@@ -103,17 +103,18 @@ static void verify_help_output(std::stringstream &out_stream) {
   const std::string kHelpOutput =
       (WithVt100 ? Vt100::render(Vt100::Render::Bold) : "") +
       "Usage: " + (WithVt100 ? Vt100::render(Vt100::Render::Normal) : "") +
-      MRSD_PROGRAM_NAME "-plugin-info <mysqlrouter_plugin_file> " +
+      MRSD_PROGRAM_NAME "-plugin-info <plugin_file> " +
       "<plugin_name>\n\n" +
       (WithVt100 ? Vt100::render(Vt100::Render::Bold) : "") + "# Examples" +
       (WithVt100 ? Vt100::render(Vt100::Render::Normal) : "") +
       "\n\n"
       "Print plugin information:\n\n"
 #ifndef _WIN32
-      "    " MRSD_PROGRAM_NAME "-plugin-info /usr/lib/mysqlrouter/routing.so routing\n"
+      "    " MRSD_PROGRAM_NAME "-plugin-info /usr/lib/" MRSD_PROGRAM_NAME
+      "/http_server.so http_server\n"
 #else
-      "    " MRSD_PROGRAM_NAME "-plugin-info \"c:\\Program Files\\MySQL\\MySQL "
-      "Router 8.0\\lib\\routing.dll\" routing\n"
+      "    " MRSD_PROGRAM_NAME "-plugin-info \"c:\\Program Files\\MariaDB\\"
+      MRSD_PROGRAM_NAME "\\lib\\http_server.dll\" http_server\n"
 #endif
       "\n" +
       (WithVt100 ? Vt100::render(Vt100::Render::Bold) : "") + "# Options" +
@@ -132,7 +133,7 @@ void PluginInfoAppTest::verify_version_output() {
   build_version(std::string(MYSQL_ROUTER_PACKAGE_NAME), &version_string);
 
   const std::string kVersionOutput =
-      version_string + "\n" + ORACLE_WELCOME_COPYRIGHT_NOTICE("2015") + "\n";
+      version_string + "\n" + MRSD_WELCOME_COPYRIGHT_NOTICE("2015") + "\n";
 
   EXPECT_EQ(out_stream_.str(), kVersionOutput);
   EXPECT_THAT(out_stream_err_.str(), StrEq(""));

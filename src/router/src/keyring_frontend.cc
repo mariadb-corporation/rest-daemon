@@ -48,7 +48,7 @@
 #include "print_version.h"  // build_version
 #include "random_generator.h"
 #include "router_config.h"             // MYSQL_ROUTER_PACKAGE_NAME
-#include "welcome_copyright_notice.h"  // ORACLE_WELCOME_COPYRIGHT_NOTICE
+#include "mrsd/copyright_notice.h"  // MRSD_WELCOME_COPYRIGHT_NOTICE
 
 using namespace std::string_literals;
 
@@ -84,7 +84,7 @@ std::string KeyringFrontend::get_version() noexcept {
   build_version(std::string(MYSQL_ROUTER_PACKAGE_NAME), &version_string);
 
   os << version_string << std::endl;
-  os << ORACLE_WELCOME_COPYRIGHT_NOTICE("2019") << std::endl;
+  os << MRSD_WELCOME_COPYRIGHT_NOTICE("2019") << std::endl;
 
   return os.str();
 }

@@ -209,7 +209,7 @@ std::set<std::string> BootstrapMySQLAccount::get_hostnames_of_created_accounts(
 
       // it shouldn't have failed, let the upper layers try to handle it
       std::string err_msg = std::string(
-                                "Error creating MySQL account for router (SHOW "
+                                "Error creating the account (SHOW "
                                 "WARNINGS stage): ") +
                             e.what();
       throw std::runtime_error(err_msg);
@@ -326,7 +326,7 @@ std::string BootstrapMySQLAccount::create_accounts_with_compliant_password(
 }
 
 /*
-  Create MySQL account for this instance of the router in the target cluster.
+  Create the account for this instance of the daemon on the server.
 
   The account will have access to the cluster metadata and to the
   replication_group_members table of the performance_schema.
@@ -421,7 +421,7 @@ void BootstrapMySQLAccount::create_users(const std::string &username,
     }
     std::string err_msg =
         std::string(
-            "Error creating MySQL account for router (CREATE USER stage): ") +
+            "Error creating the account (CREATE USER stage): ") +
         e.what();
     if (e.code() == ER_NOT_VALID_PASSWORD) {  // password does not satisfy the
                                               // current policy requirements
@@ -480,7 +480,7 @@ void BootstrapMySQLAccount::give_grants_to_users(
         // replication syncing the effect of CREATE USER that already succeeded.
         std::string err_msg =
             std::string(
-                "Error creating MySQL account for router (GRANTs stage): ") +
+                "Error creating the account (GRANTs stage): ") +
             e.what();
         throw std::runtime_error(err_msg);
       }

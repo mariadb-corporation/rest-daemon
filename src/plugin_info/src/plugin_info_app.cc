@@ -34,7 +34,7 @@
 #include "mysql/harness/vt100.h"
 #include "print_version.h"
 #include "router_config.h"  // MYSQL_ROUTER_PACKAGE_NAME
-#include "welcome_copyright_notice.h"
+#include "mrsd/copyright_notice.h"
 
 PluginInfoFrontend::PluginInfoFrontend(
     const std::string &exe_name, const std::vector<std::string> &arguments,
@@ -57,7 +57,7 @@ std::string PluginInfoFrontend::get_version() const noexcept {
   build_version(std::string(MYSQL_ROUTER_PACKAGE_NAME), &version_string);
 
   os << version_string << kNewline;
-  os << ORACLE_WELCOME_COPYRIGHT_NOTICE("2015") << kNewline;
+  os << MRSD_WELCOME_COPYRIGHT_NOTICE("2015") << kNewline;
 
   return os.str();
 }
@@ -67,7 +67,7 @@ std::string PluginInfoFrontend::get_help(const size_t screen_width) const {
 
   os << Vt100::render(Vt100::Render::Bold)
      << "Usage: " << Vt100::render(Vt100::Render::Normal) << program_name_
-     << " <mysqlrouter_plugin_file> <plugin_name>" << kNewline << kNewline;
+     << " <plugin_file> <plugin_name>" << kNewline << kNewline;
 
   os << Vt100::render(Vt100::Render::Bold) << "# Examples"
      << Vt100::render(Vt100::Render::Normal) << kNewline << kNewline;
@@ -75,10 +75,10 @@ std::string PluginInfoFrontend::get_help(const size_t screen_width) const {
   os << "Print plugin information:" << kNewline << kNewline;
   os << "    " << program_name_
 #ifndef _WIN32
-     << " /usr/lib/mysqlrouter/routing.so routing"
+     << " /usr/lib/" MRSD_PROGRAM_NAME "/http_server.so http_server"
 #else
-     << " \"c:\\Program Files\\MySQL\\MySQL Router "
-        "8.0\\lib\\routing.dll\" routing"
+     << " \"c:\\Program Files\\MariaDB\\" MRSD_PROGRAM_NAME
+        "\\lib\\http_server.dll\" http_server"
 #endif
      << kNewline << kNewline;
   os << Vt100::render(Vt100::Render::Bold) << "# Options"
