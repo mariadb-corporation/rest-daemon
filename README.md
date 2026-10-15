@@ -32,7 +32,8 @@ What it does differently from the MySQL REST Service is listed in
   `mariadb-connector-c`, Debian's `libmariadb-dev`, ...); OpenSSL is then
   taken from the system or `OPENSSL_ROOT_DIR`
 - ICU 69 or later (system packages on Linux/macOS; on Windows, e.g. the official ICU
-  zip), or from vcpkg with `-DVCPKG_MANIFEST_FEATURES=icu`
+  zip), or from vcpkg with `-DVCPKG_MANIFEST_FEATURES=icu`, as the release
+  packages do
 - optional: the **JIT executor library** (`libjitexecutor` and its headers),
   needed for MRS scripts; built from `ext/polyglot` (below)
 
@@ -157,6 +158,32 @@ deb/rpm take from the system. The deb/rpm packages add a systemd unit, a
 service is enabled after `--setup`. Building packages needs `patchelf` on
 Linux, `dpkg-shlibdeps` for deb and `rpmbuild` for rpm. The Windows packages
 include the MSVC runtime.
+
+**Release packages** (`.github/workflows/rest-daemon-release.yml`, on a push
+to `release/candidate` or started by hand): built on GitHub-hosted runners for
+macOS x64 and arm64, Windows x64 and arm64 and Linux x64 and arm64, each
+uploaded as the artifact `pkg-<os>-<arch>` of the run. The Linux packages are
+built in a Rocky Linux 9 container (`docker/linux-rocky9.Dockerfile`), so they
+run on glibc 2.34 and later (RHEL 9+, Ubuntu 22.04+, Debian 12+). GraalVM has
+no Windows ARM64 release, so the Windows arm64 leg builds x64 restd and the x64
+JIT executor library on an ARM64 runner (`vcvarsall arm64_amd64`); its package
+is an x64 one that runs on Windows on ARM under emulation. Every leg runs
+`tools/release/build_package.sh`, which takes Connector/C, OpenSSL and ICU
+from vcpkg; the JIT executor library and vcpkg's binary cache are kept with
+`actions/cache`, so the library is rebuilt only when `ext/polyglot` or
+`cmake/bootstrap_jit_executor.cmake` change.
+
+**Package verification** (`.github/workflows/verify-packages.yml`, after every
+successful release run, or started by hand with a run id): each package is
+unpacked on a pristine GitHub-hosted runner of its platform (Ubuntu x64 and
+arm64, macOS x64 and arm64, Windows x64 and, for the x64 package under
+emulation, Windows on ARM) and checked by `tools/release/verify_package.sh`:
+the layout, `--version`, that every plugin loads, the keyring tool, a daemon
+started with the HTTP server and the REST API that serves requests, and that
+no binary depends on anything outside the package except the OS (and on
+Windows the MSVC runtime). When every platform passes, the run records an
+artifact `verified-build-<run id>`. The script runs on any unpacked package:
+`EXPECT_VERSION=<version> tools/release/verify_package.sh <dir>`.
 
 ## Setting up a deployment
 

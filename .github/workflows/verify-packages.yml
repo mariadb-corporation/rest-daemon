@@ -1,0 +1,260 @@
+name: Verify Packages
+
+# Verifies the packages a Rest-Daemon-Release run produced, on runners that
+# have never built them, as MariaDB Shell's verify-packages.yml does for the
+# shell.
+#
+# A separate workflow rather than jobs inside Rest-Daemon-Release: it must be
+# startable by hand against any past build, and it must run on pristine
+# runners. A verification job sharing a runner with the build would have the
+# build tree, the toolchain and the vcpkg prefix on disk, so a package that only
+# works because of them would still pass.
+on:
+  # Fires when Rest-Daemon-Release finishes, verifying that run's packages.
+  # GitHub only honours workflow_run for the copy of this file on the DEFAULT
+  # branch: on a feature branch it doesn't fire at all.
+  workflow_run:
+    workflows: ["Rest-Daemon-Release"]
+    types: [completed]
+
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Build run to verify (blank = latest successful Rest-Daemon-Release run)"
+        type: string
+        required: false
+
+# Only a label: the run name is fixed when the run starts, so the blank-input
+# case can't show the id the resolve job goes on to pick.
+run-name: >-
+  Verify build ${{ inputs.run_id || github.event.workflow_run.id || '(latest)' }}
+
+jobs:
+  # ==========================================================================
+  # Resolve which build run to verify, once, so every leg verifies the same
+  # build, and its commit, so the check script and the expected version come
+  # from the source that produced the packages.
+  # ==========================================================================
+  resolve:
+    runs-on: ubuntu-latest
+    # Gate only the workflow_run case: a build that didn't succeed has nothing
+    # to verify. Written as "not workflow_run, or it succeeded":
+    # github.event.workflow_run is null for the other events, so a condition
+    # reaching into it alone would skip them.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    # A permissions block replaces the default set: contents: read has to be
+    # listed for checkout of this private repository.
+    permissions:
+      contents: read   # checkout
+      actions: read    # gh run list / gh run view
+
+    outputs:
+      run_id: ${{ steps.pick.outputs.run_id }}
+      sha: ${{ steps.pick.outputs.sha }}
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Resolve Build Run
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          TRIGGER_RUN_ID: ${{ github.event.workflow_run.id }}
+          INPUT_RUN_ID: ${{ inputs.run_id }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT" = "workflow_run" ]; then
+            RUN_ID="$TRIGGER_RUN_ID"
+            echo "==> Triggered by build run $RUN_ID"
+          elif [ -n "$INPUT_RUN_ID" ]; then
+            RUN_ID="$INPUT_RUN_ID"
+            echo "==> Verifying requested run $RUN_ID"
+          else
+            echo "==> No run_id given; finding the latest successful build run."
+            RUN_ID=$(gh run list -R "$REPO" \
+              --workflow "rest-daemon-release.yml" \
+              --status success --limit 1 \
+              --json databaseId --jq '.[0].databaseId // empty')
+            [ -n "$RUN_ID" ] || { echo "No successful build run found." >&2; exit 1; }
+            echo "==> Verifying latest successful run $RUN_ID"
+          fi
+
+          SHA=$(gh run view "$RUN_ID" -R "$REPO" --json headSha --jq .headSha)
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA"       >> "$GITHUB_OUTPUT"
+
+      - name: Read Version At That Commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pick.outputs.sha }}
+          sparse-checkout: VERSION
+          sparse-checkout-cone-mode: false
+
+      # An empty version would make verify_package.sh skip the version check
+      # silently, so a VERSION file it can't read fails here instead.
+      - name: Export Version
+        id: version
+        run: |
+          set -euo pipefail
+          V=$(sed -n 's/^VERSION[[:space:]]*=[[:space:]]*//p' VERSION | tr -d '[:space:]')
+          [ -n "$V" ] || { echo "No VERSION in the VERSION file" >&2; exit 1; }
+          echo "==> Expecting packages to report version $V"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+  # ==========================================================================
+  # One pristine runner per package. The runner images are the verification
+  # targets, not the build hosts: the Linux packages are built on Rocky 9
+  # (glibc 2.34) and verified on Ubuntu, the forward-compatibility direction
+  # that matters. The Windows arm64 package is an x64 one (see
+  # rest-daemon-release.yml), verified on Windows on ARM, where it runs under
+  # emulation.
+  # ==========================================================================
+  verify:
+    needs: resolve
+    runs-on: ${{ matrix.os-runner }}
+
+    name: Verify (${{ matrix.name }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x64
+            os-runner: ubuntu-latest
+          - name: linux-arm64
+            os-runner: ubuntu-24.04-arm
+          - name: macos-x64
+            os-runner: macos-15-intel
+          - name: macos-arm64
+            os-runner: macos-latest
+          - name: windows-x64
+            os-runner: windows-2022
+          - name: windows-arm64
+            os-runner: windows-11-arm
+
+    permissions:
+      contents: read
+      actions: read
+
+    defaults:
+      run:
+        # Git Bash on Windows, so one set of steps covers all three OSes
+        shell: bash
+
+    steps:
+      # Only the check scripts are needed from the repository, at the build's
+      # commit. Nothing here builds or configures anything.
+      - name: Checkout Check Scripts
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+          sparse-checkout: tools/release
+          sparse-checkout-cone-mode: true
+
+      # This leg's artifact only, by name: the two Windows legs both carry a
+      # ...-windows-x64.zip, so merging the artifacts would let one overwrite
+      # the other.
+      - name: Download Package From Build Run
+        uses: actions/download-artifact@v7
+        with:
+          name: pkg-${{ matrix.name }}
+          path: _artifacts
+          run-id: ${{ needs.resolve.outputs.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Unpack Package
+        id: unpack
+        run: |
+          set -euo pipefail
+          # find, not a glob: no globstar in the macOS runners' bash 3.2
+          matches=$(find _artifacts -type f \( -name 'mariadb-restd-*.tar.gz' -o -name 'mariadb-restd-*.zip' \) | sort)
+          count=$(printf '%s' "$matches" | grep -c . || true)
+          # exactly one, or fail loudly rather than verify the wrong one
+          if [ "$count" -ne 1 ]; then
+            echo "Expected exactly one package in the artifact, found $count:" >&2
+            [ -n "$matches" ] && printf '  %s\n' "$matches" >&2
+            exit 1
+          fi
+          PKG="$matches"
+          echo "==> Package: $PKG"
+
+          mkdir -p _unpacked
+          case "$PKG" in
+            *.zip)
+              # neither Git Bash's tar nor an unzip reads it everywhere
+              PY=$(command -v python3 || command -v python)
+              "$PY" -m zipfile -e "$PKG" _unpacked ;;
+            *) tar -xzf "$PKG" -C _unpacked ;;
+          esac
+
+          # a single top-level mariadb-restd-<version>-<platform> directory
+          roots=(_unpacked/*/)
+          if [ ${#roots[@]} -ne 1 ]; then
+            echo "Expected one top-level directory in the package, found ${#roots[@]}" >&2
+            printf '  %s\n' ${roots[@]+"${roots[@]}"} >&2
+            exit 1
+          fi
+          ROOT="${roots[0]%/}"
+          echo "==> Unpacked root: $ROOT"
+          echo "root=$ROOT" >> "$GITHUB_OUTPUT"
+
+      - name: Verify Package
+        env:
+          EXPECT_VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          chmod +x tools/release/verify_package.sh
+          tools/release/verify_package.sh "${{ steps.unpack.outputs.root }}"
+
+      # keeps a failure diagnosable without re-running: the unpacked tree is
+      # what the checks saw
+      - name: Upload Unpacked Tree On Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-verify-${{ matrix.name }}
+          path: _unpacked
+          retention-days: 3
+          if-no-files-found: ignore
+
+  # ==========================================================================
+  # Record the verdict where a later publish can find it: an artifact named
+  # after the build run id, only when every leg passed (one failed leg makes
+  # needs.verify.result 'failure').
+  # ==========================================================================
+  record:
+    needs: [resolve, verify]
+    if: needs.verify.result == 'success'
+    runs-on: ubuntu-latest
+
+    permissions: {}
+
+    steps:
+      - name: Write Marker
+        env:
+          BUILD_RUN_ID: ${{ needs.resolve.outputs.run_id }}
+          BUILD_SHA: ${{ needs.resolve.outputs.sha }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+          {
+            echo "build_run_id=$BUILD_RUN_ID"
+            echo "build_sha=$BUILD_SHA"
+            echo "version=$VERSION"
+            echo "verify_run_id=$GITHUB_RUN_ID"
+            echo "verify_run_url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } | tee verified.txt
+
+      - name: Upload Marker
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-build-${{ needs.resolve.outputs.run_id }}
+          # the name is what a publish gate would match, and the API keeps
+          # listing it after the content expires
+          retention-days: 90
+          path: verified.txt
+          if-no-files-found: error
