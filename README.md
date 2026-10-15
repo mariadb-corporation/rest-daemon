@@ -17,7 +17,10 @@ What it does differently from the MySQL REST Service is listed in
 
 > **Status:** work in progress. restd builds and passes its tests on Linux,
 > macOS and Windows against MariaDB 11.8 and 13.2; see [docs/PLAN.md](docs/PLAN.md)
-> and [docs/PROGRESS.md](docs/PROGRESS.md). There are no packages yet.
+> and [docs/PROGRESS.md](docs/PROGRESS.md). Self-contained packages for Linux,
+> macOS and Windows are on the
+> [releases page](https://github.com/mariadb-corporation/rest-daemon/releases)
+> (pre-releases so far).
 
 ## Building
 

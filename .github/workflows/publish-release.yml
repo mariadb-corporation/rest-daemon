@@ -275,7 +275,7 @@ jobs:
           the JIT executor library (MRS scripts) are bundled, and on Windows the
           MSVC runtime. Unpack one anywhere and run \`bin/mariadb-restd --setup\`
           (see the README for setting up a deployment). It works with MariaDB
-          Server 10.11 or later and needs no other package.
+          Server 11.7 or later and needs no other package.
 
           ## Checking a download
 
