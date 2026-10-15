@@ -160,9 +160,12 @@ FUNCTION(add_harness_plugin NAME)
       INSTALL(TARGETS ${NAME}
         RUNTIME DESTINATION ${_option_DESTINATION}
         COMPONENT Router)
+      # restd: OPTIONAL, as a Release build has no PDB (the release packages
+      # are Release builds)
       INSTALL(FILES $<TARGET_PDB_FILE:${NAME}>
         DESTINATION ${_option_DESTINATION}
-        COMPONENT Router)
+        COMPONENT Router
+        OPTIONAL)
     ELSE()
       INSTALL(TARGETS ${NAME}
         LIBRARY DESTINATION ${_option_DESTINATION}

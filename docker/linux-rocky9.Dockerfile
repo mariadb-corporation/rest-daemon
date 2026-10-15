@@ -28,10 +28,11 @@ RUN dnf install -y epel-release dnf-plugins-core && \
 # system copy). perl-core: vcpkg's OpenSSL; autoconf, automake, libtool,
 # python3: vcpkg's ICU; patchelf: the package's rpaths; gcc, glibc-devel,
 # zlib-devel, zlib-static (CRB): GraalVM native-image (the JIT executor
-# library), which links libz.a.
+# library), which links libz.a; patch: the JIT executor build's
+# maven-patch-plugin.
 RUN dnf install -y \
     gcc gcc-c++ glibc-devel zlib-devel zlib-static git ninja-build perl-core python3 \
-    autoconf automake libtool make pkgconfig zip unzip tar patchelf \
+    autoconf automake libtool make pkgconfig zip unzip tar patchelf patch which findutils \
     gcc-toolset-14-gcc gcc-toolset-14-gcc-c++ gcc-toolset-14-binutils \
     && dnf clean all
 
