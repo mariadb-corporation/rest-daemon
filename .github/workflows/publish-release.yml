@@ -1,0 +1,355 @@
+name: Publish Release
+
+# Publishing is a deliberate, manual act, decoupled from building, as in
+# MariaDB Shell's publish-release.yml: Rest-Daemon-Release only builds and
+# leaves its packages as run artifacts. This workflow picks one of those runs
+# and turns it into a GitHub release, so a run can be inspected first, and any
+# past run can be published (or re-published) without rebuilding anything.
+#
+# restd's packages are self-contained (Connector/C, OpenSSL, ICU and the JIT
+# executor library are bundled): a release is the five platform packages and
+# their SHA256SUMS, nothing else.
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Build run to publish (blank = latest successful Rest-Daemon-Release run)"
+        type: string
+        required: false
+      tag:
+        description: "Release tag (blank = v<version>, version read from VERSION at that run's commit)"
+        type: string
+        required: false
+      prerelease:
+        description: "Mark as prerelease (invisible to /releases/latest/)"
+        type: boolean
+        default: false
+      dry_run:
+        # Everything a real publish does except the release itself: the
+        # verification gate, the package set, the checksums and the notes are
+        # all produced, and SHA256SUMS is uploaded as a run artifact to be
+        # inspected. Nothing is created, tagged or uploaded to a release.
+        description: "Assemble and check everything, but create no release"
+        type: boolean
+        default: false
+
+# Says which of the two this run was, in the Actions list
+run-name: >-
+  ${{ inputs.dry_run && 'Dry run' || 'Publish' }}
+  ${{ inputs.tag || '(version from build)' }}
+  from run ${{ inputs.run_id || '(latest)' }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write   # create/update the release
+      actions: read     # read artifacts from the build run
+
+    steps:
+      # ====================================================================
+      # 1. RESOLVE WHICH BUILD RUN TO PUBLISH
+      #
+      # The run's head SHA matters as much as its id: the version and the
+      # release target must come from the source that produced those
+      # packages, not from whatever the default branch holds now.
+      # ====================================================================
+      - name: Resolve Build Run
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ inputs.run_id }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$RUN_ID" ]; then
+            echo "==> No run_id given; finding the latest successful build run."
+            RUN_ID=$(gh run list -R "$REPO" \
+              --workflow "rest-daemon-release.yml" \
+              --status success --limit 1 \
+              --json databaseId --jq '.[0].databaseId // empty')
+            if [ -z "$RUN_ID" ]; then
+              echo "No successful Rest-Daemon-Release run found to publish." >&2
+              exit 1
+            fi
+          fi
+
+          # a run that didn't succeed is refused, rather than releasing
+          # whichever platforms happened to finish
+          CONCLUSION=$(gh run view "$RUN_ID" -R "$REPO" --json conclusion --jq .conclusion)
+          if [ "$CONCLUSION" != "success" ]; then
+            echo "Run $RUN_ID concluded '$CONCLUSION', not 'success'; refusing to publish." >&2
+            exit 1
+          fi
+
+          SHA=$(gh run view "$RUN_ID" -R "$REPO" --json headSha --jq .headSha)
+          echo "==> Publishing run $RUN_ID (commit $SHA)"
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA"       >> "$GITHUB_OUTPUT"
+
+      # ====================================================================
+      # 2. REFUSE A BUILD THAT WAS NEVER VERIFIED
+      #
+      # Verify Packages leaves an artifact named verified-build-<build run id>
+      # only when every platform passed (its `record` job). Only successful
+      # verification runs are searched, so a failed, partial, in-progress or
+      # never-run verification all end in the same refusal. The artifact's
+      # NAME is matched, which the API keeps listing after its content
+      # expires, so an older build stays publishable.
+      # ====================================================================
+      - name: Require Successful Package Verification
+        id: verified
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ steps.run.outputs.run_id }}
+        run: |
+          set -euo pipefail
+
+          MARKER="verified-build-$RUN_ID"
+          VERIFY_RUN=""
+          echo "==> Looking for artifact '$MARKER'"
+
+          # Assigned first: in `for id in $(gh api ...)` a failed query would be
+          # an empty list, read as "never verified"; an assignment fails under
+          # set -e, so an API outage says so.
+          CANDIDATES=$(gh api \
+            "repos/$REPO/actions/workflows/verify-packages.yml/runs?status=success&per_page=30" \
+            --jq '.workflow_runs[].id')
+
+          for id in $CANDIDATES; do
+            if gh api "repos/$REPO/actions/runs/$id/artifacts?per_page=100" \
+                 --jq '.artifacts[].name' | grep -qxF "$MARKER"; then
+              VERIFY_RUN="$id"
+              break
+            fi
+          done
+
+          if [ -z "$VERIFY_RUN" ]; then
+            echo "Build run $RUN_ID has no successful package verification." >&2
+            echo "" >&2
+            echo "No artifact named '$MARKER' on any successful Verify Packages" >&2
+            echo "run: verification failed, covered only some platforms, is still" >&2
+            echo "running, or was never started for this build." >&2
+            echo "" >&2
+            echo "Recent Verify Packages runs:" >&2
+            gh run list -R "$REPO" --workflow verify-packages.yml --limit 10 \
+              --json databaseId,conclusion,createdAt,displayTitle \
+              --template '{{range .}}  {{.databaseId}}  {{.conclusion}}  {{.createdAt}}  {{.displayTitle}}{{"\n"}}{{end}}' >&2 || true
+            echo "" >&2
+            echo "Verify this build with:" >&2
+            echo "  gh workflow run verify-packages.yml -R $REPO -f run_id=$RUN_ID" >&2
+            exit 1
+          fi
+
+          echo "==> Verified by Verify Packages run $VERIFY_RUN"
+          echo "    $GITHUB_SERVER_URL/$REPO/actions/runs/$VERIFY_RUN"
+          echo "verify_run_id=$VERIFY_RUN" >> "$GITHUB_OUTPUT"
+
+      # ====================================================================
+      # 3. THE VERSION OF THE SOURCE THAT PRODUCED THOSE PACKAGES
+      # ====================================================================
+      - name: Checkout Build Commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.run.outputs.sha }}
+          sparse-checkout: VERSION
+          sparse-checkout-cone-mode: false
+
+      # ====================================================================
+      # 4. COLLECT THE PACKAGES
+      #
+      # One artifact per published platform, by name, not merged: the
+      # Windows arm64 leg's artifact holds a second
+      # mariadb-restd-<version>-windows-x64.zip (the x64 package built on an
+      # ARM64 runner, verified there under emulation), and a release can't
+      # have two assets of one name. The Windows package published is the one
+      # of the Windows x64 leg.
+      # ====================================================================
+      - name: Download Packages From Build Run
+        uses: actions/download-artifact@v7
+        with:
+          path: _artifacts
+          pattern: pkg-*
+          run-id: ${{ steps.run.outputs.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: List Downloaded Packages
+        run: |
+          set -euo pipefail
+          echo "==> Downloaded artifact tree:"
+          find _artifacts -type f | sort
+
+      # ====================================================================
+      # 5. ASSEMBLE RELEASE ASSETS
+      # ====================================================================
+      - name: Assemble Release Assets
+        id: assets
+        env:
+          TAG_INPUT: ${{ inputs.tag }}
+          RUN_ID: ${{ steps.run.outputs.run_id }}
+        run: |
+          set -euo pipefail
+
+          # the version from the file CMake reads, at the build's commit, so
+          # the tag can't disagree with the version in the package names
+          VERSION=$(sed -n 's/^VERSION[[:space:]]*=[[:space:]]*//p' VERSION | tr -d '[:space:]')
+          [ -n "$VERSION" ] || { echo "No VERSION in the VERSION file" >&2; exit 1; }
+          TAG="${TAG_INPUT:-v${VERSION}}"
+
+          # Exactly one package per published platform, each from its own
+          # artifact, or no release: verification proves each package passed
+          # on a pristine machine, and says nothing about one that is missing
+          # here (an expired or deleted artifact, a leg re-run alone).
+          mkdir -p dist
+          missing=()
+          for want in \
+              "pkg-linux-x64:mariadb-restd-$VERSION-linux-x86_64.tar.gz" \
+              "pkg-linux-arm64:mariadb-restd-$VERSION-linux-aarch64.tar.gz" \
+              "pkg-macos-x64:mariadb-restd-$VERSION-macos-x86_64.tar.gz" \
+              "pkg-macos-arm64:mariadb-restd-$VERSION-macos-arm64.tar.gz" \
+              "pkg-windows-x64:mariadb-restd-$VERSION-windows-x64.zip"; do
+            artifact="${want%%:*}"
+            file="${want#*:}"
+            if [ -f "_artifacts/$artifact/$file" ]; then
+              mv "_artifacts/$artifact/$file" dist/
+            else
+              missing+=("$file (artifact $artifact)")
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "Run $RUN_ID does not offer every platform's package for version $VERSION:" >&2
+            printf '    %s\n' "${missing[@]}" >&2
+            echo "Artifacts may have expired; rebuild and re-verify rather than publishing a partial release." >&2
+            exit 1
+          fi
+
+          cd dist
+          echo "==> Packages to publish:"
+          ls -l
+          sha256sum mariadb-restd-* > SHA256SUMS
+          echo "==> SHA256SUMS:"
+          cat SHA256SUMS
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG"         >> "$GITHUB_OUTPUT"
+
+      # ====================================================================
+      # 6. PUBLISH
+      #
+      # The notes are built before the dry-run branch: rendering them is part
+      # of what a dry run proves. The branch sits right before the first
+      # mutating command, so a dry run and a real publish differ in exactly
+      # that.
+      # ====================================================================
+      - name: Publish Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ steps.assets.outputs.tag }}
+          VERSION: ${{ steps.assets.outputs.version }}
+          SHA: ${{ steps.run.outputs.sha }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          RUN_ID: ${{ steps.run.outputs.run_id }}
+          VERIFY_RUN_ID: ${{ steps.verified.outputs.verify_run_id }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+
+          NOTES="MariaDB REST Service Daemon (mariadb-restd) $VERSION, built from
+          \`$SHA\` (build run $RUN_ID, verified by run $VERIFY_RUN_ID).
+
+          ## Packages
+
+          | Platform | Package |
+          |---|---|
+          | Linux x86-64 (glibc 2.34+: RHEL 9+, Ubuntu 22.04+, Debian 12+) | \`mariadb-restd-$VERSION-linux-x86_64.tar.gz\` |
+          | Linux ARM64 (glibc 2.34+) | \`mariadb-restd-$VERSION-linux-aarch64.tar.gz\` |
+          | macOS Intel | \`mariadb-restd-$VERSION-macos-x86_64.tar.gz\` |
+          | macOS Apple silicon | \`mariadb-restd-$VERSION-macos-arm64.tar.gz\` |
+          | Windows x64 (also Windows on ARM, under emulation) | \`mariadb-restd-$VERSION-windows-x64.zip\` |
+
+          The packages are self-contained: MariaDB Connector/C, OpenSSL, ICU and
+          the JIT executor library (MRS scripts) are bundled, and on Windows the
+          MSVC runtime. Unpack one anywhere and run \`bin/mariadb-restd --setup\`
+          (see the README for setting up a deployment). It works with MariaDB
+          Server 10.11 or later and needs no other package.
+
+          ## Checking a download
+
+          Download SHA256SUMS beside the package, then check one against the
+          other.
+
+          Linux:
+
+          \`\`\`sh
+          sha256sum -c SHA256SUMS --ignore-missing
+          \`\`\`
+
+          macOS, which ships \`shasum\` rather than \`sha256sum\`:
+
+          \`\`\`sh
+          shasum -a 256 -c SHA256SUMS --ignore-missing
+          \`\`\`
+
+          Windows (PowerShell):
+
+          \`\`\`powershell
+          \$file = 'mariadb-restd-$VERSION-windows-x64.zip'
+          \$want = (Select-String -Path SHA256SUMS -Pattern ([regex]::Escape(\$file))).Line.Split(' ')[0]
+          if ((Get-FileHash \$file -Algorithm SHA256).Hash -eq \$want) { 'OK' } else { 'MISMATCH' }
+          \`\`\`
+
+          \`--ignore-missing\` lets the check pass with only the package you
+          downloaded present."
+
+          # read-only, so a dry run can report which path a real run would take
+          if gh release view "$TAG" -R "$REPO" >/dev/null 2>&1; then
+            EXISTS=yes
+          else
+            EXISTS=no
+          fi
+
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "==> DRY RUN: no release will be created, updated or tagged."
+            if [ "$EXISTS" = yes ]; then
+              echo "    Would UPDATE existing release $TAG (assets clobbered)"
+            else
+              echo "    Would CREATE release $TAG on $SHA"
+            fi
+            echo "    prerelease=$PRERELEASE"
+            echo "    Assets:"
+            find dist -maxdepth 1 -type f -printf '      %f\n' | sort
+            echo "    Notes:"
+            printf '%s\n' "$NOTES" | sed 's/^/      /'
+            exit 0
+          fi
+
+          if [ "$EXISTS" = yes ]; then
+            echo "==> Updating existing release $TAG"
+            gh release upload "$TAG" dist/* -R "$REPO" --clobber
+            gh release edit "$TAG" -R "$REPO" --notes "$NOTES" \
+              --prerelease="$PRERELEASE"
+          else
+            echo "==> Creating release $TAG"
+            gh release create "$TAG" dist/* -R "$REPO" \
+              --target "$SHA" \
+              --title "mariadb-restd $VERSION" \
+              --notes "$NOTES" \
+              --prerelease="$PRERELEASE"
+          fi
+
+          echo "==> Published: https://github.com/$REPO/releases/tag/$TAG"
+
+      # the checksums a dry run assembled, to be checked before a release
+      # exists (the packages themselves are in the build run already)
+      - name: Upload Assembled Assets (dry run)
+        if: ${{ inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dry-run-assets-${{ steps.run.outputs.run_id }}
+          path: dist/SHA256SUMS
+          retention-days: 7
+          if-no-files-found: error

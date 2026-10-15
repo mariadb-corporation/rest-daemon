@@ -185,6 +185,16 @@ Windows the MSVC runtime). When every platform passes, the run records an
 artifact `verified-build-<run id>`. The script runs on any unpacked package:
 `EXPECT_VERSION=<version> tools/release/verify_package.sh <dir>`.
 
+**Publishing a release** (`.github/workflows/publish-release.yml`, started by
+hand with a build run id, blank for the latest successful one): refuses a
+build run that didn't succeed or has no `verified-build-<run id>` artifact,
+takes one package per platform from its artifacts (the Windows package of the
+x64 leg), writes `SHA256SUMS` and creates or updates the GitHub release
+`v<version>` (`VERSION` at the build's commit) on that commit. `dry_run`
+assembles and checks everything without creating a release; `prerelease`
+keeps it out of `/releases/latest/`. The packages are self-contained, so a
+release is the five packages and their checksums.
+
 ## Setting up a deployment
 
 `mariadb-restd --setup` prepares a self-contained deployment directory for a
