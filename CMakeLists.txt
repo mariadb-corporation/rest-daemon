@@ -198,8 +198,9 @@ IF(INSTALL_LAYOUT STREQUAL "STANDALONE")
 ENDIF()
 IF(MARIADB_CONNECTOR_FROM_VCPKG)
   # vcpkg's libmariadb links vcpkg's zlib and OpenSSL (@rpath/libz.1.3.2.dylib,
-  # libz.so.1, zlib1.dll), in every layout
-  LIST(APPEND _bundle_regexes "(^|/)(libz|zlib)[^/]*$" "(^|/)lib(ssl|crypto)[^/]*$")
+  # libz.so.1, z.dll), in every layout
+  LIST(APPEND _bundle_regexes "(^|/)(libz|zlib)[^/]*$" "(^|/)z[.]dll$"
+    "(^|/)lib(ssl|crypto)[^/]*$")
   LIST(REMOVE_DUPLICATES _bundle_regexes)
 ENDIF()
 LIST(REMOVE_DUPLICATES _bundle_dirs)

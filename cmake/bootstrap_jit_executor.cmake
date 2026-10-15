@@ -177,8 +177,17 @@ IF(NOT _old_stamp STREQUAL _stamp_text OR
     ERROR_FILE "${CMAKE_BINARY_DIR}/jit-executor-build.log"
     RESULT_VARIABLE _rc)
   IF(NOT _rc EQUAL 0)
-    MESSAGE(FATAL_ERROR "The JIT executor library build failed, see "
-                        "${CMAKE_BINARY_DIR}/jit-executor-build.log")
+    # the end of the log, where Maven and native-image report the error, for
+    # builds whose log can't be looked at afterwards (CI)
+    FILE(STRINGS "${CMAKE_BINARY_DIR}/jit-executor-build.log" _log)
+    LIST(LENGTH _log _n)
+    IF(_n GREATER 80)
+      MATH(EXPR _first "${_n} - 80")
+      LIST(SUBLIST _log ${_first} 80 _log)
+    ENDIF()
+    LIST(JOIN _log "\n" _log)
+    MESSAGE(FATAL_ERROR "The JIT executor library build failed. The end of "
+                        "${CMAKE_BINARY_DIR}/jit-executor-build.log:\n${_log}")
   ENDIF()
   FILE(STRINGS "${_polyglot}/polyglot-nativeapi/target/patches-applied.txt"
     _applied)

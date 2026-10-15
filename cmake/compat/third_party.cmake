@@ -37,8 +37,9 @@ TARGET_COMPILE_DEFINITIONS(rapidjson INTERFACE
   RAPIDJSON_SCHEMA_USE_STDREGEX=1
   RAPIDJSON_HAS_STDSTRING=1)
 
-# --- ICU (system) ----------------------------------------------------------
-IF(APPLE AND NOT ICU_ROOT AND EXISTS "/opt/homebrew/opt/icu4c")
+# --- ICU (system, or vcpkg with -DVCPKG_MANIFEST_FEATURES=icu) -------------
+IF(APPLE AND NOT ICU_ROOT AND NOT "icu" IN_LIST VCPKG_MANIFEST_FEATURES
+   AND EXISTS "/opt/homebrew/opt/icu4c")
   SET(ICU_ROOT "/opt/homebrew/opt/icu4c")
 ENDIF()
 FIND_PACKAGE(ICU 69 REQUIRED COMPONENTS uc i18n data)

@@ -30,6 +30,10 @@
 #                        Connector/C's client plugins, a subdirectory of
 #                        BUNDLE_DEST: they find the bundled libraries in ..
 
+# cmake_install.cmake runs with no policy settings of the project: without
+# this, a CMake 3.x takes IN_LIST (CMP0057) as an unknown argument
+CMAKE_POLICY(VERSION 3.24)
+
 SET(_prefix "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}")
 SET(_dest "${_prefix}/${BUNDLE_DEST}")
 SET(_client_plugins)
@@ -144,7 +148,10 @@ IF(NOT APPLE)
   # libraries get RUNPATH $ORIGIN, so that their dependencies (libssl ->
   # libcrypto, libicuuc -> libicudata, libmariadb -> libssl) are the
   # bundled copies too, not the system's.
-  IF(_bundled_names OR _client_plugins)
+  # The JIT executor library is installed there too (not bundled by this
+  # script) and links libz.so.1, which is bundled: same RUNPATH.
+  FILE(GLOB _jit_libs "${_dest}/libjitexecutor.so*")
+  IF(_bundled_names OR _client_plugins OR _jit_libs)
     FIND_PROGRAM(_patchelf patchelf)
     IF(NOT _patchelf)
       MESSAGE(FATAL_ERROR
@@ -154,6 +161,11 @@ IF(NOT APPLE)
   FOREACH(_name ${_bundled_names})
     EXECUTE_PROCESS(
       COMMAND ${_patchelf} --set-rpath "$ORIGIN" "${_dest}/${_name}"
+      COMMAND_ERROR_IS_FATAL ANY)
+  ENDFOREACH()
+  FOREACH(_lib ${_jit_libs})
+    EXECUTE_PROCESS(
+      COMMAND ${_patchelf} --set-rpath "$ORIGIN" "${_lib}"
       COMMAND_ERROR_IS_FATAL ANY)
   ENDFOREACH()
   FOREACH(_plugin ${_client_plugins})

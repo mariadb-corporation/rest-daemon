@@ -31,7 +31,8 @@ What it does differently from the MySQL REST Service is listed in
   `MARIADB_CONNECTOR_DIR` (a release package, Homebrew's
   `mariadb-connector-c`, Debian's `libmariadb-dev`, ...); OpenSSL is then
   taken from the system or `OPENSSL_ROOT_DIR`
-- ICU (system packages on Linux/macOS; on Windows, e.g. the official ICU zip)
+- ICU 69 or later (system packages on Linux/macOS; on Windows, e.g. the official ICU
+  zip), or from vcpkg with `-DVCPKG_MANIFEST_FEATURES=icu`
 - optional: the **JIT executor library** (`libjitexecutor` and its headers),
   needed for MRS scripts; built from `ext/polyglot` (below)
 
@@ -41,12 +42,13 @@ What it does differently from the MySQL REST Service is listed in
 |---|---|
 | `MARIADB_CONNECTOR_DIR` | prefix of a MariaDB Connector/C installation; without it, Connector/C and OpenSSL come from vcpkg |
 | `WITH_VCPKG_TRIPLET` | vcpkg triplet to get the dependencies with (default: the dynamic triplet of the host, if `MARIADB_CONNECTOR_DIR` is not set; `OFF`: no vcpkg) |
-| `VCPKG_ROOT` | the vcpkg checkout (default: `$VCPKG_ROOT`, else `../vcpkg`, cloned if missing) |
+| `VCPKG_ROOT` | the vcpkg checkout (default: `$VCPKG_ROOT` if it is a vcpkg git checkout, else `../vcpkg`, cloned if missing) |
 | `MRS_JIT_EXECUTOR_LIB` | directory with `libjitexecutor` and its headers; without it (and without `WITH_JIT_EXECUTOR`), restd is built without MRS script support |
 | `WITH_JIT_EXECUTOR` | build `libjitexecutor` from `ext/polyglot` at configure time, downloading GraalVM and Maven (`OFF`) |
 | `RESTD_DEPS_DIR` | where `WITH_JIT_EXECUTOR` puts GraalVM, Maven and the Graal sources (`../restd-deps`) |
 | `WITH_UNIT_TESTS` | build the unit tests and the test tools (`OFF`) |
 | `WITH_COMPONENT_TESTS` | build the component tests, needs `WITH_UNIT_TESTS` (`OFF`) |
+| `VCPKG_MANIFEST_FEATURES` | `icu`: ICU from vcpkg too, instead of the system's |
 | `OPENSSL_ROOT_DIR`, `ICU_ROOT` | where to find OpenSSL / ICU, if not in a default location |
 | `INSTALL_GIT_HOOKS` | link the hooks in `.githooks/` into the clone at configure time (`ON`) |
 
@@ -58,9 +60,12 @@ and builds against them, the way MariaDB Shell's `-DWITH_VCPKG_TRIPLET` works
 (`cmake/bootstrap_vcpkg.cmake`):
 
 - vcpkg is taken from `-DVCPKG_ROOT`, the `VCPKG_ROOT` environment variable
-  or `../vcpkg` (next to the source tree, where MariaDB Shell's build puts it
-  too), in that order. If there is no checkout there, configure clones vcpkg
-  at the `builtin-baseline` commit of `vcpkg.json` and bootstraps it.
+  (if it is a vcpkg git checkout: a Visual Studio developer environment sets
+  it to Visual Studio's bundled vcpkg, which is ignored) or `../vcpkg` (next
+  to the source tree, where MariaDB Shell's build puts it too), in that
+  order. If there is no checkout there, configure clones vcpkg at the
+  `builtin-baseline` commit of `vcpkg.json` and bootstraps it; a directory
+  that exists and isn't a vcpkg checkout is left alone and configure stops.
 - The triplet is the host's dynamic one (`arm64-osx-dynamic`,
   `x64-linux-dynamic`, `x64-windows`, ...), as restd links the shared
   `libmariadb`; choose another with `-DWITH_VCPKG_TRIPLET=<triplet>`.

@@ -104,7 +104,14 @@ ENDMACRO()
 # MY_CHECK_CXX_COMPILER_WARNING("-Wfoo" OUTVAR)
 # If the compiler knows -Wfoo, set OUTVAR to "-Wno-foo" (used to silence it).
 FUNCTION(MY_CHECK_CXX_COMPILER_WARNING WARNING_OPTION OUTVAR)
-  STRING(REGEX REPLACE "^-?W?" "" _warning "${WARNING_OPTION}")
+  # a single match, not REGEX REPLACE: depending on the CMake version, a
+  # repeated search with "^-?W?" matches the empty string after the prefix,
+  # which is an error
+  IF(WARNING_OPTION MATCHES "^-?W(.*)$")
+    SET(_warning "${CMAKE_MATCH_1}")
+  ELSE()
+    SET(_warning "${WARNING_OPTION}")
+  ENDIF()
   STRING(MAKE_C_IDENTIFIER "HAVE_CXX_W_${_warning}" _cachevar)
   IF(MSVC)
     SET(${OUTVAR} "" PARENT_SCOPE)
