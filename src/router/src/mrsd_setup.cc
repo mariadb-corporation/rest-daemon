@@ -59,7 +59,7 @@ using namespace std::string_literals;
 
 namespace {
 
-constexpr const char kConfigMrsSection[] = "mysql_rest_service";
+constexpr const char kConfigMrsSection[] = "mariadb_rest_service";
 constexpr const char kKeyringAttributePassword[] = "password";
 constexpr const char kHostOnResolveFailed[] = "unknown";
 constexpr uint16_t kDefaultSetupHttpPort = 8443;
@@ -74,8 +74,8 @@ const std::string kPidFileName = MRSD_PROGRAM_NAME ".pid";
 constexpr const char kKeyringFileName[] = "keyring";
 constexpr const char kCaKeyFileName[] = "ca-key.pem";
 constexpr const char kCaCertFileName[] = "ca.pem";
-constexpr const char kRouterKeyFileName[] = "router-key.pem";
-constexpr const char kRouterCertFileName[] = "router-cert.pem";
+constexpr const char kRouterKeyFileName[] = "restd-key.pem";
+constexpr const char kRouterCertFileName[] = "restd-cert.pem";
 
 // restd: `<prefix>_<random>`; upstream put the integer router id between
 // them, a UUID would not fit the 32 characters
@@ -241,7 +241,7 @@ void MrsdSetup::prepare_command_options() {
       });
 
   // TLS to the MariaDB server: used for the setup connection and written to
-  // the configuration as the mysql_ssl_* options of [mysql_rest_service]
+  // the configuration as the ssl_* options of [mariadb_rest_service]
   const std::vector<std::tuple<std::string, std::string, std::string>>
       ssl_options{
           {"--ssl-mode", "mode",
@@ -258,8 +258,8 @@ void MrsdSetup::prepare_command_options() {
            "Comma-separated TLS versions, e.g. TLSv1.2,TLSv1.3."},
       };
   for (const auto &[option, metavar, description] : ssl_options) {
-    // --ssl-mode -> mysql_ssl_mode, --tls-version -> mysql_tls_version
-    std::string config_option = "mysql_" + option.substr(2);
+    // --ssl-mode -> ssl_mode, --tls-version -> tls_version
+    std::string config_option = option.substr(2);
     std::replace(config_option.begin(), config_option.end(), '-', '_');
     arg_handler_.add_option(
         OptionNames({option}), description, CmdOptionValueReq::required,
@@ -538,7 +538,7 @@ std::map<std::string, std::string> MrsdSetup::get_config_cmdln_options()
     std::transform(option_id.begin(), option_id.end(), option_id.begin(),
                    ::tolower);
     if (option_id.starts_with(kConfigMrsSection + "."s)) {
-      throw invalid("[mysql_rest_service] is configured by --setup's own "
+      throw invalid("[mariadb_rest_service] is configured by --setup's own "
                     "options");
     }
     if (!result.emplace(option_id, option_value).second) {
@@ -602,15 +602,15 @@ void MrsdSetup::connect() {
     const auto it = ssl_options_.find(name);
     return it == ssl_options_.end() ? std::string{} : it->second;
   };
-  const std::string ssl_mode = ssl_option("mysql_ssl_mode");
+  const std::string ssl_mode = ssl_option("ssl_mode");
 
   try {
     mysql_->set_ssl_options(
         MySQLSession::parse_ssl_mode(
             ssl_mode.empty() ? MySQLSession::kSslModePreferred : ssl_mode),
-        ssl_option("mysql_tls_version"), ssl_option("mysql_ssl_cipher"),
-        ssl_option("mysql_ssl_ca"), ssl_option("mysql_ssl_capath"),
-        ssl_option("mysql_ssl_crl"), ssl_option("mysql_ssl_crlpath"));
+        ssl_option("tls_version"), ssl_option("ssl_cipher"),
+        ssl_option("ssl_ca"), ssl_option("ssl_capath"), ssl_option("ssl_crl"),
+        ssl_option("ssl_crlpath"));
     mysql_->connect(target_uri_.host, target_uri_.port, target_uri_.username,
                     target_uri_.password, socket_, "", connect_timeout_,
                     read_timeout_);
@@ -759,16 +759,25 @@ void MrsdSetup::load_existing_deployment() {
   }
 
   const auto &defaults = config.get_default_section();
-  if (!config.has(kConfigMrsSection) || !defaults.has("keyring_path") ||
+  // restd: a deployment written before the rename has [mysql_rest_service]
+  const char *mrs_section = config.has(kConfigMrsSection)
+                                ? kConfigMrsSection
+                                : "mysql_rest_service";
+  if (!config.has(mrs_section) || !defaults.has("keyring_path") ||
       !defaults.has("master_key_path")) {
     return;
   }
-  const auto &mrs = config.get(kConfigMrsSection, "");
+  const auto &mrs = config.get(mrs_section, "");
   const auto option = [&mrs](const char *name) {
     return mrs.has(name) ? mrs.get(name) : std::string{};
   };
-  const std::string metadata_user = option("mysql_user");
-  const std::string data_user = option("mysql_user_data_access");
+  // restd: a deployment written before the rename has the mysql_ names
+  const std::string metadata_user = mrs.has("metadata_user")
+                                        ? mrs.get("metadata_user")
+                                        : option("mysql_user");
+  const std::string data_user = mrs.has("data_user")
+                                    ? mrs.get("data_user")
+                                    : option("mysql_user_data_access");
 
   try {
     mysql_harness::init_keyring(defaults.get("keyring_path"),
@@ -1092,13 +1101,13 @@ void MrsdSetup::write_config(const std::string &rest_daemon_id) {
       const std::map<std::string, std::string> no_overrides;
       mysql_harness::ConfigSectionPrinter section(os, no_overrides,
                                                   kConfigMrsSection);
-      section.add_line("mysql_read_write_destinations", mysql_destination());
+      section.add_line("read_write_destinations", mysql_destination());
       for (const auto &[option, value] : ssl_options_) {
         section.add_line(option, value);
       }
-      section.add_line("mysql_user", metadata_account_.user);
+      section.add_line("metadata_user", metadata_account_.user);
       if (data_account_.user != metadata_account_.user) {
-        section.add_line("mysql_user_data_access", data_account_.user);
+        section.add_line("data_user", data_account_.user);
       }
       section.add_line("rest_daemon_id", rest_daemon_id);
       if (mrs::database::metadata_schema() !=
@@ -1148,7 +1157,7 @@ void MrsdSetup::write_scripts() {
     auto_cleaner_.add_file_delete(script);
     created_paths_.push_back(script);
     auto os = open_for_writing(script);
-    os << "[Environment]::SetEnvironmentVariable(\"ROUTER_PID\", \""
+    os << "[Environment]::SetEnvironmentVariable(\"MARIADB_RESTD_PID\", \""
        << pid_file << "\", \"Process\")\n"
        << "Start-Process \"" << program_path_ << "\" -ArgumentList \"-c\", '\""
        << config_path_ << "\"' -NoNewWindow\n";
@@ -1181,7 +1190,8 @@ void MrsdSetup::write_scripts() {
     }
   };
 
-  write_script("start.sh", "ROUTER_PID='" + pid_file + "' '" + program_path_ +
+  write_script("start.sh", "MARIADB_RESTD_PID='" + pid_file + "' '" +
+                               program_path_ +
                                "' -c '" + config_path_ + "' &\n");
   write_script("stop.sh", "if [ -f '" + pid_file + "' ]; then\n  kill -TERM " +
                               "\"$(cat '" + pid_file + "')\" && rm -f '" +

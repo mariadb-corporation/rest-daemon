@@ -61,7 +61,7 @@ FOREACH(test_file
     test_pidfile.cc
     test_rest_api.cc
     test_rest_mock_server.cc
-    test_rest_router.cc
+    test_rest_daemon.cc
     test_router_configuration_errors.cc
     test_router_stacktrace.cc
     test_sd_notify.cc
@@ -91,7 +91,7 @@ FOREACH(test_file
       mysqlrouter_passwd
       mysqlrouter
       rest_api
-      rest_router
+      rest_daemon
       mysql_rest_service
       routertestplugin_logger
       signal_me

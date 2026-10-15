@@ -55,7 +55,7 @@
 --echo # I.2
 
 --write_file $MYSQL_TMP_DIR/extra_router_config.cnf
-[mysql_rest_service]
+[mariadb_rest_service]
 developer=my_user
 EOF
 

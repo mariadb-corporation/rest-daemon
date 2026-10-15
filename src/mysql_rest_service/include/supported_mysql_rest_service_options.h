@@ -29,11 +29,26 @@
 
 #include <array>
 
+// restd: the options of [mariadb_rest_service]; the server accounts and the
+// backend destinations and TLS settings (replacing upstream's
+// mysql_read_write_route/mysql_read_only_route) are named without upstream's
+// mysql_ prefix. The old names are still accepted (deprecated).
 static constexpr std::array mysql_rest_service_supported_options{
+    "metadata_user",
+    "data_user",
+    "read_write_destinations",
+    "read_only_destinations",
+    "ssl_mode",
+    "ssl_ca",
+    "ssl_capath",
+    "ssl_crl",
+    "ssl_crlpath",
+    "ssl_curves",
+    "ssl_cipher",
+    "tls_version",
+    // deprecated names, accepted until the next major release
     "mysql_user",
     "mysql_user_data_access",
-    // restd: backend destinations and TLS settings, replacing upstream's
-    // mysql_read_write_route/mysql_read_only_route
     "mysql_read_write_destinations",
     "mysql_read_only_destinations",
     "mysql_ssl_mode",

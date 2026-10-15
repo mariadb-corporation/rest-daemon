@@ -1,5 +1,5 @@
 # Verify that the logging level defined in [logger] section used for MRS metadata logging when it is
-# not explicitly overwritten in [mysql_rest_service].level
+# not explicitly overwritten in [mariadb_rest_service].level
 --source include/have_router.inc
 # mrs metadata logging is only enabled when md version is >= 4.0.2
 --source ../include/mrs/is_mrs_schema_v5.inc

@@ -28,7 +28,7 @@
 #include <Winsock2.h>  // gethostname()
 #endif
 
-#include "rest_router_status.h"
+#include "rest_daemon_status.h"
 
 #include <array>
 #include <ctime>
@@ -46,7 +46,7 @@
 
 #include "router_config.h"  // MYSQL_ROUTER_VERSION
 
-bool RestRouterStatus::on_handle_request(http::base::Request &req,
+bool RestDaemonStatus::on_handle_request(http::base::Request &req,
                                          const std::string & /* base_path */,
                                          const std::vector<std::string> &) {
   if (!ensure_no_params(req)) return true;

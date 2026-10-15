@@ -98,7 +98,7 @@ static void spec_adder(RestApiComponent::JsonDocument &spec_doc) {
             allocator);
   }
 
-  // /definitions/RouterStatus
+  // /definitions/SignalAbort
   const RestApiComponent::JsonPointer signal_abort_def_ptr(
       signal_abort_def_tokens.data(), signal_abort_def_tokens.size());
 
@@ -113,7 +113,7 @@ static void spec_adder(RestApiComponent::JsonDocument &spec_doc) {
   std::string signal_abort_def_ptr_str =
       json_pointer_stringfy(signal_abort_def_ptr);
 
-  // /paths/routerStatus
+  // /paths/signalAbort
   {
     JsonPointer ptr(signal_abort_path_tokens.data(),
                     signal_abort_path_tokens.size());

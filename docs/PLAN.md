@@ -466,23 +466,32 @@ with those repositories.
   `MRS_README.router` dropped; README and release notes.
 - "MRS scripts" stays: it is the shell's name for the feature.
 
-### Phase R2: names with compatibility impact (in sync with the plugins)
-- `[mysql_rest_service]` → new section name, `mysql_user` → `user`-style keys (12 `mysql_*`
-  keys). The section name is also the plugin's file name (the harness loads `<section>.so`):
-  either a section-to-plugin alias in the harness or the plugin file renamed with it. The
-  old names are accepted with a deprecation warning for one release.
-- `ROUTER_PID` (read by the daemon, written to `start.sh`/`start.ps1`, set by the plugins'
-  `restd.py`) → `MARIADB_RESTD_PID`, both read; `router-key.pem`/`router-cert.pem` →
-  `restd-*.pem` (new deployments; existing configs name the paths); `[rest_router]`'s
-  `/api/20190715/router/status`; log domains `mrs_*` (also stored in
-  `rest_daemon_general_log.domain`: check the shell's views first); the OpenAPI security
-  scheme `mrs_login`; the `rest_daemon.attributes` keys `mrs_metadata_accounts` /
-  `mrs_data_accounts` (nothing in the shell or plugins reads them).
-- The plugins read section `mysql_rest_service`, keys `mysql_user`/`mysql_user_data_access`
-  (`mcp_plugin/lib/restd.py`) and set `ROUTER_PID`: the daemon accepts both names first,
-  the plugins switch in the same round, the old names go a release later.
-- Docs: README (configuration, "Differences from MySQL Router's MRS configuration"),
-  `docs/mariadb-differences.md`, the plugins' `rest.md`.
+### Phase R2: names with compatibility impact (in sync with the plugins) ✅ done (2026-10-15)
+- `[mysql_rest_service]` → `[mariadb_rest_service]`: the section, the plugin file
+  (`mariadb_rest_service.so`, `OUTPUT_NAME`; the CMake target keeps its name), the
+  descriptor symbol, the log domain and the metadata log sink. The daemon renames an old
+  section on loading (`MySQLRouter::rename_deprecated_sections`: options copied, the
+  `library` default and the `[logger]` `sinks` entry follow) with a deprecation warning.
+- The keys lose the `mysql_` prefix: `metadata_user`, `data_user` (as `--setup`'s
+  `--metadata-account`/`--data-account`), `read_write_destinations`,
+  `read_only_destinations`, `ssl_mode`, `ssl_ca`, `ssl_capath`, `ssl_crl`, `ssl_crlpath`,
+  `ssl_curves`, `ssl_cipher`, `tls_version`. The old names stay in the supported list and
+  are read with a warning (`PluginConfig`); `--setup --force` reads an old deployment's
+  names too.
+- `ROUTER_PID` → `MARIADB_RESTD_PID` (both read, the old one with a warning; `start.sh`/
+  `start.ps1` write the new one); `router-key.pem`/`router-cert.pem` → `restd-key.pem`/
+  `restd-cert.pem` (new deployments; existing configurations name the paths).
+- `[rest_router]` → `[rest_daemon]` (plugin `rest_daemon.so`, `/api/20190715/daemon/status`,
+  OpenAPI `DaemonStatus`); no deprecated alias (optional plugin, the shell and plugins
+  don't use it).
+- Plugins (`mariadb-shell-plugins`, same round): `restd.py` reads `[mariadb_rest_service]`
+  or `[mysql_rest_service]`, `metadata_user`/`data_user` or the old keys (deployments
+  written by restd 26.10.0 keep the old names), and sets both `MARIADB_RESTD_PID` and
+  `ROUTER_PID`; its unit test's fake daemon and `rest.md` follow.
+- Kept (the shell's own terms, not Router/MySQL branding): "MRS scripts", the log domains
+  `mrs_*`, the OpenAPI security scheme `mrs_login`, the `rest_daemon.attributes` keys
+  `mrs_metadata_accounts`/`mrs_data_accounts`.
+- The old names are removed in the next major release.
 
 ### Phase R3: package file names (optional)
 - `libmysqlrouter*`/`libmysqlharness*` (12 libraries), plugins `mysql_rest_service`,

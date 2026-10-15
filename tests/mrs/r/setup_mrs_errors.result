@@ -4,7 +4,7 @@ Error: --socket needs 'localhost' as the host of the server URI, not 'db.example
 Error: --setup must be the first option
 Error: --developer-debug-port needs --developer
 Error: --conf-set-option: invalid option 'foo': expected section.option_name=value
-Error: --conf-set-option: invalid option 'mysql_rest_service.rest_daemon_id=5': [mysql_rest_service] is configured by --setup's own options
+Error: --conf-set-option: invalid option 'mariadb_rest_service.rest_daemon_id=5': [mariadb_rest_service] is configured by --setup's own options
 Error: Invalid value for --ssl-mode: 'SOMETIMES', expected DISABLED, PREFERRED, REQUIRED, VERIFY_CA or VERIFY_IDENTITY
 Error: --master-key-reader and --master-key-writer must be used together
 CREATE USER setup_admin IDENTIFIED BY 'pass';

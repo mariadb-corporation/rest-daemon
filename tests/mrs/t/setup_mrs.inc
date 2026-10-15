@@ -20,7 +20,7 @@ exec $MYSQLROUTER --setup mrs_setup_user:pass@127.0.0.1:$MASTER_MYPORT
 
 # the generated configuration
 replace_regex /=.*setup_folder.*/=DIRECTORY_FILE_OR_FOLDER/
-              /mysql_user=mariadb_restd_.*/mysql_user=mariadb_restd_RANDOM/
+              /metadata_user=mariadb_restd_.*/metadata_user=mariadb_restd_RANDOM/
               /rest_daemon_id=.*/rest_daemon_id=UUID/
               /plugin_folder=.*/plugin_folder=ROUTER_PLUGIN_DIRECTORY/
               /destinations=.*/destinations=ADDR:PORT/ ;
@@ -29,8 +29,8 @@ replace_regex /=.*setup_folder.*/=DIRECTORY_FILE_OR_FOLDER/
 # the files of the deployment
 --file_exists $MYSQL_TMP_DIR/setup_folder/mariadb-restd.key
 --file_exists $MYSQL_TMP_DIR/setup_folder/data/keyring
---file_exists $MYSQL_TMP_DIR/setup_folder/data/router-cert.pem
---file_exists $MYSQL_TMP_DIR/setup_folder/data/router-key.pem
+--file_exists $MYSQL_TMP_DIR/setup_folder/data/restd-cert.pem
+--file_exists $MYSQL_TMP_DIR/setup_folder/data/restd-key.pem
 --file_exists $MYSQL_TMP_DIR/setup_folder/log
 --file_exists $MYSQL_TMP_DIR/setup_folder/run
 

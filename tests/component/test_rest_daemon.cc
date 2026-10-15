@@ -50,28 +50,28 @@
 
 using namespace std::chrono_literals;
 
-class RestRouterApiTest
+class RestDaemonApiTest
     : public RestApiComponentTest,
       public ::testing::WithParamInterface<RestApiTestParams> {};
 
-static const std::vector<SwaggerPath> kRouterSwaggerPaths{
-    {"/router/status", "Get status of the application", "status of application",
+static const std::vector<SwaggerPath> kDaemonSwaggerPaths{
+    {"/daemon/status", "Get status of the application", "status of application",
      ""},
 };
 
 /**
- * @test check /router/status
+ * @test check /daemon/status
  *
- * - start router with rest_router module loaded
- * - GET /router/status
+ * - start router with rest_daemon module loaded
+ * - GET /daemon/status
  * - check response code is 200 and output matches openapi spec
  */
-TEST_P(RestRouterApiTest, ensure_openapi) {
+TEST_P(RestDaemonApiTest, ensure_openapi) {
   const std::string http_hostname = "127.0.0.1";
   const std::string http_uri = GetParam().uri + GetParam().api_path;
 
   const std::string userfile = create_password_file();
-  auto config_sections = get_restapi_config("rest_router", userfile, true);
+  auto config_sections = get_restapi_config("rest_daemon", userfile, true);
 
   const std::string conf_file{create_config_file(
       conf_dir_.name(), mysql_harness::join(config_sections, "\n"))};
@@ -81,9 +81,9 @@ TEST_P(RestRouterApiTest, ensure_openapi) {
       fetch_and_validate_schema_and_resource(GetParam(), http_server));
 }
 
-class RestRouterURITest : public RestApiComponentTest {};
+class RestDaemonURITest : public RestApiComponentTest {};
 
-TEST_F(RestRouterURITest, router_status_invalid_uri) {
+TEST_F(RestDaemonURITest, daemon_status_invalid_uri) {
   RecordProperty("Description",
                  "Check that invalid URLs are handled properly by the "
                  "http_server plugin.");
@@ -96,7 +96,7 @@ TEST_F(RestRouterURITest, router_status_invalid_uri) {
        create_config_file(
            conf_dir_.name(),
            mysql_harness::join(
-               get_restapi_config("rest_router", userfile, true), "\n"))});
+               get_restapi_config("rest_daemon", userfile, true), "\n"))});
 
   net::io_context io_ctx;
 
@@ -124,9 +124,9 @@ TEST_F(RestRouterURITest, router_status_invalid_uri) {
 // and valid credentials
 // ****************************************************************************
 static const RestApiTestParams rest_api_valid_methods[]{
-    {"router_status_get",
-     std::string(rest_api_basepath) + "/router/status",
-     "/router/status",
+    {"daemon_status_get",
+     std::string(rest_api_basepath) + "/daemon/status",
+     "/daemon/status",
      HttpMethod::Get,
      HttpStatusCode::Ok,
      kContentTypeJson,
@@ -174,10 +174,10 @@ static const RestApiTestParams rest_api_valid_methods[]{
                 << value->GetString();
           }},
      },
-     kRouterSwaggerPaths},
-    {"router_status_no_params",
-     std::string(rest_api_basepath) + "/router/status?someparam",
-     "/router/status",
+     kDaemonSwaggerPaths},
+    {"daemon_status_no_params",
+     std::string(rest_api_basepath) + "/daemon/status?someparam",
+     "/daemon/status",
      HttpMethod::Get,
      HttpStatusCode::BadRequest,
      kContentTypeJsonProblem,
@@ -185,11 +185,11 @@ static const RestApiTestParams rest_api_valid_methods[]{
      kRestApiPassword,
      /*request_authentication =*/true,
      {},
-     kRouterSwaggerPaths},
+     kDaemonSwaggerPaths},
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    ValidMethods, RestRouterApiTest,
+    ValidMethods, RestDaemonApiTest,
     ::testing::ValuesIn(rest_api_valid_methods),
     [](const ::testing::TestParamInfo<RestApiTestParams> &info) {
       return info.param.test_name;
@@ -201,9 +201,9 @@ INSTANTIATE_TEST_SUITE_P(
 // ****************************************************************************
 
 static const RestApiTestParams rest_api_valid_methods_invalid_auth_params[]{
-    {"router_status_invalid_auth",
-     std::string(rest_api_basepath) + "/router/status",
-     "/router/status",
+    {"daemon_status_invalid_auth",
+     std::string(rest_api_basepath) + "/daemon/status",
+     "/daemon/status",
      HttpMethod::Get,
      HttpStatusCode::Unauthorized,
      kContentTypeHtmlCharset,
@@ -211,11 +211,11 @@ static const RestApiTestParams rest_api_valid_methods_invalid_auth_params[]{
      "invalid password",
      /*request_authentication =*/true,
      {},
-     kRouterSwaggerPaths},
+     kDaemonSwaggerPaths},
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    ValidMethodsInvalidAuth, RestRouterApiTest,
+    ValidMethodsInvalidAuth, RestDaemonApiTest,
     ::testing::ValuesIn(rest_api_valid_methods_invalid_auth_params),
     [](const ::testing::TestParamInfo<RestApiTestParams> &info) {
       return info.param.test_name;
@@ -226,19 +226,19 @@ INSTANTIATE_TEST_SUITE_P(
 // and valid credentials
 // ****************************************************************************
 static const RestApiTestParams rest_api_invalid_methods_params[]{
-    {"router_status_invalid_methods",
-     std::string(rest_api_basepath) + "/router/status", "/router/status",
+    {"daemon_status_invalid_methods",
+     std::string(rest_api_basepath) + "/daemon/status", "/daemon/status",
      HttpMethod::Post | HttpMethod::Delete | HttpMethod::Patch |
          HttpMethod::Head | HttpMethod::Trace | HttpMethod::Options,
      HttpStatusCode::MethodNotAllowed, kContentTypeJsonProblem,
      kRestApiUsername, kRestApiPassword,
      /*request_authentication =*/true,
      RestApiComponentTest::get_json_method_not_allowed_verifiers(),
-     kRouterSwaggerPaths},
+     kDaemonSwaggerPaths},
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    InvalidMethods, RestRouterApiTest,
+    InvalidMethods, RestDaemonApiTest,
     ::testing::ValuesIn(rest_api_invalid_methods_params),
     [](const ::testing::TestParamInfo<RestApiTestParams> &info) {
       return info.param.test_name;
@@ -249,13 +249,13 @@ INSTANTIATE_TEST_SUITE_P(
 // ****************************************************************************
 
 /**
- * @test Start router with the REST routing API plugin [rest_router] and
+ * @test Start router with the REST routing API plugin [rest_daemon] and
  * [http_server] enabled but not the [rest_api] plugin.
  *
  */
-TEST_F(RestRouterApiTest, rest_api_section_missing_works) {
+TEST_F(RestDaemonApiTest, rest_api_section_missing_works) {
   const std::string userfile = create_password_file();
-  auto config_sections = get_restapi_config("rest_router", userfile,
+  auto config_sections = get_restapi_config("rest_daemon", userfile,
                                             /*request_authentication=*/true);
 
   const std::string conf_file{create_config_file(
@@ -265,18 +265,18 @@ TEST_F(RestRouterApiTest, rest_api_section_missing_works) {
 }
 
 /**
- * @test Add [rest_router] twice to the configuration file. Start router. Expect
+ * @test Add [rest_daemon] twice to the configuration file. Start router. Expect
  * router to fail providing an error about the duplicate section.
  *
  */
-TEST_F(RestRouterApiTest, rest_router_section_twice) {
+TEST_F(RestDaemonApiTest, rest_daemon_section_twice) {
   const std::string userfile = create_password_file();
-  auto config_sections = get_restapi_config("rest_router", userfile,
+  auto config_sections = get_restapi_config("rest_daemon", userfile,
                                             /*request_authentication=*/true);
 
-  // force [rest_router] twice in the config
+  // force [rest_daemon] twice in the config
   config_sections.push_back(
-      mysql_harness::ConfigBuilder::build_section("rest_router", {}));
+      mysql_harness::ConfigBuilder::build_section("rest_daemon", {}));
 
   const std::string conf_file{create_config_file(
       conf_dir_.name(), mysql_harness::join(config_sections, "\n"))};
@@ -289,20 +289,20 @@ TEST_F(RestRouterApiTest, rest_router_section_twice) {
 
   const std::string router_output = router.get_full_output();
   EXPECT_NE(router_output.find(
-                "Configuration error: Section 'rest_router' already exists"),
+                "Configuration error: Section 'rest_daemon' already exists"),
             router_output.npos)
       << router_output;
 }
 
 /**
- * @test Enable [rest_router] using a section key such as [rest_router:A]. Start
+ * @test Enable [rest_daemon] using a section key such as [rest_daemon:A]. Start
  * router. Expect router to fail providing an error about the use of an
  * unsupported section key.
  *
  */
-TEST_F(RestRouterApiTest, rest_router_section_has_key) {
+TEST_F(RestDaemonApiTest, rest_daemon_section_has_key) {
   const std::string userfile = create_password_file();
-  auto config_sections = get_restapi_config("rest_router:A", userfile,
+  auto config_sections = get_restapi_config("rest_daemon:A", userfile,
                                             /*request_authentication=*/true);
 
   const std::string conf_file{create_config_file(
@@ -316,7 +316,7 @@ TEST_F(RestRouterApiTest, rest_router_section_has_key) {
 
   const std::string router_output = router.get_logfile_content();
   EXPECT_THAT(router_output,
-              ::testing::HasSubstr("  init 'rest_router' failed: [rest_router] "
+              ::testing::HasSubstr("  init 'rest_daemon' failed: [rest_daemon] "
                                    "section does not expect a key, found 'A'"));
 }
 
@@ -325,9 +325,9 @@ TEST_F(RestRouterApiTest, rest_router_section_has_key) {
  * defines authentication as a MUST.
  *
  */
-TEST_F(RestRouterApiTest, router_api_no_auth) {
+TEST_F(RestDaemonApiTest, daemon_api_no_auth) {
   const std::string userfile = create_password_file();
-  auto config_sections = get_restapi_config("rest_router", userfile,
+  auto config_sections = get_restapi_config("rest_daemon", userfile,
                                             /*request_authentication=*/false);
 
   const std::string conf_file{create_config_file(
@@ -341,18 +341,18 @@ TEST_F(RestRouterApiTest, router_api_no_auth) {
 
   const std::string router_output = router.get_logfile_content();
   EXPECT_THAT(router_output, ::testing::HasSubstr(
-                                 "  init 'rest_router' failed: option "
-                                 "require_realm in [rest_router] is required"));
+                                 "  init 'rest_daemon' failed: option "
+                                 "require_realm in [rest_daemon] is required"));
 }
 
 /**
  * @test Enable authentication for the plugin in question. Reference a realm
  * that does not exist in the configuration file.
  */
-TEST_F(RestRouterApiTest, invalid_realm) {
+TEST_F(RestDaemonApiTest, invalid_realm) {
   const std::string userfile = create_password_file();
   auto config_sections = get_restapi_config(
-      "rest_router", userfile, /*request_authentication=*/true, "invalidrealm");
+      "rest_daemon", userfile, /*request_authentication=*/true, "invalidrealm");
 
   const std::string conf_file{create_config_file(
       conf_dir_.name(), mysql_harness::join(config_sections, "\n"))};
@@ -368,7 +368,7 @@ TEST_F(RestRouterApiTest, invalid_realm) {
       router_output,
       ::testing::HasSubstr(
           "Configuration error: The option 'require_realm=invalidrealm' "
-          "in [rest_router] does not match any http_auth_realm."));
+          "in [rest_daemon] does not match any http_auth_realm."));
 }
 
 int main(int argc, char *argv[]) {

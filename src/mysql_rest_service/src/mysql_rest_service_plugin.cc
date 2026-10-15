@@ -73,7 +73,10 @@
 
 IMPORT_LOG_FUNCTIONS()
 
-static constexpr const char kSectionName[]{"mysql_rest_service"};
+// restd: the configuration section (and so the plugin's file name and the
+// log sink name) is [mariadb_rest_service]; [mysql_rest_service] is still
+// accepted by the daemon (renamed on loading, with a deprecation warning)
+static constexpr const char kSectionName[]{"mariadb_rest_service"};
 
 namespace {
 
@@ -144,7 +147,7 @@ class MrsModule {
            e.code() == ER_ACCESS_DENIED_NO_PASSWORD_ERROR)) {
         return false;
       }
-      trace_error("mysql_user", "metadata",
+      trace_error("metadata_user", "metadata",
                   mrs::database::metadata_role("meta_provider").c_str(), e);
       throw std::runtime_error(
           "Can't start the MariaDB REST Service, because connection to the "
@@ -164,7 +167,7 @@ class MrsModule {
            e.code() == ER_ACCESS_DENIED_NO_PASSWORD_ERROR)) {
         return false;
       }
-      trace_error("mysql_user_data_access", "user-data",
+      trace_error("data_user", "user-data",
                   mrs::database::metadata_role("data_provider").c_str(), e);
       throw std::runtime_error(
           "Can't start the MariaDB REST Service, because connection to the "
@@ -296,7 +299,7 @@ static void init_metadata_logger(
     const mysql_harness::ConfigSection *mrs_section) {
   if (!mysql_harness::logging::handler_registered(kSectionName)) return;
 
-  // 'mysql_rest_service' is configured as a sink, figure out the log level and
+  // 'mariadb_rest_service' is configured as a sink, figure out the log level and
   // create a sink
   using mysql_harness::logging::get_default_log_level;
   using mysql_harness::logging::log_level_from_string;
@@ -327,7 +330,7 @@ static void init(mysql_harness::PluginFuncEnv *env) {
 
     if (sections.empty())
       throw std::invalid_argument(
-          "Missing configuration section [mysql_rest_service].");
+          "Missing configuration section [mariadb_rest_service].");
 
     if (1 < sections.size())
       throw std::invalid_argument(
@@ -401,10 +404,10 @@ static std::array<const char *, 4> required = {
 
 extern "C" {
 mysql_harness::Plugin MYSQL_REST_SERVICE_EXPORT
-    harness_plugin_mysql_rest_service = {
+    harness_plugin_mariadb_rest_service = {
         mysql_harness::PLUGIN_ABI_VERSION,       // abi-version
         mysql_harness::ARCHITECTURE_DESCRIPTOR,  // arch-descriptor
-        "MYSQL_REST_SERVICE", VERSION_NUMBER(0, 0, 1),
+        "MARIADB_REST_SERVICE", VERSION_NUMBER(0, 0, 1),
         // requires
         required.size(), required.data(),
         // conflicts

@@ -101,7 +101,12 @@ using mysqlrouter::SysUserOperationsBase;
 static const char kProgramName[] = MRSD_PROGRAM_NAME;
 
 static const std::set<std::string> kSupportedExternalLoggingHandlerNames{
-    "mysql_rest_service"};
+    "mariadb_rest_service"};
+
+// restd: the section [mysql_rest_service] was renamed [mariadb_rest_service]
+// (and with it the plugin and the log sink); the old name is still read
+static constexpr const char kMrsSection[] = "mariadb_rest_service";
+static constexpr const char kMrsSectionDeprecated[] = "mysql_rest_service";
 
 namespace {
 
@@ -272,10 +277,11 @@ static bool option_has_value(mysql_harness::ConfigSection *section,
 void MySQLRouter::init_keyring(mysql_harness::Config &config) {
   bool needs_keyring = false;
 
-  if (config.has_any("mysql_rest_service")) {
-    auto mysql_rest_service = config.get("mysql_rest_service");
+  if (config.has_any(kMrsSection)) {
+    auto mysql_rest_service = config.get(kMrsSection);
     for (auto &section : mysql_rest_service) {
-      if (section->has("mysql_user") ||
+      if (section->has("metadata_user") || section->has("data_user") ||
+          section->has("mysql_user") ||
           section->has("mysql_user_data_access") ||
           option_has_value(section, "jwt_token", {"1", "true"})) {
         needs_keyring = true;
@@ -355,6 +361,47 @@ void MySQLRouter::init_main_logger(mysql_harness::LoaderConfig &config,
 }
 
 // throws std::runtime_error
+// restd: [mysql_rest_service] sections become [mariadb_rest_service] ones,
+// and the logger's sink of that name follows, so that a configuration from
+// before the rename still works
+void MySQLRouter::rename_deprecated_sections(mysql_harness::Config &config) {
+  if (!config.has_any(kMrsSectionDeprecated)) return;
+
+  std::vector<std::string> keys;
+  for (const auto *old_section : config.get(kMrsSectionDeprecated)) {
+    keys.push_back(old_section->key);
+    if (config.has(kMrsSection, old_section->key)) {
+      throw std::runtime_error(
+          "both [" + std::string(kMrsSectionDeprecated) + "] and [" +
+          kMrsSection + "] are configured; [" + kMrsSectionDeprecated +
+          "] is the deprecated name of [" + kMrsSection + "]");
+    }
+    auto &new_section = config.add(kMrsSection, old_section->key);
+    for (const auto &[option, value] : old_section->get_options()) {
+      // the plugin library defaults to the section name (LoaderConfig)
+      const bool is_library_default =
+          option == "library" && value == kMrsSectionDeprecated;
+      new_section.add(option, is_library_default ? kMrsSection : value);
+    }
+  }
+  for (const auto &key : keys) config.remove(kMrsSectionDeprecated, key);
+  deprecation_warnings_.push_back(
+      "Configuration section [" + std::string(kMrsSectionDeprecated) +
+      "] is deprecated, use [" + kMrsSection + "] instead.");
+
+  if (config.has_any("logger")) {
+    for (auto *logger : config.get("logger")) {
+      if (!logger->has("sinks")) continue;
+      auto sinks = logger->get("sinks");
+      const auto pos = sinks.find(kMrsSectionDeprecated);
+      if (pos == std::string::npos) continue;
+      sinks.replace(pos, std::string(kMrsSectionDeprecated).size(),
+                    kMrsSection);
+      logger->set("sinks", sinks);
+    }
+  }
+}
+
 mysql_harness::LoaderConfig *MySQLRouter::make_config(
     const std::map<std::string, std::string> params,
     const std::vector<std::string> &config_files) {
@@ -371,6 +418,8 @@ mysql_harness::LoaderConfig *MySQLRouter::make_config(
     for (const auto &config_file : config_files) {
       config->read(config_file);
     }
+
+    rename_deprecated_sections(*config);
 
     return config.release();
   } catch (const mysql_harness::syntax_error &err) {
@@ -436,7 +485,7 @@ void MySQLRouter::start() {
   }
 
   // Setup pidfile path for the application.
-  // Order of significance: commandline > config file > ROUTER_PID envvar
+  // Order of significance: commandline > config file > MARIADB_RESTD_PID envvar
   if (pid_file_path_.empty()) {
     if (config.has_default(router::options::kPidFile)) {
       const std::string pidfile = config.get_default(router::options::kPidFile);
@@ -448,8 +497,17 @@ void MySQLRouter::start() {
       }
     }
     // ... if still empty, check ENV
+    // restd: MARIADB_RESTD_PID; upstream's ROUTER_PID is still read
     if (pid_file_path_.empty()) {
-      const auto pid_file_env = std::getenv("ROUTER_PID");
+      auto pid_file_env = std::getenv("MARIADB_RESTD_PID");
+      if (pid_file_env == nullptr) {
+        pid_file_env = std::getenv("ROUTER_PID");
+        if (pid_file_env != nullptr) {
+          deprecation_warnings_.push_back(
+              "Environment variable ROUTER_PID is deprecated, use "
+              "MARIADB_RESTD_PID instead.");
+        }
+      }
       if (pid_file_env != nullptr) {
         const std::string pidfile = std::string(pid_file_env);
         if (!pidfile.empty()) {
@@ -499,11 +557,16 @@ void MySQLRouter::start() {
   register_supported_external_logging_handler_names(
       kSupportedExternalLoggingHandlerNames);
 
-  register_on_switch_to_configured_loggers_callback([]() {
-    // once we switched to the configured logger(s) log the Router version
-    log_system("Starting '%s', version: %s (%s)", MYSQL_ROUTER_PACKAGE_NAME,
-               MYSQL_ROUTER_VERSION, MYSQL_ROUTER_VERSION_EDITION);
-  });
+  register_on_switch_to_configured_loggers_callback(
+      [warnings = deprecation_warnings_]() {
+        // once we switched to the configured logger(s) log the version
+        log_system("Starting '%s', version: %s (%s)",
+                   MYSQL_ROUTER_PACKAGE_NAME, MYSQL_ROUTER_VERSION,
+                   MYSQL_ROUTER_VERSION_EDITION);
+        for (const auto &warning : warnings) {
+          log_warning("%s", warning.c_str());
+        }
+      });
 
   mysql_harness::ProcessStateComponent::get_instance()
       .register_on_shutdown_request_callback(

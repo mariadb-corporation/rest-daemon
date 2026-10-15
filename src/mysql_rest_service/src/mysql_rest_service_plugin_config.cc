@@ -171,30 +171,39 @@ PluginConfig::PluginConfig(const ConfigSection *section,
                            const uint32_t http_port)
     : mysql_harness::BasePluginConfig(section) {
   static const char *kKeyringAttributePassword = "password";
-  mysql_user_ = get_option(section, "mysql_user", StringOption{});
+  // restd: the options lost upstream's mysql_ prefix; an option given under
+  // its old name is read from there, with a deprecation warning
+  const auto string_option = [&](const char *name, const char *old_name) {
+    if (!section->has(name) && section->has(old_name)) {
+      log_warning(
+          "Option '%s' of section [%s] is deprecated, use '%s' instead.",
+          old_name, section->name.c_str(), name);
+      return get_option(section, old_name, StringOption{});
+    }
+    return get_option(section, name, StringOption{});
+  };
+  mysql_user_ = string_option("metadata_user", "mysql_user");
   mysql_user_data_access_ =
-      get_option(section, "mysql_user_data_access", StringOption{});
-  destinations_rw_ =
-      get_option(section, "mysql_read_write_destinations", StringOption{});
-  destinations_ro_ =
-      get_option(section, "mysql_read_only_destinations", StringOption{});
+      string_option("data_user", "mysql_user_data_access");
+  destinations_rw_ = string_option("read_write_destinations",
+                                   "mysql_read_write_destinations");
+  destinations_ro_ = string_option("read_only_destinations",
+                                   "mysql_read_only_destinations");
 
-  destination_ssl_.ssl_mode_ = parse_ssl_mode(
-      get_option(section, "mysql_ssl_mode", StringOption{}));
-  destination_ssl_.ssl_ca_file_ =
-      get_option(section, "mysql_ssl_ca", StringOption{});
+  destination_ssl_.ssl_mode_ =
+      parse_ssl_mode(string_option("ssl_mode", "mysql_ssl_mode"));
+  destination_ssl_.ssl_ca_file_ = string_option("ssl_ca", "mysql_ssl_ca");
   destination_ssl_.ssl_ca_path_ =
-      get_option(section, "mysql_ssl_capath", StringOption{});
-  destination_ssl_.ssl_crl_file_ =
-      get_option(section, "mysql_ssl_crl", StringOption{});
+      string_option("ssl_capath", "mysql_ssl_capath");
+  destination_ssl_.ssl_crl_file_ = string_option("ssl_crl", "mysql_ssl_crl");
   destination_ssl_.ssl_crl_path_ =
-      get_option(section, "mysql_ssl_crlpath", StringOption{});
+      string_option("ssl_crlpath", "mysql_ssl_crlpath");
   destination_ssl_.ssl_curves_ =
-      get_option(section, "mysql_ssl_curves", StringOption{});
+      string_option("ssl_curves", "mysql_ssl_curves");
   destination_ssl_.ssl_ciphers_ =
-      get_option(section, "mysql_ssl_cipher", StringOption{});
+      string_option("ssl_cipher", "mysql_ssl_cipher");
   destination_ssl_.tls_version_ =
-      get_option(section, "mysql_tls_version", StringOption{});
+      string_option("tls_version", "mysql_tls_version");
   // restd: the daemon's id is a UUID (upstream: router_id, an integer)
   {
     const auto id = get_option(section, "rest_daemon_id", StringOption{});
@@ -235,8 +244,8 @@ PluginConfig::PluginConfig(const ConfigSection *section,
   jwt_secret_ = get_keyring_value("rest-user", "jwt_secret");
 
   // validate early, so configuration errors are reported during init().
-  (void)parse_destinations("mysql_read_write_destinations", destinations_rw_);
-  (void)parse_destinations("mysql_read_only_destinations", destinations_ro_);
+  (void)parse_destinations("read_write_destinations", destinations_rw_);
+  (void)parse_destinations("read_only_destinations", destinations_ro_);
 
   wait_for_metadata_schema_access_ =
       get_option(section, "wait_for_metadata_schema_access", SecondsOption{});
@@ -247,9 +256,9 @@ PluginConfig::PluginConfig(const ConfigSection *section,
 }
 
 bool PluginConfig::init_runtime_configuration() {
-  provider_rw_ = create_destination("mysql_read_write_destinations",
+  provider_rw_ = create_destination("read_write_destinations",
                                     destinations_rw_, destination_ssl_);
-  provider_ro_ = create_destination("mysql_read_only_destinations",
+  provider_ro_ = create_destination("read_only_destinations",
                                     destinations_ro_, destination_ssl_);
 
   log_debug("destinations_rw_=%s", destinations_rw_.c_str());
@@ -264,8 +273,8 @@ bool PluginConfig::init_runtime_configuration() {
 }
 
 bool PluginConfig::is_required(std::string_view option) const {
-  if (option == "mysql_user") return true;
-  if (option == "mysql_read_write_destinations") return true;
+  if (option == "metadata_user") return true;
+  if (option == "read_write_destinations") return true;
   if (option == "rest_daemon_id") return true;
 
   return false;

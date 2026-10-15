@@ -295,12 +295,15 @@ IF(MRS_JIT_EXECUTOR_LIB)
   list(APPEND mysql_rest_service_reqs jit_executor_plugin)
 ENDIF()
 
+# restd: the plugin file is named after its configuration section
 ADD_HARNESS_PLUGIN(mysql_rest_service
   SOURCES
   mysql_rest_service_plugin_config.cc
   mysql_rest_service_plugin.cc
   REQUIRES "${mysql_rest_service_reqs}"
   DESTINATION "${ROUTER_INSTALL_PLUGINDIR}"
+  OUTPUT_NAME mariadb_rest_service
+  LOG_DOMAIN "\"mariadb_rest_service\""
 )
 
 TARGET_INCLUDE_DIRECTORIES(mysql_rest_service

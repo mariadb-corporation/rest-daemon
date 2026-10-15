@@ -402,7 +402,7 @@ TEST_F(NotifyTest, NotifyReadyManyPlugins) {
                                        {"filename", create_password_file()},
                                    }),
       ConfigBuilder::build_section("rest_api", {}),
-      ConfigBuilder::build_section("rest_router",
+      ConfigBuilder::build_section("rest_daemon",
                                    {{"require_realm", "somerealm"}}),
       ConfigBuilder::build_section("rest_routing",
                                    {{"require_realm", "somerealm"}}),

@@ -2,7 +2,7 @@
 
 [logger]
 level=info
-sinks=filelog,mysql_rest_service
+sinks=filelog,mariadb_rest_service
 
 [routing:static]
 bind_address=0.0.0.0
@@ -14,7 +14,7 @@ server_ssl_verify=DISABLED
 
 [http_server]
 
-[mysql_rest_service]
+[mariadb_rest_service]
 metadata_refresh_interval=1
 mysql_read_write_route=static
 wait_for_metadata_schema_access=320

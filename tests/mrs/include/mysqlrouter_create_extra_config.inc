@@ -90,10 +90,10 @@ if ($extra_logger_info)
 
 
 if ($extra_mrs_meta_user) {
-    SET @variable_extra_config = CONCAT(@variable_extra_config,"[mysql_rest_service]\n");
-    --eval SET @variable_extra_config = CONCAT(@variable_extra_config,"mysql_user=$extra_mrs_meta_user\n");
+    SET @variable_extra_config = CONCAT(@variable_extra_config,"[mariadb_rest_service]\n");
+    --eval SET @variable_extra_config = CONCAT(@variable_extra_config,"metadata_user=$extra_mrs_meta_user\n");
     if ($extra_mrs_data_user) {
-        --eval SET @variable_extra_config = CONCAT(@variable_extra_config,"mysql_user_data_access=$extra_mrs_data_user\n");
+        --eval SET @variable_extra_config = CONCAT(@variable_extra_config,"data_user=$extra_mrs_data_user\n");
     }
     
     if ($extra_mrs_router_id) {

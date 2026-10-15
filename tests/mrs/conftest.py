@@ -412,12 +412,12 @@ class Mrsd:
             "ssl_cert": str(ssl / "server-cert.pem"),
             "ssl_key": str(ssl / "server-key.pem"),
         }
-        cfg["mysql_rest_service"] = {
-            "mysql_user": "root",
-            "mysql_user_data_access": "root",
+        cfg["mariadb_rest_service"] = {
+            "metadata_user": "root",
+            "data_user": "root",
             # the fixed id the tests use ($extra_mrs_router_id)
             "rest_daemon_id": "10000000-0000-7000-8000-000000000001",
-            "mysql_read_write_destinations": f"127.0.0.1:{self.mysqld.port}",
+            "read_write_destinations": f"127.0.0.1:{self.mysqld.port}",
             "metadata_refresh_interval": "1",
             # from mtr's include/default_my-router.cnf
             "wait_for_metadata_schema_access": "320",
@@ -427,16 +427,16 @@ class Mrsd:
                                               default_section="__none__")
             extra.optionxform = str
             extra.read(test_cnf)
-            extra.remove_option("mysql_rest_service", "mysql_read_write_route") \
-                if extra.has_section("mysql_rest_service") else None
-            extra.remove_option("mysql_rest_service", "mysql_read_only_route") \
-                if extra.has_section("mysql_rest_service") else None
+            extra.remove_option("mariadb_rest_service", "mysql_read_write_route") \
+                if extra.has_section("mariadb_rest_service") else None
+            extra.remove_option("mariadb_rest_service", "mysql_read_only_route") \
+                if extra.has_section("mariadb_rest_service") else None
             for section in extra.sections():
                 if section.startswith("routing"):
                     # restd: no routing plugin; a route to the server's socket
                     # becomes a local: destination
                     if extra[section].get("use_socket_as_destination") == "1":
-                        cfg["mysql_rest_service"]["mysql_read_write_destinations"] = \
+                        cfg["mariadb_rest_service"]["read_write_destinations"] = \
                             f"local:{self.mysqld.socket}"
                     continue
                 if section not in cfg or section == "logger":

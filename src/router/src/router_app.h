@@ -427,6 +427,9 @@ class MySQLRouter {
   void init_loader(mysql_harness::LoaderConfig &config);
 
   // throws std::runtime_error
+  /** restd: [mysql_rest_service] -> [mariadb_rest_service] (deprecated name) */
+  void rename_deprecated_sections(mysql_harness::Config &config);
+
   mysql_harness::LoaderConfig *make_config(
       const std::map<std::string, std::string> params,
       const std::vector<std::string> &config_files);
@@ -446,6 +449,10 @@ class MySQLRouter {
   /** @brief PID file location **/
   std::string pid_file_path_;
   bool pid_file_created_{false};
+
+  /** restd: deprecated configuration names found while reading the
+   * configuration, logged once the configured loggers are in place */
+  std::vector<std::string> deprecation_warnings_;
 
   /** @brief CmdArgHandler object handling command line arguments **/
   CmdArgHandler arg_handler_;

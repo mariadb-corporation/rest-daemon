@@ -61,7 +61,7 @@ class CertificateHandlerTest : public ::testing::Test {
   const mysql_harness::Path ca_cert_path =
       mysql_harness::Path(temp_dir.name()).join("ca.pem");
   const mysql_harness::Path router_key_path =
-      mysql_harness::Path(temp_dir.name()).join("router-key.pem");
+      mysql_harness::Path(temp_dir.name()).join("restd-key.pem");
   const mysql_harness::Path router_cert_path =
       mysql_harness::Path(temp_dir.name()).join("router.pem");
 
@@ -134,7 +134,7 @@ TEST_F(CertificateHandlerTest, create_fail) {
   const mysql_harness::Path router_key_path =
       mysql_harness::Path(temp_dir.name())
           .join("not_there")
-          .join("router-key.pem");
+          .join("restd-key.pem");
   const mysql_harness::Path router_cert_path =
       mysql_harness::Path(temp_dir.name()).join("not_there").join("router.pem");
 
