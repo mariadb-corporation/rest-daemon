@@ -156,7 +156,7 @@ if [ ${#PLUGINS[@]} -gt 0 ]; then
 else
   fail "plugin folder ${PLUGIN_DIR#"$ROOT"/} has plugins" "no *.$PLUGIN_EXT in $PLUGIN_DIR"
 fi
-for want in http_server mysql_rest_service rest_daemon jit_executor; do
+for want in http_server mariadb_rest_service rest_daemon jit_executor; do
   case " ${PLUGINS[*]-} " in
     *" $want "*) pass "plugin $want bundled" ;;
     *) fail "plugin $want bundled" "no $want.$PLUGIN_EXT in $PLUGIN_DIR" ;;
