@@ -944,3 +944,22 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   (four deprecation warnings), the package and the smoke test on the unpacked package.
 - Kept on purpose: "MRS scripts", the `mrs_*` log domains, the OpenAPI scheme
   `mrs_login`, the `rest_daemon.attributes` keys (the shell's own terms).
+
+### 2026-10-15: session 10, continued (verification fix, LICENSE)
+
+- The first verification of the rebranded packages failed on every platform on one check:
+  `tools/release/verify_package.sh` still required a plugin `mysql_rest_service`
+  (`29f96a9`); the other 29 checks passed. The verification job checks out the release
+  run's commit, so a fix needs a new push to `release/candidate`.
+- `LICENSE` reviewed against what the product contains and ships, and rewritten in
+  MariaDB Shell's form (`c58e3a9`): MySQL Router's manual listed Duktape, Google Test
+  (test-only here), Protocol Buffers (gone with the X protocol), Kerberos5, libevent and
+  LZ4 (not linked), and nothing of what the packages bundle. Sections now: MariaDB
+  Connector/C (LGPL 2.1), GraalVM Community Edition for the JIT executor library (GPLv2
+  with the Classpath Exception; SDK, Polyglot API and GraalJS under the UPL 1.0), ICU,
+  libcno and picohttpparser (MIT), OpenSSL 3.6, RapidJSON, zlib; the standard licenses
+  they reference; MariaDB's "Availability of Source Code". Judgment calls to confirm
+  with licensing: the GraalVM section's wording, "MariaDB plc gratefully acknowledges"
+  in the zlib section, no section for the MSVC runtime (as the shell's manual).
+- The plugins' matching change (`restd.py` reads both name sets, sets both pid-file
+  variables) is mariadb-shell-plugins commit `c74cbdfc`.
