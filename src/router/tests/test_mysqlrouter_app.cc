@@ -367,8 +367,7 @@ TEST_F(AppTest, CmdLineHelp) {
   EXPECT_THAT(out_stream.str(), HasSubstr(MYSQL_ROUTER_PACKAGE_NAME "  V"));
   EXPECT_THAT(
       out_stream.str(),
-      HasSubstr(
-          "Oracle is a registered trademark of Oracle Corporation and/or its"));
+      HasSubstr(", Oracle, MariaDB plc and others."));
   EXPECT_THAT(out_stream.str(), HasSubstr("Usage\n\n" MRSD_PROGRAM_NAME));
 }
 
@@ -383,8 +382,7 @@ TEST_F(AppTest, CmdLineHelpShort) {
   EXPECT_THAT(out_stream.str(), HasSubstr(MYSQL_ROUTER_PACKAGE_NAME "  V"));
   EXPECT_THAT(
       out_stream.str(),
-      HasSubstr(
-          "Oracle is a registered trademark of Oracle Corporation and/or its"));
+      HasSubstr(", Oracle, MariaDB plc and others."));
   EXPECT_THAT(out_stream.str(), HasSubstr("Usage\n\n" MRSD_PROGRAM_NAME));
 }
 

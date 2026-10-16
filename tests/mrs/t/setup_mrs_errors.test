@@ -13,7 +13,7 @@
 --error 1
 --exec $MYSQLROUTER --setup localhost -d setup_x --conf-set-option=foo 2>&1
 --error 1
---exec $MYSQLROUTER --setup localhost -d setup_x --conf-set-option=mysql_rest_service.rest_daemon_id=5 2>&1
+--exec $MYSQLROUTER --setup localhost -d setup_x --conf-set-option=mariadb_rest_service.rest_daemon_id=5 2>&1
 --error 1
 --exec $MYSQLROUTER --setup localhost -d setup_x --ssl-mode=SOMETIMES 2>&1
 --error 1

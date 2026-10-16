@@ -25,7 +25,7 @@ SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${MRSD_PACKAGE_SUMMARY}")
 SET(CPACK_PACKAGE_DESCRIPTION "${MRSD_PACKAGE_DESCRIPTION}")
 SET(CPACK_PACKAGE_HOMEPAGE_URL "${MRSD_PACKAGE_HOMEPAGE}")
 SET(CPACK_PACKAGE_VERSION "${MRSD_VERSION}")
-SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.router")
+SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 SET(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
 SET(CPACK_STRIP_FILES OFF)  # keep symbols for the stack traces
 
@@ -87,7 +87,7 @@ IF(INSTALL_LAYOUT STREQUAL "SYSTEM")
   # (libmariadb, libjitexecutor, the internal libraries and the plugins)
   SET(CPACK_RPM_SPEC_MORE_DEFINE
 "%global __provides_exclude_from ^${CMAKE_INSTALL_PREFIX}/lib/${MRSD_PROGRAM_NAME}/.*$
-%global __requires_exclude ^(lib(mariadb|jitexecutor|mysqlharness|mysqlrouter)[^(]*|[a-z_]+[.]so)[(]")
+%global __requires_exclude ^(lib(mariadb|jitexecutor|restd)[^(]*|[a-z_]+[.]so)[(]")
   SET(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
     /usr/lib/systemd /usr/lib/systemd/system /usr/lib/sysusers.d
     /usr/lib/tmpfiles.d /usr/share/doc)

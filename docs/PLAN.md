@@ -434,10 +434,78 @@ a change on their side, coordinated with the daemon:
   into SQL unchecked (hardening on the shell side).
 - **Shell docs** still show `0x…` vendor ids (`python-client-api.md`,
   `typescript-client-api.md`); they follow the `vendorId` decision.
-- **Product name**: "MariaDB REST Daemon" (shell, schema, landing page) vs this repo's
-  "MariaDB REST Service Daemon"; low priority (user, 2026-10-13).
+- **Product name**: "MariaDB REST Daemon", as the shell, the schema comments and the landing
+  page (decided 2026-10-15; see "Rebranding round").
 - Kept as is, matching the shell's docs: the session cookie names
   `session_<32 hex digits of the auth app id>`; JWT `user_id`/`iss` hex (internal).
+
+## Rebranding round (started 2026-10-15)
+
+What a user still sees as MySQL / Router / MRS / Oracle, and the plan to remove it. Scope:
+user-visible parts only (help screens, messages, configuration, generated files, packages,
+docs); internal namespaces, directories, include paths and CMake target names stay.
+
+Decisions (2026-10-15): product name **MariaDB REST Daemon**; the help-screen banner worded
+as MariaDB Shell's welcome banner ("Copyright (c) <first year>, <year>, Oracle, MariaDB plc
+and others."); the configuration section and its `mysql_*` keys are renamed; package vendor
+and contact as the shell's ("MariaDB Corporation <info@mariadb.com>"); the "Router" term goes
+from everything user-visible; changes that touch the shell or the plugins are made in sync
+with those repositories.
+
+### Phase R1: text only, no compatibility impact ✅ done (2026-10-15)
+- `cmake/settings.cmake`: product name, package summary/description, vendor, contact.
+- The banner (`compat/include/mrsd/copyright_notice.h`, `MRSD_WELCOME_COPYRIGHT_NOTICE`) in
+  the four help screens; `--help` wording ("MariaDB server", plugin-info's examples).
+- Messages: `mysql_session.cc` ("Error executing query", "Error connecting to the MariaDB
+  server at", reaching REST clients in the `what` field of error bodies),
+  `bootstrap_mysql_account.cc`, the SCRAM handler's name ("MRS vendor authentication
+  application"), the AppArmor hint, `main.cc`, systemd `STATUS`, the thread name, the HTTP
+  client's User-Agent (`mariadb-restd/<version>`).
+- Generated certificates: CN/issuer `MariaDB_REST_Daemon_Auto_Generated_*` (new deployments).
+- `LICENSE` (was `LICENSE.router`, header as the shell's `LICENSE`); `README.router` and
+  `MRS_README.router` dropped; README and release notes.
+- "MRS scripts" stays: it is the shell's name for the feature.
+
+### Phase R2: names with compatibility impact (in sync with the plugins) ✅ done (2026-10-15)
+- `[mysql_rest_service]` → `[mariadb_rest_service]`: the section, the plugin file
+  (`mariadb_rest_service.so`, `OUTPUT_NAME`; the CMake target keeps its name), the
+  descriptor symbol, the log domain and the metadata log sink. The daemon renames an old
+  section on loading (`MySQLRouter::rename_deprecated_sections`: options copied, the
+  `library` default and the `[logger]` `sinks` entry follow) with a deprecation warning.
+- The keys lose the `mysql_` prefix: `metadata_user`, `data_user` (as `--setup`'s
+  `--metadata-account`/`--data-account`), `read_write_destinations`,
+  `read_only_destinations`, `ssl_mode`, `ssl_ca`, `ssl_capath`, `ssl_crl`, `ssl_crlpath`,
+  `ssl_curves`, `ssl_cipher`, `tls_version`. The old names stay in the supported list and
+  are read with a warning (`PluginConfig`); `--setup --force` reads an old deployment's
+  names too.
+- `ROUTER_PID` → `MARIADB_RESTD_PID` (both read, the old one with a warning; `start.sh`/
+  `start.ps1` write the new one); `router-key.pem`/`router-cert.pem` → `restd-key.pem`/
+  `restd-cert.pem` (new deployments; existing configurations name the paths).
+- `[rest_router]` → `[rest_daemon]` (plugin `rest_daemon.so`, `/api/20190715/daemon/status`,
+  OpenAPI `DaemonStatus`); no deprecated alias (optional plugin, the shell and plugins
+  don't use it).
+- Plugins (`mariadb-shell-plugins`, same round): `restd.py` reads `[mariadb_rest_service]`
+  or `[mysql_rest_service]`, `metadata_user`/`data_user` or the old keys (deployments
+  written by restd 26.10.0 keep the old names), and sets both `MARIADB_RESTD_PID` and
+  `ROUTER_PID`; its unit test's fake daemon and `rest.md` follow.
+- Kept (the shell's own terms, not Router/MySQL branding): "MRS scripts", the log domains
+  `mrs_*`, the OpenAPI security scheme `mrs_login`, the `rest_daemon.attributes` keys
+  `mrs_metadata_accounts`/`mrs_data_accounts`.
+- The old names are removed in the next major release.
+
+### Phase R3: package file names ✅ done (2026-10-15)
+- The shared libraries are `librestd_*`: `librestd` (Windows `restd_lib.dll`),
+  `librestd_harness`, `librestd_harness_stdx`, `librestd_harness_tls`, `librestd_http`,
+  `librestd_http_auth_backend`, `librestd_http_auth_realm`, `librestd_http_client`,
+  `librestd_http_server`, `librestd_io_component`, `librestd_client` (was
+  `libmysqlrouter_mysql`), `librestd_utils` (CMake `OUTPUT_NAME`s; the targets keep their
+  names). The plugin `router_openssl` is `restd_openssl` (its name is in the other plugins'
+  requires lists). The rpm requires-exclude list follows.
+
+### Verification
+Per phase: unit and component tests, the MRS suite (re-record only the results whose
+output changed), the smoke test, a release build checked with `verify_package.sh`; for R2
+also the plugins' tests against the new daemon.
 
 ## Open point: JSON columns on MariaDB (review after Milestone 3)
 
@@ -606,3 +674,8 @@ mrsd/
   `if`); id-valued variables are tested with `== ''` / `IS NOT NULL`. `--setup` now goes
   through `metadata_sql()` for its `rest_daemon` statements (missed in M3.2). The shell and
   plugins checkouts may be used and built again (their 5.0.0 work is merged).
+- 2026-10-15: rebranding round (user): product name "MariaDB REST Daemon" (as the shell,
+  the schema comments and the landing page); help banner as the shell's welcome banner;
+  `[mysql_rest_service]` and its `mysql_*` keys to be renamed (R2); package vendor/contact
+  as the shell's; no "Router" term in anything user-visible, internals untouched; changes
+  touching the shell or the plugins in sync with those repositories. R1 done.

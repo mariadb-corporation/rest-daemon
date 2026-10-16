@@ -24,20 +24,20 @@
 
 INCLUDE(GenerateExportHeader)
 
-ADD_HARNESS_PLUGIN(rest_router
+ADD_HARNESS_PLUGIN(rest_daemon
   SOURCES
-  rest_router_plugin.cc
-  rest_router_status.cc
+  rest_daemon_plugin.cc
+  rest_daemon_status.cc
   REQUIRES
   http_server_lib
   rest_api_lib
   rest_api
   DESTINATION "${ROUTER_INSTALL_PLUGINDIR}")
 
-GENERATE_EXPORT_HEADER(rest_router
-  EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/../include/mysqlrouter/rest_router_export.h)
+GENERATE_EXPORT_HEADER(rest_daemon
+  EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/../include/mysqlrouter/rest_daemon_export.h)
 
-TARGET_INCLUDE_DIRECTORIES(rest_router
+TARGET_INCLUDE_DIRECTORIES(rest_daemon
   PUBLIC
     ${CMAKE_CURRENT_BINARY_DIR}/../include/
     )

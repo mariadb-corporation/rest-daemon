@@ -165,7 +165,7 @@ bool notify_status(const std::string &msg) { return notify("STATUS=" + msg); }
 bool notify_ready() { return notify("READY=1"); }
 
 bool notify_stopping() {
-  return notify("STOPPING=1\nSTATUS=Router shutdown in progress\n");
+  return notify("STOPPING=1\nSTATUS=Shutdown in progress\n");
 }
 
 }  // namespace mysql_harness

@@ -44,7 +44,7 @@ namespace database {
 
 namespace {
 
-constexpr std::string_view kSinkName = "mysql_rest_service";
+constexpr std::string_view kSinkName = "mariadb_rest_service";
 
 mysqlrouter::sqlstring get_insert_sql(size_t records_num) {
   const std::string values = "(?, ?, ?, ?, ?, ?)";

@@ -37,7 +37,7 @@
 #include "mysqlrouter/utils.h"         // prompt_password
 #include "print_version.h"             // build_version
 #include "router_config.h"             // MYSQL_ROUTER_PACKAGE_NAME
-#include "welcome_copyright_notice.h"  // ORACLE_WELCOME_COPYRIGHT_NOTICE
+#include "mrsd/copyright_notice.h"  // MRSD_WELCOME_COPYRIGHT_NOTICE
 
 #include "http_auth_backend.h"
 #include "kdf_pbkdf2.h"
@@ -80,7 +80,7 @@ std::string PasswdFrontend::get_version() noexcept {
   build_version(std::string(MYSQL_ROUTER_PACKAGE_NAME), &version_string);
 
   os << version_string << std::endl;
-  os << ORACLE_WELCOME_COPYRIGHT_NOTICE("2018") << std::endl;
+  os << MRSD_WELCOME_COPYRIGHT_NOTICE("2018") << std::endl;
 
   return os.str();
 }

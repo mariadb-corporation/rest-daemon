@@ -24,7 +24,8 @@
 
 INCLUDE(GenerateExportHeader)
 
-ADD_HARNESS_PLUGIN(router_openssl SOURCES
+# restd: the plugin is restd_openssl (upstream: router_openssl)
+ADD_HARNESS_PLUGIN(restd_openssl SOURCES
   openssl_plugin.cc
   REQUIRES
   OpenSSL::SSL
@@ -32,16 +33,16 @@ ADD_HARNESS_PLUGIN(router_openssl SOURCES
   harness_tls
   DESTINATION "${ROUTER_INSTALL_PLUGINDIR}"
   )
-TARGET_INCLUDE_DIRECTORIES(router_openssl PRIVATE
+TARGET_INCLUDE_DIRECTORIES(restd_openssl PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}/../include/
   ${CMAKE_CURRENT_SOURCE_DIR}/../include/
   )
-GENERATE_EXPORT_HEADER(router_openssl
+GENERATE_EXPORT_HEADER(restd_openssl
   EXPORT_FILE_NAME
-  ${CMAKE_CURRENT_BINARY_DIR}/../include/mysqlrouter/router_openssl_export.h
+  ${CMAKE_CURRENT_BINARY_DIR}/../include/mysqlrouter/restd_openssl_export.h
   )
 
-ADD_INSTALL_RPATH_FOR_OPENSSL(router_openssl)
+ADD_INSTALL_RPATH_FOR_OPENSSL(restd_openssl)
 
 ADD_LIBRARY(router_tls INTERFACE)
 TARGET_INCLUDE_DIRECTORIES(router_tls INTERFACE

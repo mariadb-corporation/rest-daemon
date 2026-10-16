@@ -24,18 +24,19 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef MYSQLROUTER_REST_ROUTER_STATUS_INCLUDED
-#define MYSQLROUTER_REST_ROUTER_STATUS_INCLUDED
+#ifndef MYSQLROUTER_REST_DAEMON_STATUS_INCLUDED
+#define MYSQLROUTER_REST_DAEMON_STATUS_INCLUDED
 
 #include <ctime>
 
 #include "mysqlrouter/rest_api_component.h"
 
-class RestRouterStatus : public RestApiHandler {
+class RestDaemonStatus : public RestApiHandler {
  public:
-  static constexpr const char path_regex[] = "^/router/status$";
+  // restd: the status endpoint is /daemon/status (upstream: /router/status).
+  static constexpr const char path_regex[] = "^/daemon/status$";
 
-  RestRouterStatus(const std::string &require_realm)
+  RestDaemonStatus(const std::string &require_realm)
       : RestApiHandler(require_realm, HttpMethod::Get),
         running_since_(std::chrono::system_clock::now()),
         last_modified_(time(nullptr)) {}

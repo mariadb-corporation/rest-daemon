@@ -56,10 +56,10 @@ class RestOpenApiTest
       public ::testing::WithParamInterface<RestApiTestParams> {};
 
 /**
- * @test check /router/status
+ * @test check /daemon/status
  *
- * - start router with rest_router module loaded
- * - GET /router/status
+ * - start router with rest_daemon module loaded
+ * - GET /daemon/status
  * - check response code is 200 and output matches openapi spec
  */
 TEST_P(RestOpenApiTest, ensure_openapi) {

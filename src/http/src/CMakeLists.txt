@@ -44,7 +44,7 @@ ROUTER_ADD_SHARED_LIBRARY(http_common
   http/base/uri.cc
   http/base/http_time.cc
 
-  OUTPUT_NAME "mysqlrouter_http"
+  OUTPUT_NAME "restd_http"
 
   COMPILE_DEFINITIONS
   MYSQL_ROUTER_LOG_DOMAIN="http_common"
@@ -69,7 +69,7 @@ ROUTER_ADD_SHARED_LIBRARY(http_auth_backend_lib
   http_auth_error.cc
   http_auth_backend_component.cc
 
-  OUTPUT_NAME "mysqlrouter_http_auth_backend"
+  OUTPUT_NAME "restd_http_auth_backend"
 
   LINK_LIBRARIES
   http_common extra::rapidjson)
@@ -98,7 +98,7 @@ ROUTER_ADD_SHARED_LIBRARY(http_auth_realm_lib
   http_auth_realm.cc
   http_auth_realm_component.cc
 
-  OUTPUT_NAME "mysqlrouter_http_auth_realm"
+  OUTPUT_NAME "restd_http_auth_realm"
 
   LINK_LIBRARIES
   PUBLIC
@@ -137,7 +137,7 @@ ROUTER_ADD_SHARED_LIBRARY(http_server_lib
   http_server_component.cc
   http_request_router.cc
 
-  OUTPUT_NAME "mysqlrouter_http_server"
+  OUTPUT_NAME "restd_http_server"
 
   COMPILE_DEFINITIONS
   MYSQL_ROUTER_LOG_DOMAIN="http_server"
@@ -184,7 +184,7 @@ ROUTER_ADD_SHARED_LIBRARY(http_client
   http/client/error_code.cc
   http/client/request.cc
 
-  OUTPUT_NAME "mysqlrouter_http_client"
+  OUTPUT_NAME "restd_http_client"
 
   LINK_LIBRARIES
   ${LIBRT}

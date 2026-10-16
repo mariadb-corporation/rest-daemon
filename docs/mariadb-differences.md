@@ -40,6 +40,17 @@ entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
   `REST_DAEMON_ID` (MRS: `ROUTER_ID`); JWTs carry it as `instance_id` (MRS:
   `router-<id>`). `--setup` names the accounts it creates
   `mariadb_restd_<random>` (MRS: `mysql_router<id>_<random>`).
+- **Configuration**: the daemon's section is `[mariadb_rest_service]` (MRS:
+  `[mysql_rest_service]`) and its options carry no `mysql_` prefix:
+  `metadata_user`, `data_user`, `read_write_destinations`,
+  `read_only_destinations`, `ssl_mode`, `ssl_ca`, ..., `tls_version` (MRS:
+  `mysql_user`, `mysql_user_data_access`, `mysql_read_write_route`,
+  `mysql_ssl_mode`, ...). The pid file's environment variable is
+  `MARIADB_RESTD_PID` (MRS: `ROUTER_PID`); `--setup` writes `restd-key.pem`
+  and `restd-cert.pem` (MRS: `router-*.pem`). The old section, option and
+  variable names are still read, with a deprecation warning. The optional
+  status plugin is `[rest_daemon]` at `/api/20190715/daemon/status` (MRS:
+  `[rest_router]`, `/router/status`).
 - **Status counters** are written to `rest_daemon_status` as
   `mariadb_connections`, `mariadb_queries` and `active_mariadb_connections`;
   the counter names are `mariadbConnectionsCreated`, `mariadbQueries`, ...
@@ -71,7 +82,7 @@ entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
 - **Roles**: MariaDB activates one role at a time and no role by default
   (MRS runs `SET ROLE ALL` on its connections). The service accounts created
   by `--setup` get a default role. For pass-through authentication
-  (`mysql_user_data_access`, MariaDB Internal auth) the service activates the
+  (`data_user`, MariaDB Internal auth) the service activates the
   account's role when it has exactly one and no default; with several roles
   it logs a warning and the DBA sets one with `SET DEFAULT ROLE`. The account running
   `--setup` must hold the REST service roles `WITH ADMIN OPTION` to grant

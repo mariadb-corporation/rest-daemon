@@ -117,7 +117,7 @@ bool KeyringInfo::read_master_key() noexcept {
           log_error(
               "This may be caused by insufficient rights or AppArmor "
               "settings.\n"
-              "If you have AppArmor enabled try adding MySQLRouter rights to "
+              "If you have AppArmor enabled try adding " MRSD_PROGRAM_NAME " rights to "
               "execute your keyring reader in the " MRSD_PROGRAM_NAME
               " profile file:\n"
               "/etc/apparmor.d/usr.bin." MRSD_PROGRAM_NAME "\n\n"
@@ -151,7 +151,7 @@ bool KeyringInfo::write_master_key() const noexcept {
           log_error(
               "This may be caused by insufficient rights or AppArmor "
               "settings.\n"
-              "If you have AppArmor enabled try adding MySQLRouter rights to "
+              "If you have AppArmor enabled try adding " MRSD_PROGRAM_NAME " rights to "
               "execute your keyring writer in the " MRSD_PROGRAM_NAME
               " profile file:\n"
               "/etc/apparmor.d/usr.bin." MRSD_PROGRAM_NAME "\n\n"

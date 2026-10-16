@@ -118,8 +118,9 @@ class HARNESS_EXPORT ConfigSectionPrinter {
 
       // MRS bootstrap is currently done as a separate step, if we add the
       // configuration overwrites here it will fail later complaining that there
-      // already is a mysql_rest_service section
-      if (section_name == "mysql_rest_service") {
+      // already is a mariadb_rest_service section
+      if (section_name == "mariadb_rest_service" ||
+          section_name == "mysql_rest_service") {
         continue;
       }
 

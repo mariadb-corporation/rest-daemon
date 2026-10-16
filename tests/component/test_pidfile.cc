@@ -112,21 +112,22 @@ class RouterPidfileTest : public RouterComponentTest {
   void SetEnvRouterPid(const char *val) {
     int err_code;
 #ifdef _WIN32
-    err_code = _putenv_s("ROUTER_PID", val);
+    err_code = _putenv_s("MARIADB_RESTD_PID", val);
 #else
-    err_code = ::setenv("ROUTER_PID", val, 1);
+    err_code = ::setenv("MARIADB_RESTD_PID", val, 1);
 #endif
-    if (err_code) throw std::runtime_error("Failed to add ROUTER_PID");
+    if (err_code) throw std::runtime_error("Failed to add MARIADB_RESTD_PID");
   }
 
   void UnsetEnvRouterPid() {
     int err_code;
 #ifdef _WIN32
-    err_code = _putenv_s("ROUTER_PID", "");
+    err_code = _putenv_s("MARIADB_RESTD_PID", "");
 #else
-    err_code = ::unsetenv("ROUTER_PID");
+    err_code = ::unsetenv("MARIADB_RESTD_PID");
 #endif
-    if (err_code) throw std::runtime_error("Failed to remove ROUTER_PID");
+    if (err_code)
+      throw std::runtime_error("Failed to remove MARIADB_RESTD_PID");
   }
 
   void create_runtime_subfolders() {
@@ -194,7 +195,7 @@ class RouterPidfileTest : public RouterComponentTest {
  *      Bug #29441087 ROUTER SHOULD REMOVE PIDFILE ON CLEAN EXIT
  */
 TEST_F(RouterPidfileTest, PidFileRemovedAtExit) {
-  // Use the temporary ROUTER_PID env to set pidfile
+  // Use the temporary MARIADB_RESTD_PID env to set pidfile
   SetEnvRouterPid(pidfile.c_str());
 
   // start router with default cmdline
@@ -214,7 +215,7 @@ TEST_F(RouterPidfileTest, PidFileRemovedAtExit) {
   // check pidfile removed
   ASSERT_FALSE(mysql_harness::Path(fullpath).exists());
 
-  // Remove the ROUTER_PID env
+  // Remove the MARIADB_RESTD_PID env
   UnsetEnvRouterPid();
 
   // expect PID output
@@ -313,7 +314,7 @@ TEST_F(RouterPidfileOptionTest, PidFileOptionCfgTwice) {
 
 /**
  * @test
- *      ROUTER_PID env var with whitespace in path and filename
+ *      MARIADB_RESTD_PID env var with whitespace in path and filename
  *      TS_FR01_07 (M)
  */
 TEST_F(RouterPidfileOptionTest, PidFileOptionEnvWhitespace) {
@@ -338,7 +339,7 @@ TEST_F(RouterPidfileOptionTest, PidFileOptionEnvWhitespace) {
   // verify clean shutdown exitcode
   EXPECT_NO_FATAL_FAILURE(stop_router());
 
-  // unset ROUTER_PID env
+  // unset MARIADB_RESTD_PID env
   UnsetEnvRouterPid();
 
   // expect PID output
@@ -602,7 +603,7 @@ INSTANTIATE_TEST_SUITE_P(PidFileOptionCfgValueTestError,
 #ifndef _WIN32
 /**
  * @test
- *      ROUTER_PID env var - error cases
+ *      MARIADB_RESTD_PID env var - error cases
  * @test
  *      Not applicable on windows, as setting env var as empty equals an unset
  *      of the environment variable.
@@ -629,7 +630,7 @@ TEST_P(RouterPidfileOptionEnvValueTestError, PidFileOptionEnvValueTestError) {
                                                true, false, -1s);
   EXPECT_NO_FATAL_FAILURE(check_exit_code(router, EXIT_FAILURE, 1s));
 
-  // unset ROUTER_PID env
+  // unset MARIADB_RESTD_PID env
   UnsetEnvRouterPid();
 
   // expect error
@@ -722,7 +723,7 @@ TEST_P(RouterPidfileOptionSupremacyTest, PidFileOptionSupremacyTest) {
   EXPECT_NO_FATAL_FAILURE(stop_router());
 
   if (test_params.used & ENV) {
-    // unset ROUTER_PID env
+    // unset MARIADB_RESTD_PID env
     UnsetEnvRouterPid();
   }
 
@@ -733,13 +734,14 @@ TEST_P(RouterPidfileOptionSupremacyTest, PidFileOptionSupremacyTest) {
 INSTANTIATE_TEST_SUITE_P(PidFileOptionSupremacyTest,
                          RouterPidfileOptionSupremacyTest,
                          ::testing::Values(
-                             // --pid-file > pid_file > ROUTER_PID : TS_FR02_01
+                             // --pid-file > pid_file > MARIADB_RESTD_PID :
+                             // TS_FR02_01
                              PidFileOptionSupremacyParams(OPT | CFG | ENV),
                              // --pid-file > pid_file : TS_FR02_02
                              PidFileOptionSupremacyParams(OPT | CFG),
-                             // --pid-file > ROUTER_PID : TS_FR02_03
+                             // --pid-file > MARIADB_RESTD_PID : TS_FR02_03
                              PidFileOptionSupremacyParams(OPT | ENV),
-                             // pid_file > ROUTER_PID : TS_FR03_01
+                             // pid_file > MARIADB_RESTD_PID : TS_FR03_01
                              PidFileOptionSupremacyParams(CFG | ENV)));
 
 /**
@@ -764,7 +766,8 @@ TEST_P(RouterPidfileOptionSupremacyCornerCaseTest,
        PidFileOptionSupremacyCornerCaseTest) {
   auto test_params = GetParam();
 
-  // start router with ROUTER_PID and empty pid_file in config, and expect error
+  // start router with MARIADB_RESTD_PID and empty pid_file in config, and
+  // expect error
   SetEnvRouterPid(pidfile.c_str());
 
   // load keepalive with 10sec duration
@@ -818,7 +821,7 @@ TEST_P(RouterPidfileOptionExistsTest, PidFileOptionExistsTest) {
   ASSERT_TRUE(fullpath.exists()) << fullpath.str();
 
   if (test_params.used & ENV) {
-    // set ROUTER_PID and and expect error
+    // set MARIADB_RESTD_PID and and expect error
     SetEnvRouterPid(pidfile.c_str());
   }
 
@@ -838,7 +841,7 @@ TEST_P(RouterPidfileOptionExistsTest, PidFileOptionExistsTest) {
   EXPECT_NO_FATAL_FAILURE(check_exit_code(router, EXIT_FAILURE, 1s));
 
   if (test_params.used & ENV) {
-    // unset ROUTER_PID env
+    // unset MARIADB_RESTD_PID env
     UnsetEnvRouterPid();
   }
 
@@ -856,7 +859,8 @@ INSTANTIATE_TEST_SUITE_P(PidFileOptionExistsTest, RouterPidfileOptionExistsTest,
                              PidFileExistsParams(OPT),
                              // Start when pid_file file exists : TS_FR12_02
                              PidFileExistsParams(CFG),
-                             // Start when ROUTER_PID file exists : TS_FR12_03
+                             // Start when MARIADB_RESTD_PID file exists :
+                             // TS_FR12_03
                              PidFileExistsParams(ENV)));
 
 int main(int argc, char *argv[]) {

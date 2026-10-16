@@ -16,10 +16,10 @@ use_socket_as_destination=1
 
 [http_server]
 
-[mysql_rest_service]
+[mariadb_rest_service]
 mysql_read_write_route=static
 wait_for_metadata_schema_access=320
 
 # use account with auth-socket
-mysql_user=account_with_auth_socket
-mysql_user_data_access=account_with_auth_socket
+metadata_user=account_with_auth_socket
+data_user=account_with_auth_socket

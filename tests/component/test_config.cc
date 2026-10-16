@@ -645,7 +645,7 @@ class MRSConfigErrorTest
 
 TEST_P(MRSConfigErrorTest, Check) {
   const std::string mrs_section = mysql_harness::ConfigBuilder::build_section(
-      "mysql_rest_service", GetParam().options);
+      "mariadb_rest_service", GetParam().options);
 
   TempDirectory conf_dir("conf");
   auto default_section = get_DEFAULT_defaults();
@@ -694,52 +694,52 @@ INSTANTIATE_TEST_SUITE_P(
     Check, MRSConfigErrorTest,
     ::testing::Values(
         MRSConfigErrorParam(
-            "mysql_user_missing", {},
-            "main ERROR .* Configuration error: option mysql_user in "
-            "\\[mysql_rest_service\\] is required"),
+            "metadata_user_missing", {},
+            "main ERROR .* Configuration error: option metadata_user in "
+            "\\[mariadb_rest_service\\] is required"),
         MRSConfigErrorParam(
-            "mysql_user_empty", {{"mysql_user", ""}},
+            "metadata_user_empty", {{"metadata_user", ""}},
             "main ERROR .* Configuration error: option "
-            "mysql_user in \\[mysql_rest_service\\] needs a value"),
+            "metadata_user in \\[mariadb_rest_service\\] needs a value"),
         MRSConfigErrorParam(
-            "mysql_user_not_in_keyring",
-            {{"mysql_user", "user_not_in_keying"},
+            "metadata_user_not_in_keyring",
+            {{"metadata_user", "user_not_in_keying"},
              {"mysql_read_write_route", "rw"},
              {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"}},
-            "mysql_rest_service ERROR .* MariaDB server account: "
+            "mariadb_rest_service ERROR .* MariaDB server account: "
             "'user_not_in_keying', set in the configuration file, must have "
             "a password stored in the keyring."),
         MRSConfigErrorParam(
-            "mysql_user_data_access_not_in_keyring",
-            {{"mysql_user", "mysql_user_mrs"},
-             {"mysql_user_data_access", "user_not_in_keying"},
+            "data_user_not_in_keyring",
+            {{"metadata_user", "mysql_user_mrs"},
+             {"data_user", "user_not_in_keying"},
              {"mysql_read_write_route", "rw"},
              {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"}},
             "main ERROR .* Could not fetch value for 'user_not_in_keying' "
             "from the keyring: (map::at.*|invalid map.*)"),
         MRSConfigErrorParam("mysql_read_write_route_missing",
-                            {{"mysql_user", "mysql_user_mrs"}},
+                            {{"metadata_user", "mysql_user_mrs"}},
                             "main ERROR .* Configuration error: option "
                             "mysql_read_write_route in "
-                            "\\[mysql_rest_service\\] is required"),
+                            "\\[mariadb_rest_service\\] is required"),
         MRSConfigErrorParam(
             "mysql_read_write_route_does_not_exist",
-            {{"mysql_user", "mysql_user_mrs"},
+            {{"metadata_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "unknown"},
              {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"}},
             "main ERROR .* Error: Route name 'unknown' specified for "
             "`mysql_read_write_route` option, doesn't exist or has unsupported "
             "protocol."),
         MRSConfigErrorParam("mysql_read_write_route_empty",
-                            {{"mysql_user", "mysql_user_mrs"},
+                            {{"metadata_user", "mysql_user_mrs"},
                              {"mysql_read_write_route", ""},
                              {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"}},
                             "main ERROR .* Configuration error: option "
                             "mysql_read_write_route in "
-                            "\\[mysql_rest_service\\] needs a value"),
+                            "\\[mariadb_rest_service\\] needs a value"),
         MRSConfigErrorParam(
             "mysql_read_write_route_x_protocol",
-            {{"mysql_user", "mysql_user_mrs"},
+            {{"metadata_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "rwx"},
              {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"}},
             "main ERROR .* Error: Route name 'rwx' specified for "
@@ -747,7 +747,7 @@ INSTANTIATE_TEST_SUITE_P(
             "protocol."),
         MRSConfigErrorParam(
             "mysql_read_only_route_does_not_exist",
-            {{"mysql_user", "mysql_user_mrs"},
+            {{"metadata_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "rw"},
              {"mysql_read_only_route", "unknown"},
              {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"}},
@@ -756,7 +756,7 @@ INSTANTIATE_TEST_SUITE_P(
             "protocol."),
         MRSConfigErrorParam(
             "mysql_read_only_route_x_protocol",
-            {{"mysql_user", "mysql_user_mrs"},
+            {{"metadata_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "rw"},
              {"mysql_read_only_route", "rox"},
              {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"}},
@@ -765,39 +765,39 @@ INSTANTIATE_TEST_SUITE_P(
             "protocol."),
         MRSConfigErrorParam(
             "router_id_missing",
-            {{"mysql_user", "mysql_user_mrs"},
+            {{"metadata_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "rw"}},
             "main ERROR .* Configuration error: option router_id in "
-            "\\[mysql_rest_service\\] is required"),
+            "\\[mariadb_rest_service\\] is required"),
         MRSConfigErrorParam(
             "router_id_empty",
-            {{"mysql_user", "mysql_user_mrs"},
+            {{"metadata_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "rw"},
              {"mysql_read_only_route", "ro"},
              {"router_id", ""}},
             "main ERROR .* Configuration error: option router_id in "
-            "\\[mysql_rest_service\\] needs a value"),
+            "\\[mariadb_rest_service\\] needs a value"),
         MRSConfigErrorParam(
             "router_id_nan",
-            {{"mysql_user", "mysql_user_mrs"},
+            {{"metadata_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "rw"},
              {"mysql_read_only_route", "ro"},
              {"router_id", "nan"}},
             "main ERROR .* Configuration error: option router_id in "
-            "\\[mysql_rest_service\\] needs value between 0 and "
+            "\\[mariadb_rest_service\\] needs value between 0 and "
             "18446744073709551615 inclusive, was 'nan'"),
         MRSConfigErrorParam(
             "metadata_refresh_interval_negative",
-            {{"mysql_user", "mysql_user_mrs"},
+            {{"metadata_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "rw"},
              {"mysql_read_only_route", "ro"},
              {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"},
              {"metadata_refresh_interval", "-1"}},
             "main ERROR .* Configuration error: option "
-            "metadata_refresh_interval in \\[mysql_rest_service\\] needs value "
-            "between 0 and 1\\.79769e\\+308 inclusive, was '-1'"),
+            "metadata_refresh_interval in \\[mariadb_rest_service\\] needs "
+            "value between 0 and 1\\.79769e\\+308 inclusive, was '-1'"),
         MRSConfigErrorParam("metadata_refresh_interval_0",
-                            {{"mysql_user", "mysql_user_mrs"},
+                            {{"metadata_user", "mysql_user_mrs"},
                              {"mysql_read_write_route", "rw"},
                              {"mysql_read_only_route", "ro"},
                              {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"},
@@ -806,32 +806,32 @@ INSTANTIATE_TEST_SUITE_P(
                             "option, must be greater than zero."),
         MRSConfigErrorParam(
             "metadata_refresh_interval_nan",
-            {{"mysql_user", "mysql_user_mrs"},
+            {{"metadata_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "rw"},
              {"mysql_read_only_route", "ro"},
              {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"},
              {"metadata_refresh_interval", "nan"}},
             "Configuration error: option metadata_refresh_interval in "
-            "\\[mysql_rest_service\\] needs value between 0 and "
+            "\\[mariadb_rest_service\\] needs value between 0 and "
             "1\\.79769e\\+308 inclusive, was 'nan'"),
         MRSConfigErrorParam(
             "metadata_refresh_interval_foo",
-            {{"mysql_user", "mysql_user_mrs"},
+            {{"metadata_user", "mysql_user_mrs"},
              {"mysql_read_write_route", "rw"},
              {"mysql_read_only_route", "ro"},
              {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"},
              {"metadata_refresh_interval", "foo"}},
             "Configuration error: option metadata_refresh_interval in "
-            "\\[mysql_rest_service\\] needs value between 0 and "
+            "\\[mariadb_rest_service\\] needs value between 0 and "
             "1\\.79769e\\+308 inclusive, was 'foo'"),
         MRSConfigErrorParam("unknown_option",
-                            {{"mysql_user", "mysql_user_mrs"},
+                            {{"metadata_user", "mysql_user_mrs"},
                              {"mysql_read_write_route", "rw"},
                              {"mysql_read_only_route", "ro"},
                              {"rest_daemon_id", "10000000-0000-7000-8000-000000000001"},
                              {"unknown", "1"}},
                             "main ERROR .* Error: option "
-                            "'mysql_rest_service.unknown' is not supported")),
+                            "'mariadb_rest_service.unknown' is not supported")),
     get_test_title);
 
 int main(int argc, char *argv[]) {

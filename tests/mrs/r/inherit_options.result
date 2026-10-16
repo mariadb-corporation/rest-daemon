@@ -105,7 +105,7 @@ GET /svc/basic/t1
 {
     "message": "Table 'basic_schema.table1' doesn't exist",
     "sqlcode": "1146",
-    "what": "Error executing MySQL query \"SET STATEMENT max_statement_time=60.000000 FOR SELECT JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t1','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Table 'basic_schema.table1' doesn't exist (1146)",
+    "what": "Error executing query \"SET STATEMENT max_statement_time=60.000000 FOR SELECT JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t1','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Table 'basic_schema.table1' doesn't exist (1146)",
     "status": 500
 }
 OK
@@ -121,7 +121,7 @@ POST /svc/basic/func1 (payload-size:2)
 {
     "message": "FUNCTION basic_schema.nothing does not exist",
     "sqlcode": "1305",
-    "what": "Error executing MySQL query \"SELECT `basic_schema`.`nothing`()\": FUNCTION basic_schema.nothing does not exist (1305)",
+    "what": "Error executing query \"SELECT `basic_schema`.`nothing`()\": FUNCTION basic_schema.nothing does not exist (1305)",
     "status": 500
 }
 OK
@@ -130,7 +130,7 @@ GET /svc/basic/t2
 {
     "message": "Table 'basic_schema.table1' doesn't exist",
     "sqlcode": "1146",
-    "what": "Error executing MySQL query \"SET STATEMENT max_statement_time=60.000000 FOR SELECT JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t2','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Table 'basic_schema.table1' doesn't exist (1146)",
+    "what": "Error executing query \"SET STATEMENT max_statement_time=60.000000 FOR SELECT JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t2','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Table 'basic_schema.table1' doesn't exist (1146)",
     "status": 500
 }
 OK
@@ -146,7 +146,7 @@ POST /svc/basic/func2 (payload-size:2)
 {
     "message": "FUNCTION basic_schema.nothing does not exist",
     "sqlcode": "1305",
-    "what": "Error executing MySQL query \"SELECT `basic_schema`.`nothing`()\": FUNCTION basic_schema.nothing does not exist (1305)",
+    "what": "Error executing query \"SELECT `basic_schema`.`nothing`()\": FUNCTION basic_schema.nothing does not exist (1305)",
     "status": 500
 }
 OK
@@ -175,7 +175,7 @@ GET /svc/basic/t1
 {
     "message": "Table 'basic_schema.table1' doesn't exist",
     "sqlcode": "1146",
-    "what": "Error executing MySQL query \"SET STATEMENT max_statement_time=60.000000 FOR SELECT JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t1','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Table 'basic_schema.table1' doesn't exist (1146)",
+    "what": "Error executing query \"SET STATEMENT max_statement_time=60.000000 FOR SELECT JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t1','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Table 'basic_schema.table1' doesn't exist (1146)",
     "status": 500
 }
 OK
@@ -191,7 +191,7 @@ POST /svc/basic/func1 (payload-size:2)
 {
     "message": "FUNCTION basic_schema.nothing does not exist",
     "sqlcode": "1305",
-    "what": "Error executing MySQL query \"SELECT `basic_schema`.`nothing`()\": FUNCTION basic_schema.nothing does not exist (1305)",
+    "what": "Error executing query \"SELECT `basic_schema`.`nothing`()\": FUNCTION basic_schema.nothing does not exist (1305)",
     "status": 500
 }
 OK
@@ -200,7 +200,7 @@ GET /svc/basic/t2
 {
     "message": "Table 'basic_schema.table1' doesn't exist",
     "sqlcode": "1146",
-    "what": "Error executing MySQL query \"SET STATEMENT max_statement_time=60.000000 FOR SELECT JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t2','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Table 'basic_schema.table1' doesn't exist (1146)",
+    "what": "Error executing query \"SET STATEMENT max_statement_time=60.000000 FOR SELECT JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t2','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Table 'basic_schema.table1' doesn't exist (1146)",
     "status": 500
 }
 OK
@@ -216,7 +216,7 @@ POST /svc/basic/func2 (payload-size:2)
 {
     "message": "FUNCTION basic_schema.nothing does not exist",
     "sqlcode": "1305",
-    "what": "Error executing MySQL query \"SELECT `basic_schema`.`nothing`()\": FUNCTION basic_schema.nothing does not exist (1305)",
+    "what": "Error executing query \"SELECT `basic_schema`.`nothing`()\": FUNCTION basic_schema.nothing does not exist (1305)",
     "status": 500
 }
 OK
@@ -341,7 +341,7 @@ GET /svc/basic/t3
 {
     "message": "Table 'basic_schema.table1' doesn't exist",
     "sqlcode": "1146",
-    "what": "Error executing MySQL query \"SET STATEMENT max_statement_time=60.000000 FOR SELECT JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t3','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Table 'basic_schema.table1' doesn't exist (1146)",
+    "what": "Error executing query \"SET STATEMENT max_statement_time=60.000000 FOR SELECT JSON_OBJECT('id', `t`.`id`,'links', JSON_ARRAY(JSON_OBJECT('rel','self','href',CONCAT('/svc/basic/t3','/',CONCAT_WS(',',`t`.`id`))))) as doc FROM `basic_schema`.`table1` as `t`  LIMIT 0,26\": Table 'basic_schema.table1' doesn't exist (1146)",
     "status": 500
 }
 OK
@@ -357,7 +357,7 @@ POST /svc/basic/func3 (payload-size:2)
 {
     "message": "FUNCTION basic_schema.nothing does not exist",
     "sqlcode": "1305",
-    "what": "Error executing MySQL query \"SELECT `basic_schema`.`nothing`()\": FUNCTION basic_schema.nothing does not exist (1305)",
+    "what": "Error executing query \"SELECT `basic_schema`.`nothing`()\": FUNCTION basic_schema.nothing does not exist (1305)",
     "status": 500
 }
 OK

@@ -227,7 +227,7 @@ stdx::expected<void, std::error_code>
 ProcessManager::Spawner::wait_for_notified_stopping(
     wait_socket_t &sock, std::chrono::milliseconds timeout) {
   return wait_for_notified(
-      sock, "STOPPING=1\nSTATUS=Router shutdown in progress\n", timeout);
+      sock, "STOPPING=1\nSTATUS=Shutdown in progress\n", timeout);
 }
 
 static std::string generate_notify_socket_path(const std::string &tmp_dir) {

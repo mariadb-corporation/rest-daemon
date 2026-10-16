@@ -151,7 +151,7 @@ ROUTER_ADD_SHARED_LIBRARY(harness-library
 
   NO_EXPORT_HEADER  # custom include-path
 
-  OUTPUT_NAME "mysqlharness"
+  OUTPUT_NAME "restd_harness"
 
   LINK_LIBRARIES
   ${common_libraries}
@@ -178,7 +178,7 @@ ROUTER_ADD_SHARED_LIBRARY(harness_stdx
 
   NO_EXPORT_HEADER
 
-  OUTPUT_NAME "mysqlharness_stdx"
+  OUTPUT_NAME "restd_harness_stdx"
 )
 
 TARGET_SOURCES(harness_stdx
@@ -204,7 +204,7 @@ ROUTER_ADD_SHARED_LIBRARY(harness_tls
   tls_server_context.cc
 
   NO_EXPORT_HEADER  # custom include-path
-  OUTPUT_NAME "mysqlharness_tls"
+  OUTPUT_NAME "restd_harness_tls"
 
   LINK_LIBRARIES
   PUBLIC OpenSSL::SSL OpenSSL::Crypto

@@ -1,4 +1,4 @@
-# mariadb-restd: MariaDB REST Service Daemon
+# mariadb-restd: MariaDB REST Daemon
 
 mariadb-restd ("restd" for short) is the **MariaDB REST Service** daemon: it
 serves REST endpoints for MariaDB tables, views, stored procedures, functions
@@ -138,8 +138,8 @@ In the build directory:
 - `runtime_output_directory/`: `mariadb-restd` (the daemon), `mariadb-restd-keyring`
   (keyring tool), `mariadb-restd-passwd` (password file tool for HTTP basic
   auth), `mariadb-restd-plugin-info` and, with the tests, `mysql_server_mock` and
-  `mysqlrouter_mrs_client`
-- `plugin_output_directory/`: the plugins (`mysql_rest_service`,
+  `mariadb-restd-mrs-client` (the REST functional suite's client)
+- `plugin_output_directory/`: the plugins (`mariadb_rest_service`,
   `http_server`, `jit_executor`, ...)
 
 The program name (`mariadb-restd`), the product name and the package metadata
@@ -247,8 +247,8 @@ sudo systemctl enable --now mariadb-restd
 
 ## Configuration
 
-`--setup` writes the configuration; it can also be written by hand. restd reads
-a router-style configuration file. A minimal one:
+`--setup` writes the configuration; it can also be written by hand. A minimal
+one:
 
 ```ini
 [DEFAULT]
@@ -265,9 +265,9 @@ ssl=1
 ssl_cert=/etc/mariadb-restd/server-cert.pem
 ssl_key=/etc/mariadb-restd/server-key.pem
 
-[mysql_rest_service]
-mysql_user=mrs_user
-mysql_read_write_destinations=db1.example.com:3306
+[mariadb_rest_service]
+metadata_user=mrs_user
+read_write_destinations=db1.example.com:3306
 rest_daemon_id=0199a1b2-6c3e-7d41-9a0f-2b8c4d5e6f70
 ```
 
@@ -275,7 +275,7 @@ rest_daemon_id=0199a1b2-6c3e-7d41-9a0f-2b8c4d5e6f70
 `rest_daemon` (`--setup` registers it); at start-up restd refuses to run when
 the metadata holds the same name and address under another id.
 
-The account in `mysql_user` needs the `mariadb_rest_service_meta_provider` and
+The account in `metadata_user` needs the `mariadb_rest_service_meta_provider` and
 `mariadb_rest_service_data_provider` roles; its password, and the secret used
 to sign JWTs, are read from the keyring:
 
@@ -291,31 +291,35 @@ Start it with `mariadb-restd -c <config file>`. Without `-c`, it reads
 `mariadb-restd.conf` from its configuration folder (`mariadb-restd --help` lists
 the locations). It logs to `mariadb-restd.log` in `logging_folder`.
 
-### Differences from MySQL Router's MRS configuration
-
-MySQL Router points MRS at routing plugins (`mysql_read_write_route`,
-`mysql_read_only_route`). restd has no routing plugin; the MariaDB servers are
-configured in `[mysql_rest_service]` directly:
+### The `[mariadb_rest_service]` section
 
 | Option | |
 |---|---|
-| `mysql_read_write_destinations` | **required**, comma-separated `host[:port]`, `[ipv6]:port` or `local:/path/to/mysql.sock`; port 3306 if omitted |
-| `mysql_read_only_destinations` | same format; defaults to the read-write destinations |
+| `metadata_user` | **required**, the account restd reads the REST metadata with (`--setup`: `--metadata-account`) |
+| `data_user` | the account for the REST requests' data access (`--setup`: `--data-account`); defaults to `metadata_user` |
+| `read_write_destinations` | **required**, comma-separated `host[:port]`, `[ipv6]:port` or `local:/path/to/mysql.sock`; port 3306 if omitted |
+| `read_only_destinations` | same format; defaults to the read-write destinations |
 | `metadata_schema` | the REST metadata schema this instance serves, `<prefix>mariadb_rest_service<postfix>` (default: `mariadb_rest_service`); the role names (`<prefix>mariadb_rest_service_meta_provider<postfix>`, ...) follow it |
-| `rest_daemon_id` | **required**, the instance's UUID in the metadata (MySQL Router: `router_id`, an integer); a master key reader gets it as `REST_DAEMON_ID` (MySQL Router: `ROUTER_ID`) |
-| `mysql_ssl_mode` | TLS to the servers: `DISABLED`, `PREFERRED` (default), `REQUIRED`, `VERIFY_CA`, `VERIFY_IDENTITY` |
-| `mysql_ssl_ca`, `mysql_ssl_capath`, `mysql_ssl_crl`, `mysql_ssl_crlpath` | CA and CRL files/directories for verifying the servers |
-| `mysql_ssl_cipher`, `mysql_ssl_curves`, `mysql_tls_version` | TLS ciphers, curves and versions |
+| `rest_daemon_id` | **required**, the instance's UUID in the metadata; a master key reader gets it as `REST_DAEMON_ID` |
+| `ssl_mode` | TLS to the servers: `DISABLED`, `PREFERRED` (default), `REQUIRED`, `VERIFY_CA`, `VERIFY_IDENTITY` |
+| `ssl_ca`, `ssl_capath`, `ssl_crl`, `ssl_crlpath` | CA and CRL files/directories for verifying the servers |
+| `ssl_cipher`, `ssl_curves`, `tls_version` | TLS ciphers, curves and versions |
+| `metadata_refresh_interval`, `wait_for_metadata_schema_access`, `developer`, `developer_debug_port` | as in the MySQL REST Service |
 
-The other `[mysql_rest_service]` options (`mysql_user`,
-`mysql_user_data_access`, `metadata_refresh_interval`,
-`wait_for_metadata_schema_access`, `developer`, ...) are the same as in MySQL
-Router.
+The section was `[mysql_rest_service]` and these options carried a `mysql_`
+prefix (`mysql_user`, `mysql_user_data_access`, `mysql_read_write_destinations`,
+`mysql_ssl_mode`, ...) until 26.10.0. The old names are still read, with a
+deprecation warning in the log; so is the `ROUTER_PID` environment variable
+(now `MARIADB_RESTD_PID`). MySQL Router's `mysql_read_write_route` /
+`mysql_read_only_route` (routing plugins) don't exist: the servers are named in
+the section directly.
+
+The optional `[rest_daemon]` plugin (MySQL Router: `rest_router`) serves the
+instance's status at `/api/20190715/daemon/status`.
 
 REST services, schemas and objects are defined in the REST metadata schema with
 the MariaDB shell's REST SQL (`CREATE REST SERVICE ...`) or its VS Code
-extension. REST scripts: see [MRS_README.router](MRS_README.router) (upstream's
-description, which still applies).
+extension.
 
 ## Testing
 
@@ -372,9 +376,6 @@ parameters.
 | `tools/` | smoke test, analysis scripts (dependency closure, the suite's schema generator and converter) |
 | `docs/` | plan, progress log, inventories, differences from the MySQL REST Service |
 
-[README.router](README.router) and [MRS_README.router](MRS_README.router) are
-MySQL Router's documentation, kept from upstream.
-
 ## License
 
-GPLv2, see [LICENSE.router](LICENSE.router).
+GPLv2, see [LICENSE](LICENSE).

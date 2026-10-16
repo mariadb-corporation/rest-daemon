@@ -402,7 +402,7 @@ TEST_F(NotifyTest, NotifyReadyManyPlugins) {
                                        {"filename", create_password_file()},
                                    }),
       ConfigBuilder::build_section("rest_api", {}),
-      ConfigBuilder::build_section("rest_router",
+      ConfigBuilder::build_section("rest_daemon",
                                    {{"require_realm", "somerealm"}}),
       ConfigBuilder::build_section("rest_routing",
                                    {{"require_realm", "somerealm"}}),
@@ -959,7 +959,7 @@ TEST_P(NotifyBootstrapNotAffectedTest, NotifyBootstrapNotAffected) {
 INSTANTIATE_TEST_SUITE_P(
     NotifyBootstrapNotAffected, NotifyBootstrapNotAffectedTest,
     ::testing::Values("READY=1",
-                      "STOPPING=1\nSTATUS=Router shutdown in progress\n"));
+                      "STOPPING=1\nSTATUS=Shutdown in progress\n"));
 
 /**
  * @test TS_R5_5

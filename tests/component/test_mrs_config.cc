@@ -66,36 +66,35 @@ class RouterMrsConfig : public RouterComponentTest {
                                          true, false, wait_for);
   }
 
-  // restd: backends are configured with mysql_read_{only,write}_destinations
+  // restd: backends are configured with read_{only,write}_destinations
   // instead of upstream's mysql_read_{only,write}_route (routing plugin).
   std::string get_mrs_section(
-      const std::optional<std::string> &mysql_read_only_destinations,
-      const std::optional<std::string> &mysql_read_write_destinations,
-      const std::optional<std::string> &mysql_user,
-      const std::optional<std::string> &mysql_user_data_access,
+      const std::optional<std::string> &read_only_destinations,
+      const std::optional<std::string> &read_write_destinations,
+      const std::optional<std::string> &metadata_user,
+      const std::optional<std::string> &data_user,
       const std::optional<std::string> &rest_daemon_id) const {
     std::vector<std::pair<std::string, std::string>> options{};
 
-    if (mysql_read_only_destinations) {
-      options.emplace_back("mysql_read_only_destinations",
-                           mysql_read_only_destinations.value());
+    if (read_only_destinations) {
+      options.emplace_back("read_only_destinations",
+                           read_only_destinations.value());
     }
-    if (mysql_read_write_destinations) {
-      options.emplace_back("mysql_read_write_destinations",
-                           mysql_read_write_destinations.value());
+    if (read_write_destinations) {
+      options.emplace_back("read_write_destinations",
+                           read_write_destinations.value());
     }
-    if (mysql_user) {
-      options.emplace_back("mysql_user", mysql_user.value());
+    if (metadata_user) {
+      options.emplace_back("metadata_user", metadata_user.value());
     }
-    if (mysql_user_data_access) {
-      options.emplace_back("mysql_user_data_access",
-                           mysql_user_data_access.value());
+    if (data_user) {
+      options.emplace_back("data_user", data_user.value());
     }
     if (rest_daemon_id) {
       options.emplace_back("rest_daemon_id", rest_daemon_id.value());
     }
 
-    return mysql_harness::ConfigBuilder::build_section("mysql_rest_service",
+    return mysql_harness::ConfigBuilder::build_section("mariadb_rest_service",
                                                        options);
   }
 
@@ -157,7 +156,7 @@ class RouterMrsConfig : public RouterComponentTest {
 
 /**
  * @test Checks that the Router refuses to start if
- * [mysql_rest_service].rest_daemon_id is not configured
+ * [mariadb_rest_service].rest_daemon_id is not configured
  */
 TEST_F(RouterMrsConfig, RouterComponentBootstrapWithDefaultCertsTest) {
   const std::string mrs_section =
@@ -171,7 +170,7 @@ TEST_F(RouterMrsConfig, RouterComponentBootstrapWithDefaultCertsTest) {
   check_exit_code(router, EXIT_FAILURE);
   EXPECT_TRUE(wait_log_contains(router,
                                 "Configuration error: option rest_daemon_id in "
-                                "\\[mysql_rest_service\\] is required",
+                                "\\[mariadb_rest_service\\] is required",
                                 500ms));
 }
 
@@ -204,10 +203,10 @@ TEST_F(RouterMrsConfig, id_mismatch) {
 
 /**
  * @test Checks that the Router refuses to start if [logger].sink
- * 'mysql_rest_service' is configred but [mysql_rest_service] is not
+ * 'mariadb_rest_service' is configred but [mariadb_rest_service] is not
  */
 TEST_F(RouterMrsConfig, mrs_md_sink_with_no_mrs) {
-  const std::string logger_section = "[logger]\nsinks=mysql_rest_service\n\n";
+  const std::string logger_section = "[logger]\nsinks=mariadb_rest_service\n\n";
   const std::string http_section =
       mysql_harness::ConfigBuilder::build_section(
           "http_server", {{"port", std::to_string(router_port_rw)}});
@@ -218,8 +217,8 @@ TEST_F(RouterMrsConfig, mrs_md_sink_with_no_mrs) {
   check_exit_code(router, EXIT_FAILURE);
   EXPECT_THAT(router.get_full_output(),
               ::testing::HasSubstr(
-                  "External logging sink 'mysql_rest_service' configured, but "
-                  "section with that name missing in the config file."));
+                  "External logging sink 'mariadb_rest_service' configured, "
+                  "but section with that name missing in the config file."));
 }
 
 int main(int argc, char *argv[]) {

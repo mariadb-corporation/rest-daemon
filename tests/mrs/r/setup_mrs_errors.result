@@ -1,10 +1,10 @@
 # invalid arguments
-Error: --setup needs the URI of the MySQL server as its first argument: --setup [<user>[:<password>]@]<host>[:<port>]
+Error: --setup needs the URI of the MariaDB server as its first argument: --setup [<user>[:<password>]@]<host>[:<port>]
 Error: --socket needs 'localhost' as the host of the server URI, not 'db.example.com'
 Error: --setup must be the first option
 Error: --developer-debug-port needs --developer
 Error: --conf-set-option: invalid option 'foo': expected section.option_name=value
-Error: --conf-set-option: invalid option 'mysql_rest_service.rest_daemon_id=5': [mysql_rest_service] is configured by --setup's own options
+Error: --conf-set-option: invalid option 'mariadb_rest_service.rest_daemon_id=5': [mariadb_rest_service] is configured by --setup's own options
 Error: Invalid value for --ssl-mode: 'SOMETIMES', expected DISABLED, PREFERRED, REQUIRED, VERIFY_CA or VERIFY_IDENTITY
 Error: --master-key-reader and --master-key-writer must be used together
 CREATE USER setup_admin IDENTIFIED BY 'pass';
@@ -12,12 +12,12 @@ GRANT ALL ON *.* TO setup_admin WITH GRANT OPTION;
 # wrong password
 # Setting up mariadb-restd in 'DIRECTORY'
 
-Error: Unable to connect to the MySQL server at '127.0.0.1:PORT': Error connecting to MySQL server at 127.0.0.1:PORT: Access denied for user 'setup_admin'@HOST (using password: YES) (1045)
+Error: Unable to connect to the MariaDB server at '127.0.0.1:PORT': Error connecting to the MariaDB server at 127.0.0.1:PORT: Access denied for user 'setup_admin'@HOST (using password: YES) (1045)
 # no MRS metadata on the server
 # Setting up mariadb-restd in 'DIRECTORY'
 
 - Checking the MRS metadata
-Error: The MRS metadata schema (mariadb_rest_service) was not found on the MySQL server. Create it first, e.g. with MySQL Shell (\sql CONFIGURE REST METADATA).
+Error: The REST metadata schema (mariadb_rest_service) was not found on the MariaDB server. Create it first with MariaDB Shell (\sql CONFIGURE REST METADATA).
 # MySQL Rest Service schema created.
 # the directory has other files
 # Setting up mariadb-restd in 'DIRECTORY'
@@ -58,7 +58,7 @@ Error: 'DIRECTORY' already contains mariadb-restd.conf; use --force to overwrite
 - Creating configuration DIRECTORY/mariadb-restd.conf
 - Existing configuration backed up to DIRECTORY/mariadb-restd.conf.bak
 
-# mariadb-restd 'HOSTNAME:8443' configured for the MySQL server at '127.0.0.1:PORT'
+# mariadb-restd 'HOSTNAME:8443' configured for the MariaDB server at '127.0.0.1:PORT'
 
 Start it with
 
@@ -68,12 +68,12 @@ or
 
     mariadb-restd -c DIRECTORY/mariadb-restd.conf
 
-The MySQL REST Service can then be reached at
+The MariaDB REST Service can then be reached at
 
     https://localhost:8443/<service>
 select id, product_name from mariadb_rest_service.rest_daemon;
 id	product_name
-1	MariaDB REST Service Daemon
+1	MariaDB REST Daemon
 include/assert.inc [--force reuses the account of the existing deployment]
 DROP USER setup_admin;
 DROP SCHEMA mariadb_rest_service;

@@ -52,11 +52,12 @@ class KeyringHandler {
 
  private:
   // REST_DAEMON_ID for the master key reader (restd: the UUID text of
-  // [mysql_rest_service] rest_daemon_id; upstream: ROUTER_ID, an integer)
+  // [mariadb_rest_service] rest_daemon_id; upstream: ROUTER_ID, an integer).
+  // [mysql_rest_service] is the section's deprecated name.
   static std::string get_rest_daemon_id(const mysql_harness::Config &config) {
-    if (config.has_any("mysql_rest_service")) {
-      const auto &mrs_sections = config.get("mysql_rest_service");
-      for (const auto &section : mrs_sections) {
+    for (const char *name : {"mariadb_rest_service", "mysql_rest_service"}) {
+      if (!config.has_any(name)) continue;
+      for (const auto &section : config.get(name)) {
         if (section->has("rest_daemon_id"))
           return section->get("rest_daemon_id");
       }

@@ -22,12 +22,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+# restd: the suite's test client, mariadb-restd-mrs-client; never installed
+# (upstream put it in the package's component)
 MYSQL_ADD_EXECUTABLE(mysqlrouter_mrs_client
   main.cc
   client/http_client_request.cc
   client/session.cc
   client/authentication.cc
-  COMPONENT Router
+  SKIP_INSTALL
   LINK_LIBRARIES
   http_client
   harness-library
@@ -41,8 +43,8 @@ MYSQL_ADD_EXECUTABLE(mysqlrouter_mrs_client
   mysql_rest_service_if
   )
 
-# mysqlrouter_mrs_client component is set to Test, which
-# do not adds it to `mysqlrouter_all`.
+SET_TARGET_PROPERTIES(mysqlrouter_mrs_client PROPERTIES
+  OUTPUT_NAME "${MRSD_PROGRAM_NAME}-mrs-client")
 ADD_DEPENDENCIES(mysqlrouter_all mysqlrouter_mrs_client)
 
 TARGET_INCLUDE_DIRECTORIES(mysqlrouter_mrs_client

@@ -25,7 +25,7 @@
 */
 
 /**
- * REST API for the router app.
+ * REST API for the daemon app.
  */
 
 #include <array>
@@ -44,15 +44,16 @@
 #include "mysqlrouter/rest_api_component.h"
 #include "mysqlrouter/supported_rest_options.h"
 
-#include "rest_router_status.h"
+#include "rest_daemon_status.h"
 IMPORT_LOG_FUNCTIONS()
 
 using namespace std::string_literals;
 
-static const char kSectionName[]{"rest_router"};
+// restd: the plugin and its config section are [rest_daemon], not [rest_router].
+static const char kSectionName[]{"rest_daemon"};
 
 // one shared setting
-std::string require_realm_router;
+std::string require_realm_daemon;
 
 using StringOption = mysql_harness::StringOption;
 
@@ -61,11 +62,11 @@ using StringOption = mysql_harness::StringOption;
       mysql_harness::str_in_collection(plugin_supported_options, name)); \
   option = get_option(section, name, value);
 
-class RestRouterPluginConfig : public mysql_harness::BasePluginConfig {
+class RestDaemonPluginConfig : public mysql_harness::BasePluginConfig {
  public:
   std::string require_realm;
 
-  explicit RestRouterPluginConfig(const mysql_harness::ConfigSection *section)
+  explicit RestDaemonPluginConfig(const mysql_harness::ConfigSection *section)
       : mysql_harness::BasePluginConfig(section) {
     GET_OPTION_CHECKED(require_realm, section, "require_realm", StringOption{});
   }
@@ -111,7 +112,7 @@ static void init(mysql_harness::PluginFuncEnv *env) {
         return;
       }
 
-      RestRouterPluginConfig config{section};
+      RestDaemonPluginConfig config{section};
 
       if (!config.require_realm.empty() &&
           (known_realms.find(config.require_realm) == known_realms.end())) {
@@ -132,7 +133,7 @@ static void init(mysql_harness::PluginFuncEnv *env) {
             realm_msg);
       }
 
-      require_realm_router = config.require_realm;
+      require_realm_daemon = config.require_realm;
     }
   } catch (const std::invalid_argument &exc) {
     set_error(env, mysql_harness::kConfigInvalidArgument, "%s", exc.what());
@@ -150,14 +151,14 @@ static JsonPointer::Token make_json_pointer_token(std::string_view token) {
   return {token.data(), token.size(), rapidjson::kPointerInvalidIndex};
 }
 
-static const std::array router_status_def_tokens{
+static const std::array daemon_status_def_tokens{
     make_json_pointer_token("definitions"),
-    make_json_pointer_token("RouterStatus"),
+    make_json_pointer_token("DaemonStatus"),
 };
 
-static const std::array router_status_path_tokens{
+static const std::array daemon_status_path_tokens{
     make_json_pointer_token("paths"),
-    make_json_pointer_token("/router/status"),
+    make_json_pointer_token("/daemon/status"),  // restd: was /router/status
 };
 
 static const std::array tags_append_tokens{
@@ -184,11 +185,11 @@ static void spec_adder(RestApiComponent::JsonDocument &spec_doc) {
             allocator);
   }
 
-  // /definitions/RouterStatus
-  const RestApiComponent::JsonPointer router_status_def_ptr(
-      router_status_def_tokens.data(), router_status_def_tokens.size());
+  // /definitions/DaemonStatus
+  const RestApiComponent::JsonPointer daemon_status_def_ptr(
+      daemon_status_def_tokens.data(), daemon_status_def_tokens.size());
 
-  router_status_def_ptr.Set(
+  daemon_status_def_ptr.Set(
       spec_doc,
       JsonValue(rapidjson::kObjectType)
           .AddMember("type", "object", allocator)
@@ -219,13 +220,13 @@ static void spec_adder(RestApiComponent::JsonDocument &spec_doc) {
               allocator),
       allocator);
 
-  std::string router_status_def_ptr_str =
-      json_pointer_stringfy(router_status_def_ptr);
+  std::string daemon_status_def_ptr_str =
+      json_pointer_stringfy(daemon_status_def_ptr);
 
-  // /paths/routerStatus
+  // /paths/daemonStatus
   {
-    JsonPointer ptr(router_status_path_tokens.data(),
-                    router_status_path_tokens.size());
+    JsonPointer ptr(daemon_status_path_tokens.data(),
+                    daemon_status_path_tokens.size());
 
     ptr.Set(
         spec_doc,
@@ -254,9 +255,9 @@ static void spec_adder(RestApiComponent::JsonDocument &spec_doc) {
                                             .AddMember(
                                                 "$ref",
                                                 JsonValue(
-                                                    router_status_def_ptr_str
+                                                    daemon_status_def_ptr_str
                                                         .data(),
-                                                    router_status_def_ptr_str
+                                                    daemon_status_def_ptr_str
                                                         .size(),
                                                     allocator),
                                                 allocator),
@@ -275,8 +276,8 @@ static void start(mysql_harness::PluginFuncEnv *env) {
 
   std::array paths{
       RestApiComponentPath{
-          rest_api_srv, RestRouterStatus::path_regex,
-          std::make_unique<RestRouterStatus>(require_realm_router)},
+          rest_api_srv, RestDaemonStatus::path_regex,
+          std::make_unique<RestDaemonStatus>(require_realm_daemon)},
   };
 
   mysql_harness::on_service_ready(env);
@@ -288,27 +289,27 @@ static void start(mysql_harness::PluginFuncEnv *env) {
   if (!spec_adder_executed) rest_api_srv.remove_process_spec(spec_adder);
 }
 
-#if defined(_MSC_VER) && defined(rest_router_EXPORTS)
+#if defined(_MSC_VER) && defined(rest_daemon_EXPORTS)
 /* We are building this library */
 #define DLLEXPORT __declspec(dllexport)
 #else
 #define DLLEXPORT
 #endif
 
-static constexpr std::array rest_router_plugin_requires = {
+static constexpr std::array rest_daemon_plugin_requires = {
     "logger",
     "rest_api",
 };
 
 extern "C" {
-mysql_harness::Plugin DLLEXPORT harness_plugin_rest_router = {
+mysql_harness::Plugin DLLEXPORT harness_plugin_rest_daemon = {
     mysql_harness::PLUGIN_ABI_VERSION,       // abi-version
     mysql_harness::ARCHITECTURE_DESCRIPTOR,  // arch
-    "REST_ROUTER",                           // name
+    "REST_DAEMON",                           // name
     VERSION_NUMBER(0, 0, 1),
     // requires
-    rest_router_plugin_requires.size(),
-    rest_router_plugin_requires.data(),
+    rest_daemon_plugin_requires.size(),
+    rest_daemon_plugin_requires.data(),
     // conflicts
     0,
     nullptr,
