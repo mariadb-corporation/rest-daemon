@@ -963,3 +963,18 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   in the zlib section, no section for the MSVC runtime (as the shell's manual).
 - The plugins' matching change (`restd.py` reads both name sets, sets both pid-file
   variables) is mariadb-shell-plugins commit `c74cbdfc`.
+
+### 2026-10-16: session 11 (a REST role of a service applies to that service only)
+
+- Decision (user, from the review of the shell's PR #85, `CLONE REST SERVICE` copying the
+  roles): a clone must have no relation with its source, so the root cause is fixed here
+  rather than worked around in the shell. `do_privilege_check()` matched every privilege
+  of every role of the user by path alone, so a service role with a privilege on `*` or on
+  another service's path reached that service, and a cloned role widened access outside
+  the clone.
+- `AuthPrivilege::service_id` (the role's `specific_to_service_id`, read by
+  `QueryEntriesAuthPrivilegesImpl` with a join on `mrs_role`, part of the `GROUP BY`);
+  `do_privilege_check()` skips a privilege whose role belongs to another service than the
+  request's. No schema change. Suite test `role_service_scope` (service role on `*`, on
+  another service's path, a derived role, a global role); `docs/mariadb-differences.md`
+  "REST service behaviour"; the shell's `rest-daemon-5.0.md` §2a records the dependency.

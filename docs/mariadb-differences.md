@@ -132,6 +132,18 @@ entries are in `tests/mrs/disabled.def` and `tests/mrs/known_failures.def`.
   lengths in result metadata (`CURRENT_USER()` is `VARCHAR(384)`, MySQL's
   `VARCHAR(288)`).
 
+## REST service behaviour
+
+- **A REST role of a service applies to that service only.** A role created
+  for a service (`CREATE REST ROLE ... ON SERVICE /a`, `specific_to_service_id`)
+  grants access to requests on that service alone, whatever paths its
+  privileges name; a global role (`ON ANY SERVICE`) applies wherever its
+  privilege paths match. MRS matched every privilege of every role of the
+  user by path alone, so a service role with a privilege on `*` or on another
+  service's path reached that service, and a clone of a service (MariaDB
+  Shell's `CLONE REST SERVICE` copies the roles) widened access outside the
+  clone. Suite test `role_service_scope`.
+
 ## Test-suite only
 
 - The upstream test fixtures declared `VECTOR` columns and routine parameters

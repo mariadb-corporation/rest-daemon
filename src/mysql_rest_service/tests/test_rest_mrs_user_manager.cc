@@ -98,7 +98,8 @@ class UserManagerFixture : public Test {
     // schema-2/3 ids, whose query is gone)
     std::string query_user_privileges{
         "SELECT p.service_path, p.schema_path, p.object_path, "
-        "BIT_OR\\(p.crud_operations\\) as crud FROM.* user_id="};
+        "BIT_OR\\(p.crud_operations\\) as crud, role.specific_to_service_id "
+        "FROM.* user_id="};
     query_user_privileges.append(u.sql_id).append("\\)");
 
     EXPECT_CALL(session_, query(ContainsRegex(query_user_privileges), _, _))
@@ -142,7 +143,7 @@ class UserManagerFixture : public Test {
                                          "{}",
                                          nullptr};
   const std::vector<Row> k_row_for_user_4000040400004_privs{
-      Row{"/svc", nullptr, nullptr, "2"}};
+      Row{"/svc", nullptr, nullptr, "2", nullptr}};
   const AuthUser k_user_4000040400004{
       get_user_from_row(k_row_for_user_4000040400004, false)};
 };

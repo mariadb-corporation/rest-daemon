@@ -133,7 +133,7 @@ static bool check_privileges_v4(const ApplyToV4 &p,
 
 uint32_t do_privilege_check(
     const std::vector<database::entry::AuthPrivilege> &privileges,
-    const UniversalId & /*service_id*/, const std::string &service_path,
+    const UniversalId &service_id, const std::string &service_path,
     const UniversalId & /*schema_id*/, const std::string &schema_path,
     const UniversalId & /*db_object_id*/, const std::string &db_object_path) {
   uint32_t aggregated_privileges = 0;
@@ -148,12 +148,16 @@ uint32_t do_privilege_check(
   }
 
   for (const auto &p : privileges) {
-    bool matches = false;
+    // restd: a service role's privileges apply to its service only
+    // (AuthPrivilege::service_id); a global role's apply wherever the paths
+    // match
+    if (p.service_id.has_value() && *p.service_id != service_id) continue;
 
     // restd: schema-4 privileges only (paths); upstream also matched the
-    // schema-2/3 ones by id, hence the id parameters, unused now
-    matches = check_privileges_v4(p.select_by, service_path, schema_path,
-                                  db_object_path);
+    // schema-2/3 ones by id, hence the schema and object id parameters,
+    // unused now
+    const bool matches = check_privileges_v4(p.select_by, service_path,
+                                             schema_path, db_object_path);
 
     if (matches) {
       if (log_level_is_debug) {

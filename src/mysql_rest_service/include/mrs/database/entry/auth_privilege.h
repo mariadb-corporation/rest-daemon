@@ -28,6 +28,7 @@
 #define ROUTER_SRC_REST_MRS_SRC_MRS_DATABASE_ENTRY_AUTH_PRIVILEGE_H_
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 #include "mrs/database/entry/set_operation.h"
@@ -53,6 +54,13 @@ class AuthPrivilege {
   };
 
   ApplyToV4 select_by;  // restd: schema 4 only (upstream: a variant with 2/3)
+
+  // restd: the service of the role that holds the privilege
+  // (`mrs_role.specific_to_service_id`), none for a global role. A service
+  // role's privileges apply to requests on that service only; upstream matched
+  // every privilege of every role by path alone, so a service role reached
+  // other services.
+  std::optional<UniversalId> service_id;
 
   Operation::ValueType crud;
 };

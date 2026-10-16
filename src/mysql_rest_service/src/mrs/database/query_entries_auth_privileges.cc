@@ -39,9 +39,12 @@ void QueryEntriesAuthPrivilegesImpl::query_user(
   privileges_ = out_privileges;
   privileges_->clear();
   query_ =
+      // restd: the role's service comes with each privilege, see
+      // AuthPrivilege::service_id
       metadata_query("SELECT p.service_path, p.schema_path, p.object_path, "
-      "BIT_OR(p.crud_operations) as crud FROM "
+      "BIT_OR(p.crud_operations) as crud, role.specific_to_service_id FROM "
       "mariadb_rest_service.mrs_privilege as p "
+      "  JOIN mariadb_rest_service.mrs_role as role ON role.id = p.role_id "
       "  WHERE p.role_id in ( "
       "    WITH recursive cte As "
       "        ( "
@@ -55,7 +58,8 @@ void QueryEntriesAuthPrivilegesImpl::query_user(
       "        JOIN cte c ON c.derived_from_role_id=h.id "
       "        ) "
       "        SELECT id FROM cte) "
-      "GROUP BY p.service_path, p.schema_path, p.object_path");
+      "GROUP BY p.service_path, p.schema_path, p.object_path, "
+      "role.specific_to_service_id");
 
   query_ << to_sqlstring(user_id);
 
@@ -71,6 +75,7 @@ void QueryEntriesAuthPrivilegesImpl::on_row(const ResultRow &r) {
   row.unserialize(&apply_to.schema_name);
   row.unserialize(&apply_to.object_name);
   row.unserialize(&entry.crud);
+  row.unserialize(&entry.service_id);
 
   entry.select_by = apply_to;
 

@@ -1,0 +1,213 @@
+# A service role's privileges apply to its own service only; a global role's
+# privileges apply wherever their paths match.
+#
+# restd: upstream matched every privilege of every role of the user by path
+# alone, so a role of one service with a privilege on `*` or on another
+# service's path reached that other service.
+--source include/have_router.inc
+--source ../include/mrs/is_mrs_schema_v5.inc
+
+--let $extra_mrs_router_id=10000000-0000-7000-8000-000000000001
+--source ../include/predefined_setup/configure_router_mrs_root.inc
+
+create schema test_schema;
+create table test_schema.tbl (id int primary key);
+insert into test_schema.tbl values (1), (2), (3);
+
+--source ../include/mrs/start_object_definition.inc
+
+--let $mrs_add_service_path="/svc"
+--let $mrs_add_host_name=""
+--source ../include/mrs/service/add.inc
+--disable_query_log
+SET @svc_id = @service_id;
+--enable_query_log
+
+--let $mrs_add_schema=test_schema
+--let $mrs_add_schema_path=/db
+--let $mrs_add_schema_auth=1
+--source ../include/mrs/db_schema/add.inc
+
+--let $mrs_add_db_object=tbl
+--let $mrs_add_db_object_path=/tbl
+--source ../include/mrs/db_object/add.inc
+
+--let $mrs_add_service_path="/svc2"
+--let $mrs_add_host_name=""
+--source ../include/mrs/service/add.inc
+
+--let $mrs_add_schema=test_schema
+--let $mrs_add_schema_path=/db
+--let $mrs_add_schema_auth=1
+--source ../include/mrs/db_schema/add.inc
+
+--let $mrs_add_db_object=tbl
+--let $mrs_add_db_object_path=/tbl
+--source ../include/mrs/db_object/add.inc
+
+# Roles of /svc: all paths, another service's path, and a child of the first
+--let $mrs_sql_id_variable=@svc_all_id
+--let $mrs_add_role_caption=SvcAll
+--let $mrs_add_role_specific_to_service_id=@svc_id
+--source ../include/mrs/role/add.inc
+
+--let $mrs_sql_role_id_variable=@svc_all_id
+--let $mrs_grant_privilege_service_path=*
+--let $mrs_grant_privilege_schema_path=*
+--let $mrs_grant_privilege_object_path=*
+--let $mrs_grant_privilege_crud_operations=READ
+--source ../include/mrs/role/grant_privilege.inc
+
+--let $mrs_add_role_caption=SvcOnOther
+--let $mrs_add_role_specific_to_service_id=@svc_id
+--source ../include/mrs/role/add.inc
+
+--let $mrs_sql_role_id_variable=@role_id
+--let $mrs_grant_privilege_service_path=/svc2
+--let $mrs_grant_privilege_schema_path=*
+--let $mrs_grant_privilege_object_path=*
+--let $mrs_grant_privilege_crud_operations=READ
+--source ../include/mrs/role/grant_privilege.inc
+
+--let $mrs_add_role_caption=SvcChild
+--let $mrs_add_role_specific_to_service_id=@svc_id
+--let $mrs_add_role_derived_from_role_id=@svc_all_id
+--source ../include/mrs/role/add.inc
+
+# A global role with the same privilege as SvcAll
+--let $mrs_add_role_caption=GlobalAll
+--source ../include/mrs/role/add.inc
+
+--let $mrs_sql_role_id_variable=@role_id
+--let $mrs_grant_privilege_service_path=*
+--let $mrs_grant_privilege_schema_path=*
+--let $mrs_grant_privilege_object_path=*
+--let $mrs_grant_privilege_crud_operations=READ
+--source ../include/mrs/role/grant_privilege.inc
+
+# One auth app for both services, one user per role
+--let $k_password_pwd='JEEkMDA1JGI2amJJam9BZmdNS1kwWlFJVUVRZmg1d2UxVT0kVHVkYUQvandPNHB4QSttSVZQT2Q2\nQTlna1g2OUEyMVVpWEl4ajdrcG1Taz0='
+--let $mrs_add_auth_app=any_service_auth
+--let $mrs_add_auth_registered_users_only=1
+--let $mrs_add_auth_vendor=MRS
+--let $mrs_add_auth_services=('/svc', '/svc2')
+--source ../include/mrs/auth_app/add.inc
+
+--let $mrs_add_user_ext_uid="USER1"
+--let $mrs_add_user_name='svc_all'
+--let $mrs_add_user_auth_string=$k_password_pwd
+--let $mrs_add_user_role=SvcAll
+--source ../include/mrs/user/add.inc
+
+--let $mrs_add_user_ext_uid="USER2"
+--let $mrs_add_user_name='svc_on_other'
+--let $mrs_add_user_auth_string=$k_password_pwd
+--let $mrs_add_user_role=SvcOnOther
+--source ../include/mrs/user/add.inc
+
+--let $mrs_add_user_ext_uid="USER3"
+--let $mrs_add_user_name='svc_child'
+--let $mrs_add_user_auth_string=$k_password_pwd
+--let $mrs_add_user_role=SvcChild
+--source ../include/mrs/user/add.inc
+
+--let $mrs_add_user_ext_uid="USER4"
+--let $mrs_add_user_name='global_all'
+--let $mrs_add_user_auth_string=$k_password_pwd
+--let $mrs_add_user_role=GlobalAll
+--source ../include/mrs/user/add.inc
+
+--source ../include/mrs/end_object_definition.inc
+
+--echo
+--echo ## A role of /svc with a privilege on every path: /svc only
+exec $MRS_CLIENT_ARGS
+  -a scram_post --auth-app 'any_service_auth' --session-type jwt
+  -t PUT
+  --path /svc/authentication/login
+  -u svc_all
+  -p pwd
+  --session-file $MYSQL_TMP_DIR/user_session.dat;
+
+--let $mrs_client_arg_request_type=GET
+--let $mrs_client_arg_path='/svc/db/tbl'
+--let $mrs_client_arg_expected_status=200
+--let $mrs_client_arg_session_file=$MYSQL_TMP_DIR/user_session.dat
+--source ../include/mrs/mrs_client.inc
+
+--let $mrs_client_arg_request_type=GET
+--let $mrs_client_arg_path='/svc2/db/tbl'
+--let $mrs_client_arg_expected_status=403
+--let $mrs_client_arg_session_file=$MYSQL_TMP_DIR/user_session.dat
+--source ../include/mrs/mrs_client.inc
+
+--echo
+--echo ## A role of /svc with a privilege on /svc2: neither service
+exec $MRS_CLIENT_ARGS
+  -a scram_post --auth-app 'any_service_auth' --session-type jwt
+  -t PUT
+  --path /svc/authentication/login
+  -u svc_on_other
+  -p pwd
+  --session-file $MYSQL_TMP_DIR/user_session.dat;
+
+--let $mrs_client_arg_request_type=GET
+--let $mrs_client_arg_path='/svc/db/tbl'
+--let $mrs_client_arg_expected_status=403
+--let $mrs_client_arg_session_file=$MYSQL_TMP_DIR/user_session.dat
+--source ../include/mrs/mrs_client.inc
+
+--let $mrs_client_arg_request_type=GET
+--let $mrs_client_arg_path='/svc2/db/tbl'
+--let $mrs_client_arg_expected_status=403
+--let $mrs_client_arg_session_file=$MYSQL_TMP_DIR/user_session.dat
+--source ../include/mrs/mrs_client.inc
+
+--echo
+--echo ## A role of /svc extending the first one: its parent's privileges, /svc only
+exec $MRS_CLIENT_ARGS
+  -a scram_post --auth-app 'any_service_auth' --session-type jwt
+  -t PUT
+  --path /svc/authentication/login
+  -u svc_child
+  -p pwd
+  --session-file $MYSQL_TMP_DIR/user_session.dat;
+
+--let $mrs_client_arg_request_type=GET
+--let $mrs_client_arg_path='/svc/db/tbl'
+--let $mrs_client_arg_expected_status=200
+--let $mrs_client_arg_session_file=$MYSQL_TMP_DIR/user_session.dat
+--source ../include/mrs/mrs_client.inc
+
+--let $mrs_client_arg_request_type=GET
+--let $mrs_client_arg_path='/svc2/db/tbl'
+--let $mrs_client_arg_expected_status=403
+--let $mrs_client_arg_session_file=$MYSQL_TMP_DIR/user_session.dat
+--source ../include/mrs/mrs_client.inc
+
+--echo
+--echo ## A global role with a privilege on every path: both services
+exec $MRS_CLIENT_ARGS
+  -a scram_post --auth-app 'any_service_auth' --session-type jwt
+  -t PUT
+  --path /svc/authentication/login
+  -u global_all
+  -p pwd
+  --session-file $MYSQL_TMP_DIR/user_session.dat;
+
+--let $mrs_client_arg_request_type=GET
+--let $mrs_client_arg_path='/svc/db/tbl'
+--let $mrs_client_arg_expected_status=200
+--let $mrs_client_arg_session_file=$MYSQL_TMP_DIR/user_session.dat
+--source ../include/mrs/mrs_client.inc
+
+--let $mrs_client_arg_request_type=GET
+--let $mrs_client_arg_path='/svc2/db/tbl'
+--let $mrs_client_arg_expected_status=200
+--let $mrs_client_arg_session_file=$MYSQL_TMP_DIR/user_session.dat
+--source ../include/mrs/mrs_client.inc
+
+# Cleanup
+--source ../include/mrs/cleanup.inc
+drop schema test_schema;
+remove_file $MYSQL_TMP_DIR/user_session.dat;
