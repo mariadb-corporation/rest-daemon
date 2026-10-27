@@ -142,6 +142,11 @@ In the build directory:
 - `plugin_output_directory/`: the plugins (`mariadb_rest_service`,
   `http_server`, `jit_executor`, ...)
 
+`mariadb-restd` runs from the build directory as it is: without a
+`plugin_folder` option, it loads the plugins from `plugin_output_directory/`
+when the installed layout's plugin folder (`../lib/mariadb-restd`, Windows
+`..\lib`) does not exist.
+
 The program name (`mariadb-restd`), the product name and the package metadata
 are set in `cmake/settings.cmake`, the version in `VERSION`.
 
@@ -252,7 +257,6 @@ one:
 
 ```ini
 [DEFAULT]
-plugin_folder=/path/to/build/plugin_output_directory
 logging_folder=/var/log/mariadb-restd
 runtime_folder=/var/run/mariadb-restd
 data_folder=/var/lib/mariadb-restd

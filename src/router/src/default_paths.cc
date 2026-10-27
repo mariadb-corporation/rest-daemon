@@ -73,6 +73,25 @@ static std::string ensure_absolute_path(const std::string &path,
                                                   : basedir + dir_sep + path);
 }
 
+/** @brief The plugin folder of the build tree `<origin>` is in, if any
+ *
+ * restd: a binary run from the build tree (runtime_output_directory, or a
+ * configuration folder below it with a multi-config generator) finds the
+ * plugins in the build's plugin_output_directory, as the tests do.
+ *
+ * @param origin Directory of the executable
+ * @returns the plugin folder, or an empty string outside a build tree
+ */
+static std::string build_tree_plugin_folder(const mysql_harness::Path &origin) {
+  const auto is_runtime_dir = [](const mysql_harness::Path &dir) {
+    return dir.basename().str() == "runtime_output_directory";
+  };
+  if (!is_runtime_dir(origin) && !is_runtime_dir(origin.dirname())) return {};
+
+  mysql_harness::Path plugin_dir(mysql_harness::get_plugin_dir(origin.str()));
+  return plugin_dir.is_directory() ? plugin_dir.str() : std::string{};
+}
+
 namespace mysqlrouter {
 
 /*static*/
@@ -104,6 +123,14 @@ std::map<std::string, std::string> get_default_paths(
             ensure_absolute_path(MYSQL_ROUTER_DATA_FOLDER, basedir)}}) {
     params.emplace(it.first, mysqlrouter::substitute_variable(
                                  it.second, "{origin}", origin.str()));
+  }
+
+  // restd: the installed layout's plugin folder first, then the build tree's
+  auto &plugin_folder =
+      params.at(std::string(mysql_harness::loader::options::kPluginFolder));
+  if (!mysql_harness::Path(plugin_folder).is_directory()) {
+    auto build_tree_folder = build_tree_plugin_folder(origin);
+    if (!build_tree_folder.empty()) plugin_folder = build_tree_folder;
   }
   return params;
 }
