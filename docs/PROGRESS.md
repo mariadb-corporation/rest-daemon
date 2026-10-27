@@ -243,7 +243,7 @@ The VM has no passwordless sudo, so there are two workarounds, neither needed if
 `sudo apt install libicu-dev ninja-build` is run once:
 - ICU headers: `apt-get download libicu-dev` unpacked into `deps/icu` (78.2, matches the installed runtime)
 - no ninja: Makefiles generator
-In the build tree the config must set `plugin_folder=<build>/plugin_output_directory`.
+From the build tree, restd finds `<build>/plugin_output_directory` without a `plugin_folder` option.
 
 ### Fedora (VM `ssh <fedora-vm>`, Fedora 44, aarch64): rpm packages
 
@@ -978,3 +978,19 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   request's. No schema change. Suite test `role_service_scope` (service role on `*`, on
   another service's path, a derived role, a global role); `docs/mariadb-differences.md`
   "REST service behaviour"; the shell's `rest-daemon-5.0.md` §2a records the dependency.
+
+### 2026-10-27: session 12 (restd runs from the build tree)
+
+- A build-tree `mariadb-restd` exited for lack of plugins: the default plugin folder is
+  the package's `{origin}/../lib/mariadb-restd` (Windows `{origin}/../lib`). Switching the
+  build tree to the package layout was considered and declined: about 15 files hard-code
+  upstream's `*_output_directory` names (CMake, the C++ test helpers, the MRS suite and
+  its recorded results, the smoke test), the test executables would land next to the
+  daemon, and multi-config generators would still miss `../lib`. The release workflows
+  would not have been affected (they only run `cmake --build` and `cpack`).
+- `get_default_paths()` (`default_paths.cc`) falls back to the build's
+  `plugin_output_directory` when the package's plugin folder does not exist and the
+  binary sits in `runtime_output_directory` (or a configuration folder below it); the
+  lookup is the harness's `get_plugin_dir()`. `--setup` writes no `plugin_folder`, so its
+  configurations work from the build tree too. Verified on macOS: `--help` shows the build
+  tree's folder, a daemon without `plugin_folder` serves `rest_api`, ctest passes.
