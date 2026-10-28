@@ -7,3 +7,5 @@ __pycache__/
 ext/polyglot/**/target/
 ext/polyglot/polyglot-nativeapi/src/main/java/org/
 ext/polyglot/polyglot-nativeapi/src/main/resources/
+# macOS Finder metadata
+.DS_Store
