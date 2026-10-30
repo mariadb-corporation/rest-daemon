@@ -63,8 +63,8 @@ static WORD logger_to_eventlog_severity(LogLevel level) {
 /**
  * Create a key in the Windows registry.
  *
- * We'll setup a "MySQL Router" key in the EventLog branch (RegCreateKey),
- * set our executable name (GetModuleFileName) as file-name
+ * We'll setup a "MariaDB REST Daemon" key in the EventLog branch
+ * (RegCreateKey), set our executable name (GetModuleFileName) as file-name
  * ("EventMessageFile"), then set the message types we expect to
  * be logging ("TypesSupported").
  * If the key does not exist, sufficient privileges will be required

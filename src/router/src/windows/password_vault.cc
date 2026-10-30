@@ -60,7 +60,8 @@ PasswordVault::~PasswordVault() {
 }
 
 std::string PasswordVault::get_vault_path() const {
-  return "C:\\ProgramData\\MySQL\\MySQL Router\\mysql_router_user_data.dat";
+  return "C:\\ProgramData\\MariaDB\\MariaDB REST Daemon\\"
+         "mariadb_restd_user_data.dat";
 }
 
 void PasswordVault::password_scrambler(std::string &pass) {
