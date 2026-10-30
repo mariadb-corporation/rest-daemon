@@ -1015,7 +1015,7 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   third-party file, ICU4J, the Unicode data files, Java-WebSocket and org.json (public
   domain since 20231013). The Linux image links the system `libz`.
 - Written offer for source code (GPLv2 3(b)) in place of the pointer to the GitHub
-  organisations; the contact address and email are left for legal to fill in.
+  organisations; requests go by post to MariaDB's Redwood City address (no email).
 - The linking permission in the source headers changed like the LICENSE's (not in the
   unused `ORACLE_*` text macros of `welcome_copyright_notice.h`). The Windows password
   vault moved to `C:\ProgramData\MariaDB\MariaDB REST Daemon\mariadb_restd_user_data.dat`
