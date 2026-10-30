@@ -9,7 +9,8 @@
   This program is designed to work with certain software (including
   but not limited to OpenSSL) that is licensed under separate terms,
   as designated in a particular file or component or in included license
-  documentation.  The authors of MySQL hereby grant you an additional
+  documentation.  The authors of MySQL and, with respect to its
+  modifications and additions, MariaDB plc hereby grant you an additional
   permission to link the program and your derivative works with the
   separately licensed software that they have either included with
   the program or referenced in the documentation.
@@ -184,8 +185,9 @@ class EventlogSubscription {
     // @note: To understand the fields used in our XPath query, see example XML
     //        shown in eventlog_log_cb().
     //
-    // @note: At the time of writing, expression "Provider[@Name = 'MySQL Router']"
-    //        could also be replaced by "(Provider/@Name = 'MySQL Router')" and
+    // @note: At the time of writing, expression
+    //        "Provider[@Name = 'MariaDB REST Daemon']" could also be replaced
+    //        by "(Provider/@Name = 'MariaDB REST Daemon')" and
     //        it seems to work - if one day the below fails to run, try this
     //        other expression (unsure if they're equivalent).
     // clang-format on
@@ -319,7 +321,7 @@ class EventlogSubscription {
     //
     //   <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
     //     <System>
-    //       <Provider Name='MySQL Router'/>
+    //       <Provider Name='MariaDB REST Daemon'/>
     //       <EventID Qualifiers='0'>0</EventID>
     //       <Level>2</Level>
     //       <Task>0</Task>
@@ -330,7 +332,7 @@ class EventlogSubscription {
     //       <Computer>somehost.example.com</Computer><Security/>
     //     </System>
     //     <EventData>
-    //       <Data>MySQL Router</Data>
+    //       <Data>MariaDB REST Daemon</Data>
     //       <Data>Some example message</Data> <---- log message appears here
     //     </EventData>
     //   </Event>

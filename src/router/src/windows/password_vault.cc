@@ -9,7 +9,8 @@
   This program is designed to work with certain software (including
   but not limited to OpenSSL) that is licensed under separate terms,
   as designated in a particular file or component or in included license
-  documentation.  The authors of MySQL hereby grant you an additional
+  documentation.  The authors of MySQL and, with respect to its
+  modifications and additions, MariaDB plc hereby grant you an additional
   permission to link the program and your derivative works with the
   separately licensed software that they have either included with
   the program or referenced in the documentation.
@@ -59,7 +60,8 @@ PasswordVault::~PasswordVault() {
 }
 
 std::string PasswordVault::get_vault_path() const {
-  return "C:\\ProgramData\\MySQL\\MySQL Router\\mysql_router_user_data.dat";
+  return "C:\\ProgramData\\MariaDB\\MariaDB REST Daemon\\"
+         "mariadb_restd_user_data.dat";
 }
 
 void PasswordVault::password_scrambler(std::string &pass) {

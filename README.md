@@ -380,6 +380,15 @@ parameters.
 | `tools/` | smoke test, analysis scripts (dependency closure, the suite's schema generator and converter) |
 | `docs/` | plan, progress log, inventories, differences from the MySQL REST Service |
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
 GPLv2, see [LICENSE](LICENSE).
+
+## Trademarks
+
+MySQL is a registered trademark of Oracle and/or its affiliates. The MariaDB
+REST Daemon is not affiliated with or endorsed by Oracle.

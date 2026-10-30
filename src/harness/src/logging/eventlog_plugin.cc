@@ -9,7 +9,8 @@
   This program is designed to work with certain software (including
   but not limited to OpenSSL) that is licensed under separate terms,
   as designated in a particular file or component or in included license
-  documentation.  The authors of MySQL hereby grant you an additional
+  documentation.  The authors of MySQL and, with respect to its
+  modifications and additions, MariaDB plc hereby grant you an additional
   permission to link the program and your derivative works with the
   separately licensed software that they have either included with
   the program or referenced in the documentation.
@@ -62,8 +63,8 @@ static WORD logger_to_eventlog_severity(LogLevel level) {
 /**
  * Create a key in the Windows registry.
  *
- * We'll setup a "MySQL Router" key in the EventLog branch (RegCreateKey),
- * set our executable name (GetModuleFileName) as file-name
+ * We'll setup a "MariaDB REST Daemon" key in the EventLog branch
+ * (RegCreateKey), set our executable name (GetModuleFileName) as file-name
  * ("EventMessageFile"), then set the message types we expect to
  * be logging ("TypesSupported").
  * If the key does not exist, sufficient privileges will be required

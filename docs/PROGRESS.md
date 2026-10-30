@@ -913,8 +913,8 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   published `v26.10.0` as a pre-release (5 packages + `SHA256SUMS`). Its notes said MariaDB
   Server 10.11 or later; corrected to 11.7 in the workflow (`2b4c73c`), the release itself
   is fixed by running Publish Release for the same run again.
-- The self-hosted CI workflow (all suites) is drafted but parked until IT-23080 (GCP
-  workload-identity access, the GCP secrets, the org runner group).
+- The self-hosted CI workflow (all suites) is drafted but parked until the CI
+  infrastructure (cloud access and runners for this repository) is in place.
 - `/checkpoint` and `/read-checkpoint` follow MariaDB Shell's: the context keeps only what
   stays true (no git state, session history or machine details); `/read-checkpoint` reads
   open PRs and dangling branches live.
@@ -994,3 +994,30 @@ See `.claude/PROJECT_CONTEXT.md` (`/read-checkpoint`), kept up to date by `/chec
   lookup is the harness's `get_plugin_dir()`. `--setup` writes no `plugin_folder`, so its
   configurations work from the build tree too. Verified on macOS: `--help` shows the build
   tree's folder, a daemon without `plugin_folder` serves `rest_api`, ctest passes.
+
+### 2026-10-30: session 13 (legal review of the LICENSE)
+
+- Legal's review of `LICENSE` against the upstream `LICENSE.router`; to be public the
+  repository needs points A (LICENSE) and C (confirmations), the first binary release
+  points B (GraalVM notices, source availability, zlib years).
+- `LICENSE`: title "MariaDB REST Daemon 26"; one wording of the origin ("a fork of MySQL
+  Router, including its MySQL REST Service, by Oracle"); the linking permission is
+  granted by the authors of MySQL and, for its modifications and additions, MariaDB plc;
+  Duktape (with its 4th-party code) and Google Test listed again as test-only sources not
+  in the binaries; the dtoa notice (Connector/C and `extra/mysql-internals/src/dtoa.cc`);
+  zlib 1995-2026 (1.3.2 from vcpkg). Protocol Buffers, abseil-cpp and Kerberos5 are not
+  in the tree; RapidJSON is headers only (no `bin/jsonchecker`).
+- GraalVM entry, from what the released `libjitexecutor` contains (class names in the
+  image) and the 24.1.1 Maven closure of `ext/polyglot`: Substrate VM, the Graal compiler
+  and the inspector/DAP/profiler tools are GPLv2 with the Classpath Exception, Truffle,
+  the SDK, GraalJS and TRegex UPL; OpenJDK's notices for `java.base`, `jdk.localedata`
+  and `jdk.dynalink` (no `java.xml` or desktop classes in the image), GraalJS's
+  third-party file, ICU4J, the Unicode data files, Java-WebSocket and org.json (public
+  domain since 20231013). The Linux image links the system `libz`.
+- Written offer for source code (GPLv2 3(b)) in place of the pointer to the GitHub
+  organisations; requests go by post to MariaDB's Redwood City address (no email).
+- The linking permission in the source headers changed like the LICENSE's (not in the
+  unused `ORACLE_*` text macros of `welcome_copyright_notice.h`). The Windows password
+  vault moved to `C:\ProgramData\MariaDB\MariaDB REST Daemon\mariadb_restd_user_data.dat`
+  (an existing vault is not migrated); the event log source already was the product
+  name. README: trademark notice, link to `CONTRIBUTING.md`.

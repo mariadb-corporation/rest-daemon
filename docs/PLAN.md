@@ -47,7 +47,7 @@ remaining items (real deb/rpm installs, MSI, GitHub Actions) are finished last.
 | Platforms | **Linux, Windows, macOS** |
 | Upstream sync | **None.** Directory layout may be changed freely |
 | Tests | Keep the GoogleTest/CTest suites; port the MRS-relevant mtr tests to gtest; no mtr |
-| Source repo location | `https://github.com/mariadb-corporation/rest-daemon` (private), local clone `<dev>/rest-daemon` |
+| Source repo location | `https://github.com/mariadb-corporation/rest-daemon`, local clone `<dev>/rest-daemon` |
 
 ## Guiding principles
 
@@ -151,7 +151,8 @@ See [phase0-inventory.md](phase0-inventory.md). **Verdict: GO.** The kept code u
   `mariadb-restd.conf` / `mariadb-restd.log`. Both names are set only in
   `cmake/settings.cmake`. Config section names and log domains are kept (router-style
   configs stay valid). Install layout (`lib/mysqlrouter`, `/var/lib/mysqlrouter`,
-  `C:\ProgramData\MySQL\MySQL Router`) is renamed with packaging (Phase 4).
+  `C:\ProgramData\MySQL\MySQL Router`) is renamed with packaging (Phase 4); the
+  Windows password vault is `C:\ProgramData\MariaDB\MariaDB REST Daemon` (2026-10-30).
 - ✅ `mariadb-restd --setup <server URI> -d <dir>` (2026-10-05): from `BootstrapConfigurator::configure_mrs()`
   (check_mrs_metadata, register_mrs_router_instance, create_mrs_users, keyring,
   config writing) against a single standalone server; no router account and no routing

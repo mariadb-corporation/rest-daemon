@@ -9,7 +9,8 @@
   This program is designed to work with certain software (including
   but not limited to OpenSSL) that is licensed under separate terms,
   as designated in a particular file or component or in included license
-  documentation.  The authors of MySQL hereby grant you an additional
+  documentation.  The authors of MySQL and, with respect to its
+  modifications and additions, MariaDB plc hereby grant you an additional
   permission to link the program and your derivative works with the
   separately licensed software that they have either included with
   the program or referenced in the documentation.
@@ -35,7 +36,8 @@ class PasswordVault {
   /** @brief Create an instance of the vault.
    *
    * On creation the vault cache is initialized with the contents of the vault
-   * file at %APPDATA%/MySQL/MySQL Router/mysql_router_user_data.dat.
+   * file at
+   * C:\ProgramData\MariaDB\MariaDB REST Daemon\mariadb_restd_user_data.dat.
    * The passwords are stored in the cache in cleartext.
    */
   PasswordVault();
@@ -83,7 +85,7 @@ class PasswordVault {
   /** @brief Stores the vault cache into persistent storage in encrypted form.
    *
    * The vault location in persistent storage is
-   * %APPDATA%/MySQL/MySQL Router/mysql_router_user_data.dat.
+   * C:\ProgramData\MariaDB\MariaDB REST Daemon\mariadb_restd_user_data.dat.
    */
   void store_passwords();
 
