@@ -168,7 +168,8 @@ Linux, `dpkg-shlibdeps` for deb and `rpmbuild` for rpm. The Windows packages
 include the MSVC runtime.
 
 **Release packages** (`.github/workflows/rest-daemon-release.yml`, on a push
-to `release/candidate` or started by hand): built on GitHub-hosted runners for
+to `release/candidate` or started by hand; every run waits until a reviewer of
+the `release-build` environment approves it): built on GitHub-hosted runners for
 macOS x64 and arm64, Windows x64 and arm64 and Linux x64 and arm64, each
 uploaded as the artifact `pkg-<os>-<arch>` of the run. The Linux packages are
 built in a Rocky Linux 9 container (`docker/linux-rocky9.Dockerfile`), so they

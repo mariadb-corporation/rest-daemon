@@ -37,10 +37,24 @@ env:
 
 jobs:
   # ==========================================================================
+  # The release-build environment's required reviewers hold every run here
+  # until one of them approves it, whichever way it was started. One gate job
+  # rather than the environment on each build leg, so a run is one approval
+  # and one deployment record, not six.
+  # ==========================================================================
+  gate:
+    name: Approval
+    runs-on: ubuntu-latest
+    environment: release-build
+    steps:
+      - run: echo "approved"
+
+  # ==========================================================================
   # macOS and Windows
   # ==========================================================================
   build:
     name: Build (${{ matrix.os }}-${{ matrix.arch }})
+    needs: gate
     runs-on: ${{ matrix.os-runner }}
     timeout-minutes: 240
 
@@ -210,6 +224,7 @@ jobs:
   # ==========================================================================
   linux:
     name: Build (linux-${{ matrix.arch }})
+    needs: gate
     runs-on: ${{ matrix.os-runner }}
     timeout-minutes: 240
 
