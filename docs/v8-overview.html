@@ -1,0 +1,344 @@
+<title>REST Daemon V8 Overview</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: a narrow reading column with a sticky contents rail on wide screens; one column on phones. */
+  :root {
+    --bg: #f5f7f9;
+    --surface: #ffffff;
+    --fg: #1a2230;
+    --muted: #5a6476;
+    --line: #d6dce5;
+    --accent: #0e6b78;
+    --accent-soft: #e2f0f2;
+    --warn: #9a5b00;
+    --warn-soft: #fbefd9;
+    --ok: #2f6b3a;
+    --ok-soft: #e3f1e5;
+    --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+    --font-body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12161c; --surface: #1a2029; --fg: #e4e8ee; --muted: #9aa4b4; --line: #2c3440;
+      --accent: #5cbcc8; --accent-soft: #163239; --warn: #e2a74a; --warn-soft: #3a2c14;
+      --ok: #7cc68a; --ok-soft: #1b3321; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12161c; --surface: #1a2029; --fg: #e4e8ee; --muted: #9aa4b4; --line: #2c3440;
+    --accent: #5cbcc8; --accent-soft: #163239; --warn: #e2a74a; --warn-soft: #3a2c14;
+    --ok: #7cc68a; --ok-soft: #1b3321; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.55;
+    padding-block: 32px 64px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  code, pre { font-family: var(--font-mono); font-size: 0.9em; }
+  code { background: var(--accent-soft); padding: 1px 5px; border-radius: 3px; }
+  pre { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+
+  .page { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; }
+  @media (max-width: 860px) { .page { grid-template-columns: minmax(0, 1fr); gap: 24px; } }
+
+  nav.toc { position: sticky; top: 24px; align-self: start; font-size: 14px; }
+  nav.toc .eyebrow { margin-bottom: 8px; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  nav.toc a { color: var(--muted); text-decoration: none; }
+  nav.toc a:hover { color: var(--accent); }
+  @media (max-width: 860px) {
+    nav.toc { position: static; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
+    nav.toc ol { flex-direction: row; flex-wrap: wrap; gap: 6px 16px; }
+  }
+
+  main { min-width: 0; max-width: 72ch; }
+  .eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 5vw, 42px); line-height: 1.1; margin: 8px 0 12px; text-wrap: balance; }
+  h2 { font-family: var(--font-display); font-weight: 700; font-size: 24px; line-height: 1.2; margin: 48px 0 12px; text-wrap: balance; padding-top: 24px; border-top: 1px solid var(--line); }
+  h3 { font-family: var(--font-display); font-weight: 600; font-size: 18px; margin: 28px 0 8px; text-wrap: balance; }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  .lead { font-size: 18px; color: var(--fg); }
+  .status { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--warn); background: var(--warn-soft); border-radius: 999px; padding: 3px 12px; }
+  .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+
+  dl.glance { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px 24px; margin: 24px 0 8px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+  dl.glance div { min-width: 0; }
+  dl.glance dt { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  dl.glance dd { margin: 2px 0 0; font-family: var(--font-display); font-weight: 600; font-size: 18px; }
+
+  .table-wrap { overflow-x: auto; margin: 12px 0 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; font: inherit; font-size: 14.5px; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  th { font-weight: 600; color: var(--muted); font-size: 12.5px; letter-spacing: 0.04em; text-transform: uppercase; }
+  tr:last-child td { border-bottom: 0; }
+  td.yes { color: var(--ok); font-weight: 600; }
+  td.no { color: var(--warn); font-weight: 600; }
+
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
+  .flow .box { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; font-size: 14px; min-width: 0; }
+  .flow .box small { display: block; color: var(--muted); font-size: 12px; }
+  .flow .arrow { font-family: var(--font-mono); font-size: 12px; color: var(--accent); white-space: nowrap; }
+  .flow .ours { border-color: var(--accent); background: var(--accent-soft); }
+
+  .note { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 14px 0 18px; }
+  .note.warn { border-color: var(--warn); background: var(--warn-soft); }
+
+  ol.phases { list-style: none; padding: 0; margin: 16px 0; counter-reset: phase -1; display: flex; flex-direction: column; gap: 12px; }
+  ol.phases > li { counter-increment: phase; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+  ol.phases > li::before { content: "V" counter(phase, decimal); font-family: var(--font-mono); font-weight: 500; color: var(--accent); font-size: 15px; padding-top: 2px; }
+  ol.phases .ph-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; align-items: baseline; }
+  ol.phases .ph-head strong { font-family: var(--font-display); font-size: 17px; }
+  ol.phases .est { font-family: var(--font-mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
+  ol.phases ul { margin: 8px 0 0; font-size: 15px; }
+  ol.phases .exit { margin-top: 8px; font-size: 14px; color: var(--muted); }
+  ol.phases .exit b { color: var(--ok); font-weight: 600; }
+
+  ul.decisions { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  ul.decisions li { position: relative; padding-left: 32px; }
+  ul.decisions li::before { content: ""; position: absolute; left: 0; top: 4px; width: 16px; height: 16px; border: 1.5px solid var(--muted); border-radius: 4px; }
+
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<div class="page">
+  <nav class="toc" aria-label="Contents">
+    <div class="eyebrow">Contents</div>
+    <ol>
+      <li><a href="#why">Why move</a></li>
+      <li><a href="#today">Windows on ARM today</a></li>
+      <li><a href="#debug">Debugging</a></li>
+      <li><a href="#sourcemaps">TypeScript source maps</a></li>
+      <li><a href="#scope">What stays, what changes</a></li>
+      <li><a href="#source">Where V8 comes from</a></li>
+      <li><a href="#phases">Phases</a></li>
+      <li><a href="#risks">Risks</a></li>
+      <li><a href="#decisions">Decisions needed</a></li>
+      <li><a href="#sources">Sources</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="eyebrow">MariaDB REST Daemon · JIT executor</div>
+    <h1>Replacing GraalVM with V8 as the script engine</h1>
+    <p><span class="status">Proposal, not decided · 2026-10-30</span></p>
+    <p class="lead">The JIT executor plugin runs MRS scripts on GraalJS inside a GraalVM native image. This page collects what we found out on 30 October 2026 about moving it to V8: why, what it touches, how debugging and TypeScript keep working, where V8 would come from, and a phased plan with estimates. The plan itself is <code>docs/v8-plan.md</code>.</p>
+
+    <dl class="glance">
+      <div><dt>Effort</dt><dd>8–11 weeks, one engineer</dd></div>
+      <div><dt>Native targets</dt><dd>6 of 6 (today 5 of 6)</dd></div>
+      <div><dt>REST service plugin</dt><dd>Unchanged</dd></div>
+      <div><dt>Engine files to rewrite</dt><dd>18 of the JIT executor's sources</dd></div>
+    </dl>
+
+    <h2 id="why">Why move</h2>
+    <p>The move to GraalVM was made for non-technical reasons, and the MRS scripts use nothing that is specific to GraalJS. Four things argue for V8 now.</p>
+    <h3>Platforms</h3>
+    <p>GraalVM Community has never shipped a Windows ARM64 build, and none is planned. The request (oracle/graal#9215, open since 2024, "help wanted") got the answer "not on our roadmap" from the GraalVM team in January 2026. GraalVM also dropped macOS x64 after 25.0.0: our pinned 23.0.1 still has it, but the next upgrade would cost us the macOS x64 package.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>GraalVM CE release</th><th>Linux x64</th><th>Linux arm64</th><th>macOS x64</th><th>macOS arm64</th><th>Windows x64</th><th>Windows arm64</th></tr></thead>
+        <tbody>
+          <tr><td>23.0.1 (ours), 24.0.2, 25.0.0</td><td class="yes">yes</td><td class="yes">yes</td><td class="yes">yes</td><td class="yes">yes</td><td class="yes">yes</td><td class="no">no</td></tr>
+          <tr><td>25.0.2, 25 Innovation 1–4 (latest, Sep 2026)</td><td class="yes">yes</td><td class="yes">yes</td><td class="no">no</td><td class="yes">yes</td><td class="yes">yes</td><td class="no">no</td></tr>
+          <tr><td>V8 (Google's own builds)</td><td class="yes">yes</td><td class="yes">yes</td><td class="yes">yes</td><td class="yes">yes</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Build</h3>
+    <p>The JIT executor library is a GraalVM native image: a Maven build, a 20 GB heap for <code>native-image</code>, minutes per platform, and 2,653 lines of patches on GraalVM's polyglot native API in <code>ext/polyglot</code>. With V8 the plugin links a prebuilt static library that is pinned by version and checksum.</p>
+    <h3>Licensing</h3>
+    <p>The GraalVM, OpenJDK and GraalJS notices are the bulk of the LICENSE file and were the hardest part of legal's review (section B.1). V8 is BSD-3 with a short list of third-party notices. The written offer for source code can stay; it is cheap and covers the MySQL-derived GPL code regardless.</p>
+    <h3>Debugging</h3>
+    <p>Unchanged in substance. VS Code attaches to the engine over the Chrome DevTools Protocol, and V8's inspector is that protocol's reference implementation. Details below.</p>
+
+    <h2 id="today">Windows on ARM today</h2>
+    <p>The release build has six legs, but only five distinct packages. The <code>windows-arm64</code> leg compiles the <em>x64</em> daemon on an ARM64 runner (<code>vcvarsall arm64_amd64</code>) with the x64 GraalVM library under emulation. Its package is another <code>windows-x64.zip</code>, and Publish Release takes the one from the x64 leg. The leg exists to prove that the x64 build works on an ARM64 development machine; the published x64 package runs on Windows on ARM under emulation, and verification tests exactly that on a Windows ARM runner.</p>
+    <p>A real ARM64 daemon with the x64 GraalVM library is not possible: a native ARM64 process cannot load an x64 DLL. Only ARM64EC binaries can, and that would mean building Connector/C, OpenSSL and ICU as ARM64EC through vcpkg, which is large and uncertain. So with GraalVM the options are: keep the x64 package (recommended today), publish the same binaries under an <code>arm64</code> name (misleading), or ship a native ARM64 daemon without the JIT executor (no MRS scripts).</p>
+
+    <h2 id="debug">How debugging works, with either engine</h2>
+    <p>The shell plugins' <code>mrs_scripts</code> example attaches with VS Code's built-in Node.js debugger: <code>"type": "node", "request": "attach", "port": 9229</code>. That debugger speaks the Chrome DevTools Protocol (CDP) to the engine. Nothing in the chain is GraalVM-specific.</p>
+    <div class="flow" aria-label="Debugging chain">
+      <div class="box">VS Code<small>Debug Adapter Protocol</small></div>
+      <span class="arrow">──DAP──▶</span>
+      <div class="box">js-debug<small>built into VS Code; resolves source maps</small></div>
+      <span class="arrow">──CDP over WebSocket──▶</span>
+      <div class="box">GraalVM inspector<small>today, on the debug port</small></div>
+    </div>
+    <div class="flow" aria-label="Debugging chain with V8">
+      <div class="box">VS Code</div>
+      <span class="arrow">──DAP──▶</span>
+      <div class="box">js-debug</div>
+      <span class="arrow">──CDP over WebSocket──▶</span>
+      <div class="box ours">our WebSocket server<small>new: /json/list, /json/version, RFC 6455</small></div>
+      <span class="arrow">──▶</span>
+      <div class="box">v8_inspector<small>part of V8: breakpoints, stepping, scopes, console, profiler</small></div>
+    </div>
+    <p>With V8 we write no protocol messages. We write what every program embedding V8 writes: an inspector client that passes messages between the socket and the inspector session, registers each script context, and runs a message loop while a script is paused on the execution thread; plus a small WebSocket server on the debug port with the two discovery endpoints js-debug uses. GraalVM's inspector also opens its own port, so the daemon's HTTP server is not involved. A debug adapter of our own (DAP directly) would rebuild what js-debug already does and gain nothing; CDP also keeps the daemon debuggable from Chrome DevTools.</p>
+
+    <h2 id="sourcemaps">TypeScript source maps</h2>
+    <p>Getting source maps to work with GraalJS took effort, so the natural worry is that V8 brings the same fight back. It does not: the map handling lives in VS Code's debugger, not in the engine, and V8 is the engine that debugger is built for.</p>
+    <p>The scripts do not exist as files on the developer's machine in the form the engine runs them. The daemon loads them from the content set in the database through its own virtual file system (<code>mrs/file_system/db_service_file_system.cc</code>), and the inspector reports each script under its content-set path, such as <code>/myService/scripts/build/MrsScriptModule.js</code>. VS Code then has to do two things on its own:</p>
+    <ol>
+      <li>find the <code>.map</code> file named by the script's <code>//# sourceMappingURL=</code> comment, and</li>
+      <li>map the <code>sources</code> inside it to files in the workspace.</li>
+    </ol>
+    <p>Step 2 is what the workaround in the example's <code>rollup.config.mjs</code> fixes: it forces <code>sourceRoot</code> to the absolute project folder so the map's sources resolve to local files. The blanked <code>resolveSourceMapLocations</code> and the <code>"trace": true</code> in the launch config are leftovers of the same fight. This is a consequence of scripts living in the database and is identical with V8.</p>
+    <p>What V8 adds: the daemon implements module loading itself, so it decides each script's name and can set the source-map URL explicitly when compiling (<code>ScriptOrigin</code>), for example to the map's HTTPS URL in the content set, which VS Code fetches directly. The GraalVM-specific Windows backslash quirk the daemon has to undo today goes away with it.</p>
+    <div class="note">Independent of the engine: have rollup emit inline source maps (<code>sourcemap: 'inline'</code>) for development builds. The map travels inside the script as a <code>data:</code> URL, VS Code decodes it without looking for a file, and step 1 disappears today, with GraalJS. The forced <code>sourceRoot</code> stays needed for step 2.</div>
+
+    <h2 id="scope">What stays and what changes</h2>
+    <p>The engine sits behind one interface, and the REST service plugin uses only it, in six files: <code>JitExecutorComponent::get_context</code>, <code>IContext::execute</code>, <code>ServiceHandlerConfig</code>, <code>GlobalCallbacks</code> and <code>IFile_system</code>. That interface stays, so the REST service plugin, its tests, the content-set file system and the <code>_debug</code> handler do not change. The script contract (<code>mrs.d.ts</code>: <code>print</code>, <code>SqlError</code>, <code>Session.runSql</code>, <code>getSession</code>, <code>getCurrentMrsUserId</code>, <code>getContentSetPath</code>; ES modules; promises resolved; JSON or raw results) stays too.</p>
+    <p>Inside <code>src/jit_executor</code> (21,000 lines without tests), 18 files call GraalVM's <code>poly_*</code> API. The rest, above all <code>jit_executor_value.cc</code> (1,972 lines, the value model), the <code>database/</code> layer and <code>utils/</code>, is engine independent.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Responsibility</th><th>GraalVM today</th><th>V8</th></tr></thead>
+        <tbody>
+          <tr><td>Engine lifecycle, heap limits</td><td>isolate per service, <code>IsolateArgs</code> min/max heap</td><td><code>v8::Isolate</code> per service, <code>ResourceConstraints</code>, near-heap-limit callback</td></tr>
+          <tr><td>Context pool, shared base context</td><td><code>copy_global_context</code>, engine sharing (off when debugging)</td><td><code>v8::Context</code> per pool entry, global object from a template; optional code cache</td></tr>
+          <tr><td>Execution thread per context, timeouts</td><td><code>Jit-Run</code> thread, queue, <code>poly_context_interrupt</code></td><td>same thread model, <code>Isolate::TerminateExecution()</code> (thread safe)</td></tr>
+          <tr><td>Promise results</td><td><code>synch_return</code> / <code>synch_error</code> resolver</td><td><code>Promise::Then</code> plus explicit microtask checkpoint</td></tr>
+          <tr><td>ES modules from the content set</td><td>proxy file system (311-line interface, 2 wrappers), <code>Current_script</code> stack</td><td><code>CompileModule</code>, resolve and dynamic-import callbacks reading through the same <code>IFile_system</code></td></tr>
+          <tr><td>Native objects in JS (Session, Result, Row, Column, Date)</td><td>proxy object/array/function/iterator/map wrappers, <code>Object_bridge</code>, <code>Collectable</code></td><td><code>ObjectTemplate</code> with property handlers, <code>FunctionTemplate</code>, internal fields, weak handles</td></tr>
+          <tr><td>Value conversion</td><td><code>type_conversion</code>, <code>types_polyglot</code>, <code>polyglot_utils</code> (~1,200 lines)</td><td>V8 handles: Number/BigInt/String/Array/Object/Date/ArrayBuffer</td></tr>
+          <tr><td>Errors</td><td><code>polyglot_error.cc</code>: guest stack traces, resource exhausted, interrupted</td><td><code>TryCatch</code>, <code>Message</code>, <code>StackTrace</code>; OOM via heap-limit callback</td></tr>
+          <tr><td>Memory accounting, idle teardown</td><td><code>poly_perf_data</code> counters, <code>poly_system_gc</code></td><td><code>HeapStatistics</code>, <code>LowMemoryNotification</code></td></tr>
+          <tr><td>Debugger</td><td><code>inspect</code> option: GraalVM's CDP server</td><td><code>v8_inspector</code> plus our WebSocket server (new)</td></tr>
+          <tr><td>Build</td><td><code>bootstrap_jit_executor.cmake</code>: GraalVM, Maven, native image, patches</td><td><code>bootstrap_v8.cmake</code>: prebuilt monolith per platform, SHA-256 pinned</td></tr>
+          <tr><td>Packaging</td><td><code>libjitexecutor.so</code> next to the plugin</td><td>V8 linked statically into the plugin; <code>snapshot_blob.bin</code>, <code>icudtl.dat</code> if i18n</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="source">Where V8 comes from</h2>
+    <p>Building V8 from source needs depot_tools, gn and ninja and takes one to two hours per platform. Prebuilt static monoliths are the practical route, cached in CI by version as the JIT library is today.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Source</th><th>Version</th><th>Linux x64</th><th>Linux arm64</th><th>macOS x64</th><th>macOS arm64</th><th>Windows x64</th><th>Windows arm64</th></tr></thead>
+        <tbody>
+          <tr><td>kassane/libv8 (default, i18n, pointer-compression variants; SHA256SUMS)</td><td>15.1.46, Jun 2026</td><td class="yes">yes</td><td class="yes">yes</td><td class="no">no</td><td class="yes">yes</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+          <tr><td>zyedidia/v8-build</td><td>14.0.365, Jan 2026</td><td class="yes">yes</td><td class="yes">yes</td><td class="no">no</td><td class="yes">yes</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+          <tr><td>vcpkg <code>v8</code> port</td><td>9.1.269, 2021</td><td colspan="6">not usable</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>So macOS x64 needs a build of our own (a GitHub <code>macos-15-intel</code> runner, cached by version) or is dropped. GraalVM would force the same choice at its next upgrade.</p>
+    <div class="note warn">Toolchain check first. V8's default build uses its own clang and libc++ (<code>use_custom_libcxx=true</code>), which does not link against our libstdc++ build in the Rocky 9 container; on Windows the CRT flavour (<code>/MD</code>) must match ours. The spike settles this before anything else; the fallback is our own build with <code>use_custom_libcxx=false</code>.</div>
+
+    <h2 id="phases">Phases</h2>
+    <p>About 8–11 weeks of one engineer, plus legal's turnaround on the LICENSE. V1 and V2 are the bulk; the debugger is the smallest part.</p>
+    <ol class="phases">
+      <li>
+        <div>
+          <div class="ph-head"><strong>Spike</strong><span class="est">1 week</span></div>
+          <ul>
+            <li>Link the prebuilt V8 on macOS arm64 and Linux x64 (Rocky 9); confirm the toolchain questions and the Windows arm64 link with our MSVC.</li>
+            <li>Run one content-set script end to end with a minimal engine: module load from <code>IFile_system</code>, <code>getSession().runSql()</code>, promise result, timeout.</li>
+            <li>Attach VS Code once to a hand-written WebSocket loop to confirm the pause loop on the execution thread.</li>
+            <li>Choose the variant: <code>i18n</code> (keeps <code>Intl</code>, as GraalJS has it via ICU4J; adds <code>icudtl.dat</code>, about 10 MB) or <code>default</code>.</li>
+          </ul>
+          <div class="exit"><b>Exit:</b> go/no-go with the toolchain answers and the chosen V8 source.</div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div class="ph-head"><strong>Engine core</strong><span class="est">2–3 weeks</span></div>
+          <ul>
+            <li><code>src/jit_executor/src/v8/</code>: isolate and context lifecycle, pool, execution thread with queue, timeouts and termination, promise resolution, ES modules and dynamic <code>import()</code> from the content set, error mapping with guest stack traces, <code>print</code> and the four global functions.</li>
+            <li>Memory limits: <code>max_heap_size</code>, <code>maximum_ram_size</code>, <code>memory_units</code> on <code>HeapStatistics</code>.</li>
+          </ul>
+          <div class="exit"><b>Exit:</b> <code>scripting_base_tests</code> and <code>scripting_multi_service</code> pass on macOS.</div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div class="ph-head"><strong>Object bridge and types</strong><span class="est">2 weeks</span></div>
+          <ul>
+            <li>Session, Result, Row, Column, Date on templates; value conversion both ways including BigInt, Date, binary and nested arrays/objects; weak handles for collectable natives.</li>
+          </ul>
+          <div class="exit"><b>Exit:</b> <code>scripting_type_bridging</code> passes; the MRS suite passes on Linux, macOS and Windows x64. Golden <code>.result</code> files that quote engine error messages are updated deliberately.</div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div class="ph-head"><strong>Debugger</strong><span class="est">1–2 weeks</span></div>
+          <ul>
+            <li><code>V8InspectorClient</code> and <code>Channel</code>; one inspector session per debug context; <code>runMessageLoopOnPause</code> on the execution thread; no timeout while debugging, as today.</li>
+            <li>WebSocket server on the debug port: <code>/json/version</code>, <code>/json/list</code>, RFC 6455 upgrade. Hand-written (a few hundred lines) or <code>ixwebsocket</code> (BSD-3, in vcpkg).</li>
+            <li>Keep the debug-context semantics: <code>get_context(debug_port)</code>, <code>release_debug_context</code>, <code>stop_debug_context</code>, the <code>_debug</code> toggle.</li>
+          </ul>
+          <div class="exit"><b>Exit:</b> the <code>mrs_scripts</code> launch config attaches unchanged; breakpoints in <code>.ts</code> sources bind through source maps; stepping and variables work; Chrome DevTools attaches too.</div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div class="ph-head"><strong>Build, CI, packaging, LICENSE</strong><span class="est">1–2 weeks</span></div>
+          <ul>
+            <li><code>bootstrap_v8.cmake</code> replaces <code>bootstrap_jit_executor.cmake</code>; <code>WITH_JIT_EXECUTOR</code> / <code>MRS_JIT_EXECUTOR_LIB</code> keep their meaning for the release workflow's cache.</li>
+            <li>Release workflow: a native <code>windows-arm64</code> leg; a decision on macOS x64. <code>verify_package.sh</code>: no <code>libjitexecutor</code>, the plugin loads, a script runs.</li>
+            <li>LICENSE: remove the GraalVM, OpenJDK and GraalJS sections; add V8 and its third-party notices. Legal reviews the result.</li>
+          </ul>
+          <div class="exit"><b>Exit:</b> all packages built and verified; LICENSE cleared.</div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div class="ph-head"><strong>Cutover and cleanup</strong><span class="est">1 week</span></div>
+          <ul>
+            <li>Remove <code>ext/polyglot</code>, the <code>polyglot_*</code> sources, the GraalVM download; update README, PLAN.md, PROGRESS.md, PROJECT_CONTEXT.md.</li>
+            <li>Tag the last GraalVM commit and keep it as the fallback until the first V8 release has run for a cycle.</li>
+          </ul>
+          <div class="exit"><b>Exit:</b> first pre-release with V8; packages show no GraalVM.</div>
+        </div>
+      </li>
+    </ol>
+
+    <h2 id="risks">Risks</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr><td>Prebuilt V8 comes from an individual's project</td><td>Pin version and SHA-256 as for GraalVM; mirror the archives we use; fallback is our own CI build per platform, cached by version</td></tr>
+          <tr><td>Toolchain mismatch (libc++ vs libstdc++, CRT flavour)</td><td>Checked first in the spike; own build with <code>use_custom_libcxx=false</code> if needed</td></tr>
+          <tr><td>No prebuilt macOS x64</td><td>Own build on the Intel runner, or drop the package (GraalVM forces the same choice at its next upgrade)</td></tr>
+          <tr><td>Behaviour differences GraalJS → V8 (error texts, <code>Intl</code>, strictness)</td><td>The MRS suite's scripting tests are the gate; golden files updated with intent</td></tr>
+          <tr><td>Memory-limit semantics differ</td><td>Keep the configuration surface; map to <code>ResourceConstraints</code> plus the heap-limit callback; document the new numbers</td></tr>
+          <tr><td>Debugger pause loop on a pooled execution thread</td><td>Debug contexts are dedicated already (no pool, no timeout); the loop runs only there</td></tr>
+          <tr><td>V8 API churn (a release every four weeks)</td><td>Pin; update twice a year as a planned task</td></tr>
+          <tr><td>Binary size (monolith 30–40 MB, <code>icudtl.dat</code> about 10 MB)</td><td>Comparable to today's <code>libjitexecutor</code>; measure in the spike</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="decisions">Decisions needed before the spike</h2>
+    <ul class="decisions">
+      <li>Go ahead with the spike at all.</li>
+      <li><code>i18n</code> variant (full <code>Intl</code>, matches GraalJS) or <code>default</code>.</li>
+      <li>V8 source: kassane/libv8 as is, or our own CI builds from the start.</li>
+      <li>macOS x64: own V8 build, or drop the package.</li>
+      <li>WebSocket transport: hand-written, or <code>ixwebsocket</code>.</li>
+    </ul>
+
+    <h2 id="sources">Sources</h2>
+    <ul>
+      <li><a href="https://github.com/oracle/graal/issues/9215">oracle/graal#9215: Windows ARM64 Support</a> (open, "help wanted"; "not on our roadmap", 2026-01)</li>
+      <li><a href="https://github.com/graalvm/graalvm-ce-builds/releases">GraalVM Community builds</a>: release assets per platform</li>
+      <li><a href="https://github.com/kassane/libv8">kassane/libv8</a> and <a href="https://github.com/zyedidia/v8-build">zyedidia/v8-build</a>: prebuilt V8 monoliths</li>
+      <li>Repository: <code>src/jit_executor</code>, <code>cmake/bootstrap_jit_executor.cmake</code>, <code>ext/polyglot</code>, <code>.github/workflows/rest-daemon-release.yml</code>, <code>docs/v8-plan.md</code></li>
+      <li>Shell plugins: <code>rest_plugin/examples/mrs_scripts/.vscode/launch.json</code>, <code>rollup.config.mjs</code>, <code>mrs/mrs.d.ts</code></li>
+    </ul>
+
+    <footer>Findings of 2026-10-30. Numbers for V8 variants and sizes are to be measured in the spike.</footer>
+  </main>
+</div>
