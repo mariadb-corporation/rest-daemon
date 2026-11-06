@@ -238,6 +238,12 @@ assembles and checks everything without creating a release; `prerelease`
 keeps it out of `/releases/latest/`. The packages are self-contained, so a
 release is the five packages and their checksums.
 
+**The whole procedure** (version bump PR, `release/candidate`, the build's
+approval, verification, publish) is the Claude Code command `/release`
+(`.claude/commands/release.md`, `/release --help`), with the checks and waiting
+in `tools/release/release.py`; it pre-releases by default, `--official` for a
+release, `--dry-run` to publish nothing.
+
 ## Setting up a deployment
 
 `mariadb-restd --setup` prepares a self-contained deployment directory for a
