@@ -55,7 +55,7 @@ running /release again resumes where the last run stopped.
                 release/candidate, and where release/candidate stands
   1 Version     main's VERSION must be newer than the last published
                 version and in the current month (yy.mm.p); otherwise open
-                and merge a "Version <v>" PR
+                and rebase-merge an "Updating version to <v>" PR
   2 Build &     fast-forward release/candidate to main, or reuse an
     verify      existing build; approve the build's release-build
                 environment review; wait for Rest-Daemon-Release and
@@ -158,20 +158,29 @@ The report must show, on lines of their own:
   python3 tools/release/release.py bump-pr <release_version> --last <last_release.version>
   ```
 
-  This creates branch `wip/version-<v>` with a single commit, `Version <v>`,
-  which changes only the `VERSION =` line of `VERSION`, and opens the PR
-  `Version <v>`. If a previous run already opened that PR, it reuses it.
+  This creates branch `wip/version-<v>` with a single commit whose message is
+  exactly `Updating version to <v>`, which changes only the `VERSION =` line
+  of `VERSION`, and opens the PR `Updating version to <v>`. If a previous run
+  already opened that PR, it reuses it, but only when its branch holds that
+  one commit with that message (`gh pr view <N> -R
+  mariadb-corporation/rest-daemon --json commits --jq '.commits[] |
+  .messageHeadline'`); otherwise stop and ask.
   1. The repository has no PR checks and needs no approving review, but only
      devtools team members can merge into main. Check anyway, so a check added
      later is not merged past:
      `gh pr checks <N> -R mariadb-corporation/rest-daemon --watch --fail-fast --interval 30`
      (it says there are no checks when there are none; that is not a failure).
-  2. Merge it with a merge commit, as the repository's PRs are merged:
-     `gh pr merge <N> -R mariadb-corporation/rest-daemon --merge --delete-branch`.
+  2. Merge it by rebasing, so main gets the PR's one commit as it is, with
+     no merge commit and no `(#N)` added to its message (a squash merge
+     would add one):
+     `gh pr merge <N> -R mariadb-corporation/rest-daemon --rebase --delete-branch`.
      If the merge is refused because the user may not merge into main, stop
      and report it.
-  3. Re-run `preflight` and confirm that main now has `<v>`. Nothing runs on
-     a push to main, so there is nothing to wait for.
+  3. Re-run `preflight` and confirm that main now has `<v>`, and that main's
+     newest commit is that one commit, with exactly that message:
+     `gh api repos/mariadb-corporation/rest-daemon/commits/main --jq '.commit.message, (.parents | length)'`
+     must print `Updating version to <v>` and `1`. Nothing runs on a push to
+     main, so there is nothing to wait for.
 
 ## Step 2: Build and verify on release/candidate
 
