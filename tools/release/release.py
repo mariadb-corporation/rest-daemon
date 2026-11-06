@@ -281,7 +281,9 @@ def cmd_bump_pr(args):
     blob = gh("api", f"repos/{REPO}/contents/{VERSION_FILE}?ref={main_sha}", "--jq", ".sha").strip()
     gh("api", f"repos/{REPO}/git/refs", "-f", f"ref=refs/heads/{branch}", "-f", f"sha={main_sha}")
     payload = {
-        "message": f"Version {args.version}",
+        # The exact message main gets: /release merges the PR by rebasing it,
+        # which keeps this commit's message as it is.
+        "message": f"Updating version to {args.version}",
         "content": base64.b64encode(new.encode()).decode(),
         "sha": blob,
         "branch": branch,
@@ -290,7 +292,7 @@ def cmd_bump_pr(args):
         stdin=json.dumps(payload))
 
     url = gh("pr", "create", "-R", REPO, "--base", "main", "--head", branch,
-             "--title", f"Version {args.version}",
+             "--title", f"Updating version to {args.version}",
              "--body", f"Sets VERSION to {args.version} for the next release "
                        f"(last release: {args.last or 'none'}).").strip()
     print(f"{url.rstrip('/').rpartition('/')[2]}\t{url}\t(created)")
