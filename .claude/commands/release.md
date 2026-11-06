@@ -276,7 +276,7 @@ and the marker artifact.
      `v<VERSION>` at the build's commit);
    - the release it creates: tag `v<v>`, title `mariadb-restd <v>`,
      pre-release or official, at the Rest-Daemon-Release run's commit, with
-     the five packages and `SHA256SUMS`;
+     the five packages, `SHA256SUMS`, `install.sh` and `install.ps1`;
    - for an official release: it becomes `/releases/latest/`, which is what
      `install.sh` and `install.ps1` install by default;
    - anything unusual seen along the way, each on its own line: a version
@@ -319,8 +319,9 @@ and the marker artifact.
    Then watch it. Report every `::warning::` in its log.
 6. Report the result:
    - **Real publish:** `gh release view v<v> -R mariadb-corporation/rest-daemon --json url,isPrerelease,assets`,
-     giving the URL, the pre-release flag and the asset count (six: five
-     packages and `SHA256SUMS`).
+     giving the URL, the pre-release flag and the asset count (eight: five
+     packages, `SHA256SUMS`, `install.sh` and `install.ps1`; six for a build
+     from before the installers, which the run warns about).
    - **Dry run:** the `dry-run-assets-<BUILD>` artifact on the run. State
      plainly that nothing was published. Running `/release` again without
      `--dry-run` publishes the same build, because every earlier step is
