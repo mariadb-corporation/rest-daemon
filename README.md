@@ -22,6 +22,40 @@ What it does differently from the MySQL REST Service is listed in
 > [releases page](https://github.com/mariadb-corporation/rest-daemon/releases)
 > (pre-releases so far).
 
+## Installing
+
+`install.sh` (Linux, macOS) and `install.ps1` (Windows) install a release
+package for this machine: they read the release's `SHA256SUMS`, download and
+verify the matching package, unpack it into a folder per version and link its
+programs (`mariadb-restd`, `mariadb-restd-passwd`, `mariadb-restd-keyring`,
+`mariadb-restd-plugin-info`). Every release so far is a pre-release, which
+needs `--pre-release` (`-PreRelease`) or a release tag:
+
+```sh
+curl -fsSL https://github.com/mariadb-corporation/rest-daemon/raw/main/install.sh | bash -s -- --pre-release
+```
+
+```powershell
+$env:MARIADB_RESTD_PRERELEASE = 1
+irm https://github.com/mariadb-corporation/rest-daemon/raw/main/install.ps1 | iex
+```
+
+| | Linux, macOS | Windows |
+|---|---|---|
+| Versions | `~/.local/share/mariadb-restd/<version>` | `%LOCALAPPDATA%\Programs\mariadb-restd\<version>` |
+| Programs | symlinks in `~/.local/bin` | `.cmd` shims in `<prefix>\bin` |
+
+The newest two versions are kept. Settings, as environment variables (and
+parameters of `install.ps1`): `MARIADB_RESTD_TAG` (`-Tag`, a release such as
+`v26.10.1`), `MARIADB_RESTD_PRERELEASE` (`-PreRelease`), `MARIADB_RESTD_PREFIX`
+(`-Prefix`), `MARIADB_RESTD_BINDIR` (`-BinDir`), `MARIADB_RESTD_SHA256SUMS`
+(`-Sha256Sums`, a local copy of the release's checksums to verify against,
+with a tag), `MARIADB_RESTD_REPO` (`-Repo`) and, on Windows,
+`MARIADB_RESTD_ADDTOPATH` (`-AddToPath`, add the shims' folder to the user
+`PATH`). The Linux packages need glibc 2.34 or later; Windows on ARM runs the
+x64 package under emulation. Installs started at the same time into one prefix
+wait for each other. The scripts work like MariaDB Shell's installers.
+
 ## Building
 
 ### Requirements
