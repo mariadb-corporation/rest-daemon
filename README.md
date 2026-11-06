@@ -236,7 +236,9 @@ x64 leg), writes `SHA256SUMS` and creates or updates the GitHub release
 `v<version>` (`VERSION` at the build's commit) on that commit. `dry_run`
 assembles and checks everything without creating a release; `prerelease`
 keeps it out of `/releases/latest/`. The packages are self-contained, so a
-release is the five packages and their checksums.
+release is the five packages and their checksums, plus the build commit's
+`install.sh` and `install.ps1` as a record (users run the ones on `main`); its
+notes give the install commands, with the tag pinned for a pre-release.
 
 **The whole procedure** (version bump PR, `release/candidate`, the build's
 approval, verification, publish) is the Claude Code command `/release`

@@ -7,8 +7,8 @@ name: Publish Release
 # past run can be published (or re-published) without rebuilding anything.
 #
 # restd's packages are self-contained (Connector/C, OpenSSL, ICU and the JIT
-# executor library are bundled): a release is the five platform packages and
-# their SHA256SUMS, nothing else.
+# executor library are bundled): a release is the five platform packages,
+# their SHA256SUMS, and the build commit's install.sh and install.ps1.
 on:
   workflow_dispatch:
     inputs:
@@ -149,13 +149,17 @@ jobs:
           echo "verify_run_id=$VERIFY_RUN" >> "$GITHUB_OUTPUT"
 
       # ====================================================================
-      # 3. THE VERSION OF THE SOURCE THAT PRODUCED THOSE PACKAGES
+      # 3. THE VERSION OF THE SOURCE THAT PRODUCED THOSE PACKAGES, AND ITS
+      #    INSTALLERS
       # ====================================================================
       - name: Checkout Build Commit
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.run.outputs.sha }}
-          sparse-checkout: VERSION
+          sparse-checkout: |
+            /VERSION
+            /install.sh
+            /install.ps1
           sparse-checkout-cone-mode: false
 
       # ====================================================================
@@ -229,9 +233,26 @@ jobs:
           cd dist
           echo "==> Packages to publish:"
           ls -l
+          # SHA256SUMS is both the integrity check and the installers'
+          # manifest: they pick the package for the machine from it. So it
+          # lists the packages only.
           sha256sum mariadb-restd-* > SHA256SUMS
           echo "==> SHA256SUMS:"
           cat SHA256SUMS
+
+          # Users install with the copies on the default branch, not these.
+          # They ship anyway, as MariaDB Shell's do, so each release carries
+          # the installers of the commit it was built from: an archival
+          # record. A build from before the installers existed has none,
+          # which costs that record, not the release.
+          for script in install.sh install.ps1; do
+            if [ -f "../$script" ]; then
+              cp "../$script" "$script"
+            else
+              echo "::warning::$script is not in the build commit; the release ships without it"
+            fi
+          done
+          [ ! -f install.sh ] || chmod +x install.sh
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG"         >> "$GITHUB_OUTPUT"
@@ -255,11 +276,59 @@ jobs:
           RUN_ID: ${{ steps.run.outputs.run_id }}
           VERIFY_RUN_ID: ${{ steps.verified.outputs.verify_run_id }}
           DRY_RUN: ${{ inputs.dry_run }}
+          INSTALLER_REF: ${{ github.event.repository.default_branch || 'main' }}
         run: |
           set -euo pipefail
 
+          # /releases/latest/ skips prereleases, so a prerelease is installed
+          # by naming its tag. A stable release gets commands with no version
+          # in them, which keep working for every later release. The shell
+          # takes the pin as a one-shot variable assignment, PowerShell as a
+          # statement of its own.
+          if [ "$PRERELEASE" = "true" ]; then
+            RUN_INSTALLER="MARIADB_RESTD_TAG=$TAG bash"
+            PS_PIN="\$env:MARIADB_RESTD_TAG = '$TAG'"
+          else
+            RUN_INSTALLER="bash"
+            PS_PIN=""
+          fi
+          SH_CMD="curl -fsSL https://github.com/$REPO/raw/$INSTALLER_REF/install.sh | $RUN_INSTALLER"
+          PS_CMD="irm https://github.com/$REPO/raw/$INSTALLER_REF/install.ps1 | iex"
+          if [ -n "$PS_PIN" ]; then
+            PS_BLOCK="$PS_PIN
+          $PS_CMD"
+          else
+            PS_BLOCK="$PS_CMD"
+          fi
+
           NOTES="MariaDB REST Daemon (mariadb-restd) $VERSION, built from
           \`$SHA\` (build run $RUN_ID, verified by run $VERIFY_RUN_ID).
+
+          ## Install
+
+          Linux and macOS:
+
+          \`\`\`sh
+          $SH_CMD
+          \`\`\`
+
+          Installs into \`~/.local/share/mariadb-restd/<version>\` and links
+          \`mariadb-restd\` and its tools into \`~/.local/bin\`.
+
+          Windows (PowerShell):
+
+          \`\`\`powershell
+          $PS_BLOCK
+          \`\`\`
+
+          Installs into \`%LOCALAPPDATA%\\Programs\\mariadb-restd\\<version>\` and
+          writes \`.cmd\` shims into its \`bin\` folder, which is added to PATH
+          only when you re-run with \`-AddToPath\`.
+
+          Both installers pick the package for the machine, verify its checksum
+          before unpacking, and keep the two newest versions. The \`install.sh\`
+          and \`install.ps1\` attached here are the copies this release was
+          built with; the commands above use the current ones.
 
           ## Packages
 
@@ -350,6 +419,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dry-run-assets-${{ steps.run.outputs.run_id }}
-          path: dist/SHA256SUMS
+          path: |
+            dist/SHA256SUMS
+            dist/install.sh
+            dist/install.ps1
           retention-days: 7
           if-no-files-found: error
