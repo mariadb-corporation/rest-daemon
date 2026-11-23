@@ -12,7 +12,9 @@ name: Rest-Daemon-Release
 # emulation). Its package is the x64 one, and runs on Windows on ARM under
 # emulation; it shares its JIT executor library with the Windows x64 leg.
 #
-# Every package is uploaded as the artifact pkg-<os>-<arch> of the run.
+# Every package is uploaded as the artifact pkg-<os>-<arch> of the run. The
+# macOS packages are then signed and notarized (the sign-macos job, see
+# sign-macos.yml), which replaces the two macOS artifacts with signed ones.
 #
 # Connector/C, OpenSSL and ICU come from vcpkg (vcpkg.json, feature icu). Two
 # things are cached with actions/cache, per platform:
@@ -26,10 +28,18 @@ name: Rest-Daemon-Release
 #   with the same vcpkg.json: vcpkg addresses the archives by each port's ABI
 #   hash, so unaffected ports stay warm across a change.
 
+# Started by hand only, nothing builds on a push. /release moves
+# release/candidate and then starts it with the macOS packages signed:
+#   gh workflow run rest-daemon-release.yml --ref release/candidate -f sign=true
+# The run builds the branch it is started on; the release-build environment
+# allows release/candidate only.
 on:
-  push:
-    branches: [ "release/candidate" ]
   workflow_dispatch:
+    inputs:
+      sign:
+        description: "Sign and notarize the macOS packages (needs a second release-build approval once the builds finish)"
+        type: boolean
+        default: false
 
 env:
   # bump to drop every cached JIT executor library
@@ -38,9 +48,9 @@ env:
 jobs:
   # ==========================================================================
   # The release-build environment's required reviewers hold every run here
-  # until one of them approves it, whichever way it was started. One gate job
-  # rather than the environment on each build leg, so a run is one approval
-  # and one deployment record, not six.
+  # until one of them approves it. One gate job rather than the environment
+  # on each build leg, so a run is one approval and one deployment record,
+  # not six.
   # ==========================================================================
   gate:
     name: Approval
@@ -372,3 +382,22 @@ jobs:
       - name: Cleanup Docker Image
         if: always()
         run: docker rmi restd-rocky9-builder-${{ matrix.arch }}:${{ github.sha }} || true
+
+  # ==========================================================================
+  # SIGN AND NOTARIZE THE MACOS PACKAGES (only when started with sign=true)
+  #
+  # Replaces pkg-macos-* with signed tarballs of the same names, so Verify
+  # Packages and Publish Release pick them up unchanged. Runs in the
+  # release-build environment, which holds the signing secrets, so the run
+  # waits for a second approval once the builds have finished. See
+  # sign-macos.yml.
+  # ==========================================================================
+  sign-macos:
+    needs: build
+    if: ${{ inputs.sign }}
+    uses: ./.github/workflows/sign-macos.yml
+    # Without it the called workflow sees no secrets at all, not even those of
+    # the release-build environment its job names.
+    secrets: inherit
+    with:
+      artifacts: '["pkg-macos-x64", "pkg-macos-arm64"]'

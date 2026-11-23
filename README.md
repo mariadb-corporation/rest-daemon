@@ -201,9 +201,9 @@ service is enabled after `--setup`. Building packages needs `patchelf` on
 Linux, `dpkg-shlibdeps` for deb and `rpmbuild` for rpm. The Windows packages
 include the MSVC runtime.
 
-**Release packages** (`.github/workflows/rest-daemon-release.yml`, on a push
-to `release/candidate` or started by hand; every run waits until a reviewer of
-the `release-build` environment approves it): built on GitHub-hosted runners for
+**Release packages** (`.github/workflows/rest-daemon-release.yml`, started by
+hand on `release/candidate`, never by a push; every run waits until a reviewer
+of the `release-build` environment approves it): built on GitHub-hosted runners for
 macOS x64 and arm64, Windows x64 and arm64 and Linux x64 and arm64, each
 uploaded as the artifact `pkg-<os>-<arch>` of the run. The Linux packages are
 built in a Rocky Linux 9 container (`docker/linux-rocky9.Dockerfile`), so they
@@ -216,6 +216,18 @@ from vcpkg; the JIT executor library and vcpkg's binary cache are kept with
 `actions/cache`, so the library is rebuilt only when `ext/polyglot` or
 `cmake/bootstrap_jit_executor.cmake` change.
 
+**macOS signing** (`.github/workflows/sign-macos.yml`, called by a build
+started with `sign=true`, as `/release` always starts it): once every platform
+has built, and after a second `release-build` approval, every Mach-O file in
+the two macOS packages is signed with the Developer ID (hardened runtime,
+secure timestamp) and notarized by Apple, and the signed tarballs replace the
+`pkg-macos-*` artifacts; the run then carries a `macos-signed-<Team ID>`
+artifact. `mariadb-restd` gets the `allow-jit` entitlement
+(`packaging/macos/entitlements.plist`), without which the hardened runtime
+keeps the JIT executor from compiling MRS scripts. The work is
+`tools/release/sign_macos_package.sh <package.tar.gz> <out dir>`, which also
+runs on a Mac (`SIGN_IDENTITY=-` signs ad hoc, without notarizing).
+
 **Package verification** (`.github/workflows/verify-packages.yml`, after every
 successful release run, or started by hand with a run id): each package is
 unpacked on a pristine GitHub-hosted runner of its platform (Ubuntu x64 and
@@ -224,9 +236,12 @@ emulation, Windows on ARM) and checked by `tools/release/verify_package.sh`:
 the layout, `--version`, that every plugin loads, the keyring tool, a daemon
 started with the HTTP server and the REST API that serves requests, and that
 no binary depends on anything outside the package except the OS (and on
-Windows the MSVC runtime). When every platform passes, the run records an
-artifact `verified-build-<run id>`. The script runs on any unpacked package:
-`EXPECT_VERSION=<version> tools/release/verify_package.sh <dir>`.
+Windows the MSVC runtime). For a signed build, the macOS legs also require
+every binary to carry the signing team's signature with the hardened runtime
+and to be notarized, and `mariadb-restd` to have the `allow-jit` entitlement.
+When every platform passes, the run records an artifact
+`verified-build-<run id>`. The script runs on any unpacked package:
+`EXPECT_VERSION=<version> [EXPECT_TEAM_ID=<team>] tools/release/verify_package.sh <dir>`.
 
 **Publishing a release** (`.github/workflows/publish-release.yml`, started by
 hand with a build run id, blank for the latest successful one): refuses a
@@ -240,8 +255,8 @@ release is the five packages and their checksums, plus the build commit's
 `install.sh` and `install.ps1` as a record (users run the ones on `main`); its
 notes give the install commands, with the tag pinned for a pre-release.
 
-**The whole procedure** (version bump PR, `release/candidate`, the build's
-approval, verification, publish) is the Claude Code command `/release`
+**The whole procedure** (version bump PR, moving `release/candidate` and
+starting the signed build, the build's two approvals, verification, publish) is the Claude Code command `/release`
 (`.claude/commands/release.md`, `/release --help`), with the checks and waiting
 in `tools/release/release.py`; it pre-releases by default, `--official` for a
 release, `--dry-run` to publish nothing.

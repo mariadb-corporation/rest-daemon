@@ -13,12 +13,13 @@ Takes mariadb-restd from "main is ready" to a published GitHub release of
 
 | Workflow file | Workflow name | Role |
 |---|---|---|
-| `rest-daemon-release.yml` | Rest-Daemon-Release | builds the five packages, on a push to `release/candidate` (or started by hand); its first job runs in the `release-build` environment, whose required reviewers (the devtools team) hold every build until one of them approves it |
+| `rest-daemon-release.yml` | Rest-Daemon-Release | builds the five packages; started by hand only, never by a push, and by `/release` (`start-build`) always on `release/candidate` with the macOS packages signed and notarized (`sign=true`, `sign-macos.yml`); its first job and its signing jobs run in the `release-build` environment, whose required reviewers (the devtools team) hold the run at each until one of them approves it |
 | `verify-packages.yml` | Verify Packages | starts by itself when a build succeeds; tests each package on pristine runners and leaves the `verified-build-<build run>` artifact |
 | `publish-release.yml` | Publish Release | started by hand from `main`; refuses a build without that artifact, creates or updates the release `v<VERSION>` |
 
 `tools/release/release.py` does the checks and the waiting: `preflight`,
-`bump-pr`, `push-rc`, `find-run`, `approve-build` and `watch`. Run it as
+`bump-pr`, `push-rc`, `start-build`, `find-run`, `approve-build` and
+`watch`. Run it as
 `python3 tools/release/release.py <subcommand>`. Run `--help` on a subcommand
 for its flags.
 
@@ -56,9 +57,10 @@ running /release again resumes where the last run stopped.
   1 Version     main's VERSION must be newer than the last published
                 version and in the current month (yy.mm.p); otherwise open
                 and rebase-merge an "Updating version to <v>" PR
-  2 Build &     fast-forward release/candidate to main, or reuse an
-    verify      existing build; approve the build's release-build
-                environment review; wait for Rest-Daemon-Release and
+  2 Build &     fast-forward release/candidate to main and start a
+    verify      signed build, or reuse an existing signed build; approve
+                the build's two release-build environment reviews
+                (start, signing); wait for Rest-Daemon-Release and
                 Verify Packages
   3 Publish     show a pre-publish summary and ask before a real publish;
                 run publish-release and report the release
@@ -68,8 +70,8 @@ release/candidate that cannot fast-forward, and a build that main has moved
 past.
 
 It changes: a version PR on main, release/candidate (fast-forward only,
-never forced), workflow runs (including the environment approval of the
-build), and the release itself. It never force-pushes, never merges past a
+never forced), workflow runs (the build it starts, and the environment
+approvals of the build), and the release itself. It never force-pushes, never merges past a
 failing check, and leaves a failed run as it is for you to inspect.
 
 Details: .claude/commands/release.md · helper: tools/release/release.py --help
@@ -193,35 +195,46 @@ From a fresh `preflight`:
    `gh api repos/mariadb-corporation/rest-daemon/compare/main...release/candidate --jq '.commits[] | "\(.sha[0:9]) \(.commit.message | split("\n")[0])"'`.
    Never force it. A ruleset on release/candidate refuses any update that is
    not a fast-forward, and lets only repository admins update it at all.
-3. **Reuse a build that already exists.** If release/candidate is
+3. **Reuse a signed build that already exists.** If release/candidate is
    `identical` to main, list the Rest-Daemon-Release runs for
    `repo.main_sha`
-   (`find-run --workflow rest-daemon-release.yml --sha <sha> --timeout 0`).
-   Take the newest one.
-   - If it succeeded, use it as `BUILD` and go to 6.
-   - If it is still running, or waiting for its environment review, approve
-     it as in 5 and watch it.
-   - If there is none, or only failed ones, start a build without moving the
-     branch. Note the time, then
-     `gh workflow run rest-daemon-release.yml -R mariadb-corporation/rest-daemon --ref release/candidate`,
-     find the run with
-     `find-run --workflow rest-daemon-release.yml --event workflow_dispatch --sha <sha> --created-after <time>`,
-     and go to 5.
-4. **Move release/candidate.** Note the time, then fast-forward it to the
-   exact SHA `preflight` reported. If main moved since, re-run `preflight`
-   first.
+   (`find-run --workflow rest-daemon-release.yml --event workflow_dispatch --sha <sha> --timeout 0`).
+   Take the newest one. Only a signed build can be reused. A succeeded run
+   is signed when it carries a `macos-signed-<Team ID>` artifact:
+   `gh api repos/mariadb-corporation/rest-daemon/actions/runs/<run>/artifacts --jq '.artifacts[].name' | grep '^macos-signed-'`.
+   - If it succeeded and is signed, use it as `BUILD` and go to 7.
+   - If it is still running, use it as `BUILD` and approve and watch it as
+     in 6. If it then succeeds without the marker, it was started by hand
+     without signing: start a new build as in 5.
+   - If there is none, or only failed or unsigned ones, start a build as in
+     5 without moving the branch.
+4. **Move release/candidate**, unless it is already `identical` to main.
+   Fast-forward it to the exact SHA `preflight` reported. If main moved
+   since, re-run `preflight` first.
 
    ```
    python3 tools/release/release.py push-rc <repo.main_sha>
    ```
 
-   The push starts the build. Find it with
-   `find-run --workflow rest-daemon-release.yml --event push --sha <sha> --created-after <time>`.
-   If push-rc is refused because the user may not update release/candidate
-   (only admins can), stop and report it.
-5. **Approve the build.** The build's first job (Approval) runs in the
-   `release-build` environment, whose required reviewers hold the run in
-   `waiting` until one of them approves it. Approve it before watching:
+   A push starts nothing: the build is started in 5. If push-rc is refused
+   because the user may not update release/candidate (only admins can), stop
+   and report it.
+5. **Start the build**, unless 3 found one to reuse. It always signs and
+   notarizes the macOS packages:
+
+   ```
+   python3 tools/release/release.py start-build --expect-sha <repo.main_sha>
+   ```
+
+   It refuses to start when release/candidate is not at that SHA, dispatches
+   `rest-daemon-release.yml` on release/candidate with `sign=true`, and
+   prints the run it started; that run is `BUILD`. If it reports that the run
+   builds another commit, release/candidate moved: cancel that run and go
+   back to 1 with a fresh `preflight`.
+6. **Approve the build.** The run stops twice in the `release-build`
+   environment, whose required reviewers hold it in `waiting` until one of
+   them approves: at its first job (Approval), and at the macOS signing jobs
+   once every platform has built. Approve the first before watching:
 
    ```
    python3 tools/release/release.py approve-build <BUILD>
@@ -234,9 +247,20 @@ From a fresh `preflight`:
    reports no review pending, the run is already past the gate: say so and
    go on.
 
-   Watch `BUILD`. It takes about 45 minutes, longer when the JIT executor
-   library cache misses.
-6. **Verification.** Verify Packages starts by itself when the build
+   Then watch `BUILD` with `release.py watch <BUILD> --approve`, which
+   approves the signing review when the run reaches it. If the user is not a
+   reviewer, it says once who is and keeps polling. It takes about 45
+   minutes, longer when the JIT executor library cache misses, plus the
+   signing and notarization (minutes, sometimes longer when Apple's notary
+   service is slow).
+
+   When it succeeds, confirm that it signed: the run carries the marker that
+   makes Verify Packages check the macOS signatures and notarization:
+
+   ```
+   gh api repos/mariadb-corporation/rest-daemon/actions/runs/<BUILD>/artifacts --jq '.artifacts[].name' | grep '^macos-signed-'
+   ```
+7. **Verification.** Verify Packages starts by itself when the build
    finishes. Find its run with
    `find-run --workflow verify-packages.yml --title "Verify build <BUILD>" --timeout 900`.
    If no run appears, start it by hand with
@@ -250,8 +274,9 @@ From a fresh `preflight`:
 
 The report must show release/candidate as `<old sha> → <new sha>` (or
 `unchanged`), the build and verification runs with their workflow names, who
-approved the build's environment review (`/release`, or a reviewer by hand),
-and the marker artifact.
+approved each of the build's two environment reviews (`/release`, or a
+reviewer by hand), the signing marker (with its Team ID) and the verification
+marker artifact.
 
 ## Step 3: Publish
 
@@ -339,7 +364,7 @@ read on its own. Use one row per item, and `—` when a step had nothing to do:
 | Version for this release | the version, and whether main had to be bumped |
 | Version bump | the PR (number, link) and its merge, or "already bumped" |
 | release/candidate | old → new SHA, or unchanged |
-| Build | Rest-Daemon-Release run, link, whether it was reused or new, and its environment approval (`/release`, by hand, or not needed) |
+| Build | Rest-Daemon-Release run, link, whether it was reused or new, its two environment approvals (`/release`, by hand, or not needed), and the macOS signing marker with its Team ID |
 | Verification | Verify Packages run, link, marker artifact |
 | Publish | Publish Release run, link, the inputs given (prerelease, dry_run); for a real publish, the user's confirmation |
 | Result | release URL, pre-release flag and asset count, or "dry run, nothing published" with the assets artifact |
