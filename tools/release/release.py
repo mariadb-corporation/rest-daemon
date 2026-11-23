@@ -26,7 +26,11 @@
 #                        decision each one leads to.
 #   bump-pr V            Opens the PR that sets VERSION on main to V (or finds
 #                        the one already open).
-#   push-rc SHA          Fast-forwards release/candidate to SHA.
+#   push-rc SHA          Fast-forwards release/candidate to SHA. Starts no
+#                        build: Rest-Daemon-Release only runs when started.
+#   start-build          Starts Rest-Daemon-Release on release/candidate with
+#                        the macOS packages signed, and prints the run it
+#                        started.
 #   find-run             Waits for a workflow run matching some filters to
 #                        appear, and prints its id.
 #   approve-build RUN_ID Approves the release-build environment review that
@@ -34,6 +38,9 @@
 #                        waiting for it.
 #   watch RUN_ID         Polls a run until it finishes, reporting every job as
 #                        it starts and ends, and stops at the first failed job.
+#                        With --approve, also approves each release-build
+#                        review the run reaches (a signed build has a second
+#                        one, for signing, once the builds finish).
 #
 # Needs the GitHub CLI (gh), logged in with access to the repository.
 
@@ -53,6 +60,9 @@ VERSION_FILE = "VERSION"
 # The environment rest-daemon-release.yml's first job runs in. Its required
 # reviewers hold every build until one of them approves it.
 BUILD_ENVIRONMENT = "release-build"
+
+BUILD_WORKFLOW = "rest-daemon-release.yml"
+BUILD_WORKFLOW_NAME = "Rest-Daemon-Release"
 
 VERSION_PATTERN = re.compile(r"^(\d{2})\.(\d{1,2})\.(\d+)$")
 VERSION_LINE = re.compile(r"^(VERSION[ \t]*=[ \t]*)(\S*)(.*)$", re.MULTILINE)
@@ -313,6 +323,48 @@ def cmd_push_rc(args):
 
 
 # ---------------------------------------------------------------------------
+# start-build
+# ---------------------------------------------------------------------------
+
+def cmd_start_build(args):
+    """Dispatches Rest-Daemon-Release on release/candidate with sign=true,
+    then waits for the run to appear and prints it the way find-run does. The
+    run builds the head of release/candidate at the moment it starts, so the
+    head is read first and the run's headSha checked against it: a branch that
+    moved in between would build something nobody chose."""
+    head = gh("api", f"repos/{REPO}/commits/{RC_BRANCH}", "--jq", ".sha").strip()
+    if args.expect_sha and head != args.expect_sha:
+        print(f"{REPO} {RC_BRANCH} is at {head}, not {args.expect_sha}: not starting a build.",
+              file=sys.stderr)
+        return 1
+    start = now_utc()
+    gh("workflow", "run", BUILD_WORKFLOW, "-R", REPO, "--ref", RC_BRANCH, "-f", "sign=true")
+    print(f"[{stamp()}] started {BUILD_WORKFLOW_NAME} on {RC_BRANCH} ({head[:9]}) with sign=true", flush=True)
+
+    deadline = time.monotonic() + args.timeout
+    while True:
+        runs = gh_json("run", "list", "-R", REPO, "--workflow", BUILD_WORKFLOW, "--event", "workflow_dispatch",
+                       "--limit", "10", "--json", "databaseId,headSha,createdAt,status,conclusion,url")
+        # A run is listed with the time GitHub created it, which can be a
+        # second or two before our clock read `start`.
+        new = [r for r in runs if parse_time(r["createdAt"]) >= start - datetime.timedelta(seconds=5)]
+        if new:
+            r = new[-1]  # the oldest new one: ours, if someone else also started one since
+            if r["headSha"] != head:
+                print(f"{BUILD_WORKFLOW_NAME} run {r['databaseId']} builds {r['headSha']}, not {head}: "
+                      f"{RC_BRANCH} moved. Cancel it and decide again.\n{r['url']}", file=sys.stderr)
+                return 1
+            print(f"{BUILD_WORKFLOW_NAME} run {r['databaseId']}\tworkflow_dispatch\t"
+                  f"{r['status']}/{r['conclusion'] or '-'}\t{r['createdAt']}\t{r['url']}", flush=True)
+            return 0
+        if time.monotonic() >= deadline:
+            print(f"The dispatch was accepted, but no {BUILD_WORKFLOW_NAME} run appeared within {args.timeout}s.",
+                  file=sys.stderr)
+            return 1
+        time.sleep(args.interval)
+
+
+# ---------------------------------------------------------------------------
 # find-run
 # ---------------------------------------------------------------------------
 
@@ -348,6 +400,24 @@ def cmd_find_run(args):
 # approve-build
 # ---------------------------------------------------------------------------
 
+def approve_pending_review(run_id, name):
+    """Approves the run's pending release-build review, if there is one.
+    Returns "approved", "none" (nothing pending), or the reviewers who can
+    approve it when the current user cannot."""
+    pending = gh_json("api", f"repos/{REPO}/actions/runs/{run_id}/pending_deployments")
+    ours = [d for d in pending if d["environment"]["name"] == BUILD_ENVIRONMENT]
+    if not ours:
+        return "none"
+    review = ours[0]
+    if not review["current_user_can_approve"]:
+        return ", ".join(r["reviewer"].get("slug") or r["reviewer"].get("login") for r in review["reviewers"])
+    run(["gh", "api", "-X", "POST", f"repos/{REPO}/actions/runs/{run_id}/pending_deployments", "--input", "-"],
+        stdin=json.dumps({"environment_ids": [review["environment"]["id"]],
+                          "state": "approved", "comment": "/release"}))
+    print(f"[{stamp()}] approved the {BUILD_ENVIRONMENT} review of {name}", flush=True)
+    return "approved"
+
+
 def cmd_approve_build(args):
     """The build's first job runs in the release-build environment, whose
     required reviewers hold the run in `waiting` until one of them approves.
@@ -359,22 +429,13 @@ def cmd_approve_build(args):
         info = gh_json("run", "view", str(args.run_id), "-R", REPO,
                        "--json", "status,conclusion,url,workflowName")
         name = f"{info['workflowName']} run {args.run_id}"
-        pending = gh_json("api", f"repos/{REPO}/actions/runs/{args.run_id}/pending_deployments")
-        ours = [d for d in pending if d["environment"]["name"] == BUILD_ENVIRONMENT]
-        if ours:
-            review = ours[0]
-            if not review["current_user_can_approve"]:
-                reviewers = ", ".join(
-                    r["reviewer"].get("slug") or r["reviewer"].get("login") for r in review["reviewers"])
-                print(f"{name} is waiting for the {BUILD_ENVIRONMENT} review, which you cannot approve.\n"
-                      f"Ask one of: {reviewers}\n{info['url']}", file=sys.stderr)
-                return 1
-            run(["gh", "api", "-X", "POST", f"repos/{REPO}/actions/runs/{args.run_id}/pending_deployments",
-                 "--input", "-"],
-                stdin=json.dumps({"environment_ids": [review["environment"]["id"]],
-                                  "state": "approved", "comment": "/release"}))
-            print(f"[{stamp()}] approved the {BUILD_ENVIRONMENT} review of {name}", flush=True)
+        outcome = approve_pending_review(args.run_id, name)
+        if outcome == "approved":
             return 0
+        if outcome != "none":
+            print(f"{name} is waiting for the {BUILD_ENVIRONMENT} review, which you cannot approve.\n"
+                  f"Ask one of: {outcome}\n{info['url']}", file=sys.stderr)
+            return 1
         if info["status"] not in ("queued", "waiting", "pending"):
             # Past the gate already (approved by hand), or finished: nothing
             # to approve.
@@ -394,6 +455,7 @@ def cmd_approve_build(args):
 def cmd_watch(args):
     seen = {}
     name = None
+    told_reviewers = False
     print(f"[{stamp()}] watching run {args.run_id}", flush=True)
     while True:
         result = run(["gh", "run", "view", str(args.run_id), "-R", REPO,
@@ -407,6 +469,20 @@ def cmd_watch(args):
         if name is None:
             name = f"{run_info['workflowName']} run {args.run_id}"
             print(f"[{stamp()}] {name}: {run_info['displayTitle']}\n           {run_info['url']}", flush=True)
+
+        # A run held at an environment review is "waiting". With --approve, the
+        # review is approved here (a signed build has a second one, for the
+        # macOS signing, once every platform has built); when the user cannot
+        # approve it, say once who can and keep polling, as GitHub keeps the
+        # run waiting for 30 days.
+        if args.approve and run_info["status"] == "waiting":
+            outcome = approve_pending_review(args.run_id, name)
+            if outcome not in ("approved", "none") and not told_reviewers:
+                print(f"[{stamp()}] {name} is waiting for a {BUILD_ENVIRONMENT} review you cannot approve. "
+                      f"Ask one of: {outcome}", flush=True)
+                told_reviewers = True
+            elif outcome == "approved":
+                told_reviewers = False
 
         failed = []
         for job in run_info["jobs"]:
@@ -472,9 +548,16 @@ def main():
     p.add_argument("sha", help="The exact main commit preflight reported.")
     p.set_defaults(func=cmd_push_rc)
 
+    p = sub.add_parser("start-build",
+                       help="Start Rest-Daemon-Release on release/candidate, macOS signing on, and print its run.")
+    p.add_argument("--expect-sha", help="Refuse to start unless release/candidate is at this commit.")
+    p.add_argument("--timeout", type=int, default=300, help="Seconds to wait for the run to appear (default 300).")
+    p.add_argument("--interval", type=int, default=10)
+    p.set_defaults(func=cmd_start_build)
+
     p = sub.add_parser("find-run", help="Wait for a matching workflow run and print it.")
     p.add_argument("--workflow", required=True, help="Workflow file name, e.g. rest-daemon-release.yml.")
-    p.add_argument("--event", help="push, workflow_run, workflow_dispatch...")
+    p.add_argument("--event", help="workflow_dispatch, workflow_run, push...")
     p.add_argument("--sha", help="Head commit of the run.")
     p.add_argument("--title", help="Exact run display title.")
     p.add_argument("--created-after", help="ISO-8601 UTC time; older runs are ignored.")
@@ -493,6 +576,8 @@ def main():
     p.add_argument("--interval", type=int, default=60, help="Seconds between polls (default 60).")
     p.add_argument("--keep-going", action="store_true",
                    help="Do not stop at the first failed job; wait for the whole run.")
+    p.add_argument("--approve", action="store_true",
+                   help="Approve each release-build environment review the run waits for.")
     p.add_argument("--log-lines", type=int, default=40)
     p.set_defaults(func=cmd_watch)
 

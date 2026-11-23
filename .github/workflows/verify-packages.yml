@@ -55,6 +55,8 @@ jobs:
       run_id: ${{ steps.pick.outputs.run_id }}
       sha: ${{ steps.pick.outputs.sha }}
       version: ${{ steps.version.outputs.version }}
+      # Empty unless the build run signed its macOS packages.
+      macos_team_id: ${{ steps.signed.outputs.team_id }}
 
     steps:
       - name: Resolve Build Run
@@ -87,6 +89,29 @@ jobs:
           SHA=$(gh run view "$RUN_ID" -R "$REPO" --json headSha --jq .headSha)
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
           echo "sha=$SHA"       >> "$GITHUB_OUTPUT"
+
+      # sign-macos.yml leaves an artifact named macos-signed-<Team ID> in a run
+      # whose macOS packages it signed. Its presence is what makes the macOS
+      # legs require signatures from that team; without it they check none
+      # (an older build, or one started by hand without sign).
+      - name: Detect Signed macOS Packages
+        id: signed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ steps.pick.outputs.run_id }}
+        run: |
+          set -euo pipefail
+          NAME=$(gh api --paginate "repos/$REPO/actions/runs/$RUN_ID/artifacts" \
+            --jq '.artifacts[].name | select(startswith("macos-signed-"))')
+          NAME="${NAME%%$'\n'*}"
+          if [ -n "$NAME" ]; then
+            TEAM_ID="${NAME#macos-signed-}"
+            echo "==> macOS packages are signed by team $TEAM_ID"
+            echo "team_id=$TEAM_ID" >> "$GITHUB_OUTPUT"
+          else
+            echo "==> macOS packages are not signed"
+          fi
 
       - name: Read Version At That Commit
         uses: actions/checkout@v4
@@ -206,6 +231,7 @@ jobs:
       - name: Verify Package
         env:
           EXPECT_VERSION: ${{ needs.resolve.outputs.version }}
+          EXPECT_TEAM_ID: ${{ runner.os == 'macOS' && needs.resolve.outputs.macos_team_id || '' }}
         run: |
           chmod +x tools/release/verify_package.sh
           tools/release/verify_package.sh "${{ steps.unpack.outputs.root }}"

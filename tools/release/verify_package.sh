@@ -30,6 +30,9 @@
 #   EXPECT_VERSION     assert `--version` reports exactly this version
 #   ALLOW_SYSTEM_LIBS  extended regex of further dependencies allowed from the
 #                      system (matched against the whole dependency string)
+#   EXPECT_TEAM_ID     macOS: assert every binary is signed by this team, with
+#                      the hardened runtime, and notarized (Gatekeeper accepts
+#                      it), and that mariadb-restd has the allow-jit entitlement
 #
 # Every check runs even after one fails, so a single run reports the full
 # picture rather than only the first problem. Exits non-zero if any check
@@ -438,6 +441,86 @@ else
           printf "%s|%s|%s%s\n", d, label, ex[d], more
         }
       }' | sort)
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# Code signatures, for a signed macOS package (EXPECT_TEAM_ID set, see
+# .github/workflows/sign-macos.yml). As in MariaDB Shell's verify_package.sh.
+#
+# Every binary must be signed by the expected team with the hardened runtime:
+# under it, a binary only loads libraries signed by its own team, so one file
+# signed differently breaks whatever loads it. Gatekeeper is asked about each
+# of them too. Its verdict needs Apple's notarization record, which it looks up
+# online, so this is what proves notarization covered them.
+#
+# mariadb-restd must also carry com.apple.security.cs.allow-jit. Without it the
+# JIT executor's compilations fail and MRS scripts still run, interpreted
+# only, so nothing else here would notice.
+# ---------------------------------------------------------------------------
+EXPECT_TEAM_ID="${EXPECT_TEAM_ID:-}"
+if [ -n "$EXPECT_TEAM_ID" ]; then
+  section "Code signatures"
+  if [ "$(uname -s)" != "Darwin" ]; then
+    skip "binaries signed by team $EXPECT_TEAM_ID" "signatures are only checked on macOS"
+  else
+    SIG_BAD="$WORK/sig-bad"
+    : > "$SIG_BAD"
+    SIGNED=0
+    while IFS= read -r bin; do
+      [ -n "$bin" ] || continue
+      # object files cannot be signed, and the notary service does not ask
+      # for them to be
+      case "$(file -b "$bin")" in *object*) continue ;; esac
+      SIGNED=$((SIGNED + 1))
+      rel="${bin#"$ROOT"/}"
+      if ! codesign --verify --strict "$bin" 2>/dev/null; then
+        printf '%s\tinvalid signature\n' "$rel" >> "$SIG_BAD"; continue
+      fi
+      info="$(codesign -dv "$bin" 2>&1)"
+      team="$(printf '%s\n' "$info" | sed -n 's/^TeamIdentifier=//p')"
+      if [ "$team" != "$EXPECT_TEAM_ID" ]; then
+        printf '%s\tTeam ID %s\n' "$rel" "${team:-none}" >> "$SIG_BAD"; continue
+      fi
+      if ! printf '%s\n' "$info" | grep -Eq '^CodeDirectory .*flags=0x[0-9a-f]+\([^)]*runtime'; then
+        printf '%s\tno hardened runtime\n' "$rel" >> "$SIG_BAD"; continue
+      fi
+      # `--type execute` assesses app bundles only and rejects every
+      # command-line binary; `--type open` with the primary-signature context
+      # assesses the file's own signature.
+      GK="$(spctl --assess --type open --context context:primary-signature -vv "$bin" 2>&1 || true)"
+      if ! printf '%s\n' "$GK" | grep -q ': accepted' \
+         || ! printf '%s\n' "$GK" | grep -qx 'source=Notarized Developer ID'; then
+        printf '%s\tnot accepted by Gatekeeper as notarized\n' "$rel" >> "$SIG_BAD"
+      fi
+    done < <(list_binaries)
+
+    if [ "$SIGNED" -eq 0 ]; then
+      fail "binaries signed by team $EXPECT_TEAM_ID" "found no Mach-O files under $ROOT"
+    elif [ ! -s "$SIG_BAD" ]; then
+      pass "all $SIGNED binaries signed by team $EXPECT_TEAM_ID, hardened runtime, notarized"
+    else
+      # grouped by problem: an unsigned build step usually leaves many files
+      while IFS='|' read -r problem count examples; do
+        fail "binaries signed by team $EXPECT_TEAM_ID: $problem" "$count: $examples"
+      done < <(sort "$SIG_BAD" | awk -F'\t' '
+        { n[$2]++; if (n[$2] <= 3) ex[$2] = ex[$2] (ex[$2] == "" ? "" : ", ") $1 }
+        END {
+          for (p in n) {
+            more = (n[p] > 3) ? sprintf(", +%d more", n[p] - 3) : ""
+            label = (n[p] == 1) ? "1 binary" : sprintf("%d binaries", n[p])
+            printf "%s|%s|%s%s\n", p, label, ex[p], more
+          }
+        }' | sort)
+    fi
+
+    if codesign -d --entitlements - --xml "$RESTD" 2>/dev/null \
+         | grep -q 'com\.apple\.security\.cs\.allow-jit'; then
+      pass "bin/mariadb-restd has the allow-jit entitlement"
+    else
+      fail "bin/mariadb-restd has the allow-jit entitlement" \
+        "without it MRS scripts run interpreted only (packaging/macos/entitlements.plist)"
+    fi
   fi
 fi
 
