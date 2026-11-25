@@ -425,6 +425,16 @@ with REST SQL and checks that it is served; optionally uploads and calls an
 MRS script (`MRS_SCRIPTS_DIR`, needs `SHELL_PLUGINS`). See the script for its
 parameters.
 
+**Continuous integration** (`.github/workflows/rest-daemon-ci.yml`): every
+pull request (unless its title has `[bypass-ci]`) starts MariaDB Shell's
+self-hosted runner (`devtools-ci-start.yml`), builds restd with the JIT
+executor and the tests, and runs CTest, the live-server unit tests, the MRS
+functional suite and the smoke test against the MariaDB server package and
+the shell the runner keeps in `~/.cache/ci`. Objects are cached with ccache in
+`~/.cache/ci/ccache-restd`, the JIT executor library in
+`~/.cache/ci/jit-executor/<key>` (rebuilt only when `ext/polyglot` or
+`cmake/bootstrap_jit_executor.cmake` change).
+
 ## Repository layout
 
 | | |

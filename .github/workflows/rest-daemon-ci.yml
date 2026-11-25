@@ -1,0 +1,275 @@
+name: Rest-Daemon-CI
+
+# Builds mariadb-restd with the JIT executor and the tests, and runs every test
+# suite: CTest (unit and component tests), the live-server unit tests, the MRS
+# functional suite (pytest) and the smoke test.
+#
+# Runs on the self-hosted runner MariaDB Shell's CI uses, and reuses what that
+# runner keeps in ~/.cache/ci: the MariaDB server package of the weekly server
+# build (server-build.yml in the shell repository) and the shell tarball
+# MariaDB-Shell-CI-Publish installs there.
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      test:
+        description: 'Run the tests'
+        type: boolean
+        required: false
+        default: true
+  workflow_call:
+    inputs:
+      test:
+        description: 'Run the tests'
+        type: boolean
+        required: false
+        default: true
+
+jobs:
+  ensure-runner:
+      # A PR tagged [bypass-ci] skips every build step, so there is no point
+      # spinning the self-hosted runner up for it.
+      if: ${{ !contains(github.event.pull_request.title, '[bypass-ci]') }}
+      uses: ./.github/workflows/devtools-ci-start.yml
+      secrets: inherit
+
+  build:
+    name: Rest-Daemon-CI-Verification
+
+    needs: ensure-runner
+
+    # As in MariaDB-Shell-CI: ensure-runner is skipped for a [bypass-ci] PR and
+    # for a fork PR (no access to the GCP secrets), and both still want this
+    # job to run, on a hosted runner. Only a runner that failed to start stops
+    # it.
+    if: ${{ always() && needs.ensure-runner.result != 'failure' && needs.ensure-runner.result != 'cancelled' }}
+
+    # The runner is chosen before the steps' `if:` are evaluated, so the paths
+    # that never start the VM have to land on a hosted runner here, or the job
+    # waits for a self-hosted runner that isn't coming.
+    runs-on: ${{ (github.event.pull_request.head.repo.fork || contains(github.event.pull_request.title, '[bypass-ci]')) && 'ubuntu-latest' || 'self-hosted' }}
+
+    env:
+      BUILD_DIR: build
+      RUN_BUILD: ${{ !contains(github.event.pull_request.title, '[bypass-ci]') }}
+      # A pull_request run has no inputs: pull requests always test.
+      RUN_TESTS: ${{ !contains(github.event.pull_request.title, '[bypass-ci]')
+        && (github.event_name == 'pull_request' || inputs.test) }}
+
+    steps:
+      - name: Skip CI Notice
+        if: contains(github.event.pull_request.title, '[bypass-ci]')
+        run: echo "Bypassing CI checks due to PR title tag."
+
+      # ========================================
+      # 0. CHECKOUT (MUST BE FIRST)
+      # ========================================
+      - name: Checkout
+        if: env.RUN_BUILD == 'true'
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        if: env.RUN_BUILD == 'true'
+        run: |
+          set -euo pipefail
+          # ICU is the one library restd takes from the system; Connector/C and
+          # OpenSSL come from vcpkg (vcpkg.json).
+          missing=()
+          command -v ccache >/dev/null 2>&1 || missing+=(ccache)
+          [ -e /usr/include/unicode/uchar.h ] || missing+=(libicu-dev)
+          python3 -c 'import ensurepip' 2>/dev/null || missing+=(python3-venv)
+          if [ ${#missing[@]} -gt 0 ]; then
+            sudo apt-get update && sudo apt-get install -y "${missing[@]}"
+          fi
+
+      # ==========
+      # 1. CCACHE
+      # ==========
+      - name: Setup ccache
+        if: env.RUN_BUILD == 'true'
+        run: |
+          # An absolute path: nothing expands a '~' that arrives through the
+          # environment. A tree of its own, so that the shell's and the
+          # server's builds don't evict restd's objects.
+          echo "CCACHE_DIR=$HOME/.cache/ci/ccache-restd" >> "$GITHUB_ENV"
+
+      # A step of its own: a variable exported through $GITHUB_ENV only reaches
+      # the steps that follow.
+      - name: Prime ccache
+        if: env.RUN_BUILD == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p "$CCACHE_DIR"
+          ccache --set-config=max_size=5G
+          ccache --zero-stats
+
+      # =====================
+      # 2. JIT EXECUTOR CACHE
+      # =====================
+      # The JIT executor library takes minutes to build (GraalVM native-image)
+      # and changes rarely, so it is kept in ~/.cache/ci/jit-executor/<key>.
+      # The key covers everything the library is built from: the tracked
+      # files of ext/polyglot (the poms, the patch, module-info.java), the
+      # versions and checksums in cmake/bootstrap_jit_executor.cmake, and the
+      # machine. A hit hands the cached directory to configure as
+      # MRS_JIT_EXECUTOR_LIB; a miss configures with WITH_JIT_EXECUTOR=ON and
+      # the library is cached once the build has linked against it.
+      #
+      # Self-hosted only: a hosted runner has no ~/.cache/ci to read, is wiped
+      # after the job, and has less memory than native-image's 20 GB heap, so
+      # there restd is built without the JIT executor.
+      - name: Look up the JIT executor
+        id: jit
+        if: env.RUN_BUILD == 'true' && runner.environment == 'self-hosted'
+        run: |
+          set -euo pipefail
+          KEY=$( { uname -m
+                   git rev-parse HEAD:ext/polyglot
+                   git rev-parse HEAD:cmake/bootstrap_jit_executor.cmake
+                 } | sha256sum | cut -c1-16 )
+          DIR="$HOME/.cache/ci/jit-executor/$KEY"
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          if [ -f "$DIR/polyglot_api.h" ] && \
+             [ -n "$(find "$DIR" -maxdepth 1 -name 'libjitexecutor.*' -print -quit)" ]; then
+            echo "Using the cached JIT executor $DIR"
+            echo "hit=true" >> "$GITHUB_OUTPUT"
+            # the pruning below goes by mtime: keep a library in use
+            touch "$DIR"
+          else
+            echo "No cached JIT executor for key $KEY: building it"
+            echo "hit=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ============
+      # 3. CONFIGURE
+      # ============
+      - name: Configure mariadb-restd
+        if: env.RUN_BUILD == 'true'
+        run: |
+          set -euo pipefail
+          JIT_ARGS=()
+          if [ "${{ steps.jit.outputs.hit }}" = "true" ]; then
+            JIT_ARGS=(-DMRS_JIT_EXECUTOR_LIB="${{ steps.jit.outputs.dir }}")
+          elif [ "${{ runner.environment }}" = "self-hosted" ]; then
+            # GraalVM, Maven and the Graal sources are kept across runs too,
+            # so a rebuild of the library doesn't download them again.
+            JIT_ARGS=(-DWITH_JIT_EXECUTOR=ON -DRESTD_DEPS_DIR="$HOME/.cache/ci/restd-deps")
+          fi
+          cmake -S . -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DWITH_UNIT_TESTS=ON \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            "${JIT_ARGS[@]}"
+
+      # ============
+      # 4. BUILD
+      # ============
+      - name: Build mariadb-restd
+        id: build
+        if: env.RUN_BUILD == 'true'
+        run: |
+          # a job count, never a bare --parallel (unlimited jobs exhaust the
+          # runner's memory on the link steps)
+          cmake --build "$BUILD_DIR" --parallel "$(nproc)"
+
+      - name: Report ccache statistics
+        if: always() && env.RUN_BUILD == 'true'
+        run: ccache --show-stats || true
+
+      # After the build, so only a library restd linked against is cached.
+      # Assembled aside and moved into place, so a cancelled run can't leave
+      # a half-copied library under a key that later runs would trust.
+      - name: Cache the JIT executor
+        if: steps.jit.outputs.hit == 'false' && steps.build.outcome == 'success'
+        run: |
+          set -euo pipefail
+          SRC=ext/polyglot/polyglot-nativeapi-native-library/target
+          DIR="${{ steps.jit.outputs.dir }}"
+          CACHE=$(dirname "$DIR")
+          TMP="$CACHE/.tmp.$GITHUB_RUN_ID.$GITHUB_RUN_ATTEMPT"
+          rm -rf "$TMP"
+          mkdir -p "$TMP"
+          cp -P "$SRC"/libjitexecutor.* "$SRC"/*.h "$TMP/"
+          rm -rf "${DIR:?}"
+          mv "$TMP" "$DIR"
+          echo "Cached the JIT executor in $DIR"
+          # keys no run has used for a month, and the leftovers of cancelled
+          # runs
+          find "$CACHE" -mindepth 1 -maxdepth 1 -type d -mtime +30 -exec rm -rf {} + || true
+
+      # =============================
+      # 5. SETUP THE TEST ENVIRONMENT
+      # =============================
+      # The suites that need a server and the shell take them from
+      # ~/.cache/ci, so they run on the self-hosted runner only.
+      - name: Setup test environment
+        id: testenv
+        if: env.RUN_TESTS == 'true' && steps.build.outcome == 'success' && runner.environment == 'self-hosted'
+        run: |
+          set -euo pipefail
+
+          # the server package of the weekly server build
+          SERVER=$(find ~/.cache/ci -mindepth 1 -maxdepth 1 -type d -name 'mariadb*' | head -n 1)
+          [ -x "$SERVER/bin/mariadbd" ] || { echo "No MariaDB server package in ~/.cache/ci" >&2; exit 1; }
+          echo "MARIADB_PACKAGE_DIR=$SERVER" >> "$GITHUB_ENV"
+          echo "Server: $SERVER ($("$SERVER/bin/mariadbd" --version))"
+
+          # the shell MariaDB-Shell-CI-Publish installed
+          SHELL_TGZ=$(find ~/.cache/ci -maxdepth 1 -type f -name 'mariadb-shell*.tar.gz' | head -n 1)
+          [ -n "$SHELL_TGZ" ] || { echo "No mariadb-shell tarball in ~/.cache/ci" >&2; exit 1; }
+          rm -rf "$RUNNER_TEMP/shell"
+          mkdir -p "$RUNNER_TEMP/shell"
+          tar -xzf "$SHELL_TGZ" -C "$RUNNER_TEMP/shell"
+          MYSQLSH=$(find "$RUNNER_TEMP/shell" -path '*/bin/mariadb-shell' -type f | head -n 1)
+          echo "MYSQLSH=$MYSQLSH" >> "$GITHUB_ENV"
+          echo "Shell: $MYSQLSH ($("$MYSQLSH" --version))"
+
+          python3 -m venv "$BUILD_DIR/mrs-venv"
+          "$BUILD_DIR/mrs-venv/bin/pip" install -q -r tests/mrs/requirements.txt pytest-xdist
+
+      # ============
+      # 6. TESTS
+      # ============
+      # Each suite runs whenever the build succeeded, whatever the suites
+      # before it did, so one failing suite doesn't hide the others' results.
+      - name: Unit and component tests (CTest)
+        if: always() && env.RUN_TESTS == 'true' && steps.build.outcome == 'success'
+        run: ctest --test-dir "$BUILD_DIR" --output-on-failure -j "$(nproc)" --output-junit ctest-junit.xml
+
+      # The two special_types cases are the known JSON-string write limitation
+      # (docs/mariadb-differences.md).
+      - name: Live-server unit tests
+        if: always() && steps.testenv.outcome == 'success'
+        env:
+          RUN_WITH_LIVE_MYSQLD: 1
+        run: |
+          "$BUILD_DIR/runtime_output_directory/routertest_mrs_plugin" \
+            --gtest_filter='DatabaseQuery*.*:JsonMapping*.*:-DatabaseQueryPut.special_types:DatabaseQueryPost.special_types' \
+            --gtest_output=xml:live-tests.xml
+
+      - name: MRS functional suite (pytest)
+        if: always() && steps.testenv.outcome == 'success'
+        run: |
+          MRSD_BUILD="$PWD/$BUILD_DIR" \
+            "$BUILD_DIR/mrs-venv/bin/python" -m pytest tests/mrs -q -n 4 \
+            --junitxml=mrs-suite.xml
+
+      - name: Smoke test
+        if: always() && steps.testenv.outcome == 'success'
+        run: MRSD_BUILD="$PWD/$BUILD_DIR" tools/smoke/run_smoke.sh "$RUNNER_TEMP/smoke"
+
+      # ============
+      # 7. ARCHIVE
+      # ============
+      - name: Archive test results
+        if: always() && env.RUN_TESTS == 'true' && steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            ${{ env.BUILD_DIR }}/ctest-junit.xml
+            ${{ env.BUILD_DIR }}/Testing/Temporary/LastTest*.log
+            live-tests.xml
+            mrs-suite.xml
+          if-no-files-found: warn
+          retention-days: 7
