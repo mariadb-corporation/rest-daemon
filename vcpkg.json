@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "name": "mariadb-restd",
-  "builtin-baseline": "18919708ee85a93da45f7eaa50f7998d0d0b1b7b",
+  "builtin-baseline": "98d7375b79be7551ac3db6fbe668a08da9b1cac5",
   "dependencies": [
     {
       "name": "libmariadb",
@@ -22,7 +22,8 @@
   "overrides": [
     {
       "name": "openssl",
-      "version": "3.6.3"
+      "version": "3.6.5",
+      "port-version": 2
     }
   ]
 }

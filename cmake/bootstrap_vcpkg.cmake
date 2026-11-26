@@ -38,7 +38,10 @@
 # vcpkg) or ../vcpkg (the checkout MariaDB Shell uses, when the two are cloned
 # side by side), in that order, and cloned there at the "builtin-baseline"
 # commit of vcpkg.json if missing; a directory that exists and isn't a vcpkg
-# checkout is never replaced.
+# checkout is never replaced. An existing checkout follows the baseline: each
+# configure, also of an existing build directory, moves it to the baseline
+# commit (fetching it if needed) and bootstraps vcpkg again when that commit
+# needs a newer executable. -DVCPKG_GIT_TAG=<ref> pins it instead.
 # A vcpkg toolchain file passed with -DCMAKE_TOOLCHAIN_FILE is used as is.
 
 IF(NOT DEFINED WITH_VCPKG_TRIPLET AND NOT MARIADB_CONNECTOR_DIR)
@@ -84,7 +87,13 @@ SET(VCPKG_INSTALLED_DIR "${CMAKE_BINARY_DIR}/vcpkg_installed"
 SET(VCPKG_INSTALLED_PREFIX "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}"
   CACHE PATH "Per-triplet vcpkg install prefix of this build" FORCE)
 
-IF(CMAKE_TOOLCHAIN_FILE MATCHES "[Vv]cpkg")
+# The toolchain this file derived itself (cached at the end) is not the
+# caller's: a re-configure goes through the steps below again, so a baseline
+# bump in vcpkg.json moves the checkout and updates the vcpkg executable in an
+# existing build directory too, rather than building against the old ports.
+IF(CMAKE_TOOLCHAIN_FILE MATCHES "[Vv]cpkg"
+   AND NOT (VCPKG_ROOT AND
+            CMAKE_TOOLCHAIN_FILE STREQUAL "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"))
   MESSAGE(STATUS "vcpkg: using ${CMAKE_TOOLCHAIN_FILE}, "
                  "triplet ${VCPKG_TARGET_TRIPLET}")
   RETURN()
@@ -94,7 +103,20 @@ ENDIF()
 # versions and vcpkg's port scripts are from the same commit
 SET(VCPKG_GIT_REPOSITORY "https://github.com/microsoft/vcpkg.git"
   CACHE STRING "Git URL of vcpkg, cloned if there is no checkout")
-IF(NOT VCPKG_GIT_TAG)
+#
+# The baseline is read on every configure, so VCPKG_GIT_TAG follows a bump of
+# it in an existing build directory. Only a ref the caller pinned
+# (-DVCPKG_GIT_TAG=...) is left alone. _VCPKG_GIT_TAG_DERIVED remembers what
+# this file derived, which is how the two are told apart. A build directory
+# configured before it existed holds the baseline it derived back then: a full
+# commit id, with VCPKG_ROOT cached.
+SET(_vcpkg_follow_baseline FALSE)
+STRING(LENGTH "${VCPKG_GIT_TAG}" _vcpkg_tag_length)
+IF(NOT VCPKG_GIT_TAG
+   OR VCPKG_GIT_TAG STREQUAL "${_VCPKG_GIT_TAG_DERIVED}"
+   OR (NOT DEFINED _VCPKG_GIT_TAG_DERIVED AND VCPKG_ROOT
+       AND VCPKG_GIT_TAG MATCHES "^[0-9a-fA-F]+$" AND _vcpkg_tag_length EQUAL 40))
+  SET(_vcpkg_follow_baseline TRUE)
   FILE(READ "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg.json" _vcpkg_manifest)
   STRING(JSON _vcpkg_baseline ERROR_VARIABLE _vcpkg_json_error
          GET "${_vcpkg_manifest}" "builtin-baseline")
@@ -103,9 +125,11 @@ IF(NOT VCPKG_GIT_TAG)
       "No \"builtin-baseline\" commit in ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg.json; "
       "pass -DVCPKG_GIT_TAG=<commit>")
   ENDIF()
+  SET(VCPKG_GIT_TAG "${_vcpkg_baseline}"
+    CACHE STRING "Git ref (branch, tag or commit) of vcpkg to clone" FORCE)
+  SET(_VCPKG_GIT_TAG_DERIVED "${_vcpkg_baseline}" CACHE INTERNAL
+    "VCPKG_GIT_TAG as derived from vcpkg.json (anything else was pinned)")
 ENDIF()
-SET(VCPKG_GIT_TAG "${_vcpkg_baseline}"
-  CACHE STRING "Git ref (branch, tag or commit) of vcpkg to clone")
 
 # The environment's VCPKG_ROOT only when it is a vcpkg checkout: a Visual
 # Studio developer environment sets it to the vcpkg bundled with Visual
@@ -171,9 +195,98 @@ IF(NOT EXISTS "${_vcpkg_root}/.git")
       MESSAGE(FATAL_ERROR "Failed to check out vcpkg ${VCPKG_GIT_TAG}")
     ENDIF()
   ENDIF()
+ELSEIF(_vcpkg_follow_baseline)
+  # A checkout cloned for an earlier baseline stays there unless moved: vcpkg
+  # would then build the old ports, or, once the new baseline needs a newer
+  # vcpkg executable, fail outright. Move it to the baseline commit, fetching
+  # it if the checkout predates it. A pinned ref is the caller's business, and
+  # a checkout with local changes is not ours to move.
+  #
+  # The checkout may be shared (../vcpkg is MariaDB Shell's too): each
+  # configure moves it to its own baseline. vcpkg reads older baselines from
+  # git history, so a build directory still on one keeps working.
+  FIND_PACKAGE(Git REQUIRED)
+  EXECUTE_PROCESS(
+    COMMAND "${GIT_EXECUTABLE}" -C "${_vcpkg_root}" rev-parse HEAD
+    OUTPUT_VARIABLE _vcpkg_head OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE _rc)
+  STRING(TOLOWER "${VCPKG_GIT_TAG}" _vcpkg_want)
+  IF(_rc EQUAL 0 AND NOT _vcpkg_head STREQUAL _vcpkg_want)
+    EXECUTE_PROCESS(
+      COMMAND "${GIT_EXECUTABLE}" -C "${_vcpkg_root}" status --porcelain
+              --untracked-files=no
+      OUTPUT_VARIABLE _vcpkg_dirty OUTPUT_STRIP_TRAILING_WHITESPACE)
+    IF(_vcpkg_dirty)
+      MESSAGE(WARNING
+        "${_vcpkg_root} is at ${_vcpkg_head}, not at the vcpkg.json baseline "
+        "${VCPKG_GIT_TAG}, and has local changes, so it is left where it is. "
+        "Commit or discard them and re-configure, or pass -DVCPKG_GIT_TAG to "
+        "pin the checkout as it is.")
+    ELSE()
+      EXECUTE_PROCESS(
+        COMMAND "${GIT_EXECUTABLE}" -C "${_vcpkg_root}" cat-file -e
+                "${VCPKG_GIT_TAG}^{commit}"
+        RESULT_VARIABLE _rc ERROR_QUIET)
+      IF(NOT _rc EQUAL 0)
+        # By id first: a clone made with --branch fetches only that branch
+        # otherwise. GitHub serves any reachable commit by id; a server that
+        # does not gets the plain fetch.
+        MESSAGE(STATUS "vcpkg: fetching baseline ${VCPKG_GIT_TAG}")
+        EXECUTE_PROCESS(
+          COMMAND "${GIT_EXECUTABLE}" -C "${_vcpkg_root}" fetch origin "${VCPKG_GIT_TAG}"
+          RESULT_VARIABLE _rc ERROR_QUIET)
+        IF(NOT _rc EQUAL 0)
+          EXECUTE_PROCESS(
+            COMMAND "${GIT_EXECUTABLE}" -C "${_vcpkg_root}" fetch origin)
+        ENDIF()
+        EXECUTE_PROCESS(
+          COMMAND "${GIT_EXECUTABLE}" -C "${_vcpkg_root}" cat-file -e
+                  "${VCPKG_GIT_TAG}^{commit}"
+          RESULT_VARIABLE _rc ERROR_QUIET)
+        IF(NOT _rc EQUAL 0)
+          MESSAGE(FATAL_ERROR
+            "Could not fetch the vcpkg baseline ${VCPKG_GIT_TAG} into "
+            "${_vcpkg_root} from its 'origin' remote. Fetch it there yourself, "
+            "or pass -DVCPKG_GIT_TAG to pin the checkout as it is.")
+        ENDIF()
+      ENDIF()
+      MESSAGE(STATUS "vcpkg: moving ${_vcpkg_root} to baseline "
+                     "${VCPKG_GIT_TAG} (was ${_vcpkg_head})")
+      EXECUTE_PROCESS(
+        COMMAND "${GIT_EXECUTABLE}" -C "${_vcpkg_root}"
+                -c advice.detachedHead=false checkout -q "${VCPKG_GIT_TAG}"
+        RESULT_VARIABLE _rc)
+      IF(NOT _rc EQUAL 0)
+        MESSAGE(FATAL_ERROR "Failed to check out vcpkg ${VCPKG_GIT_TAG}")
+      ENDIF()
+    ENDIF()
+  ENDIF()
 ENDIF()
 
+# Bootstrapped unless the executable is there and is the release this checkout
+# asks for. Each vcpkg commit names its tool release in
+# scripts/vcpkg-tool-metadata.txt; a checkout moved to a newer baseline usually
+# needs a newer one (an older executable rejects the newer tool data:
+# "document schema version 2 is not supported").
+SET(_vcpkg_need_bootstrap FALSE)
 IF(NOT EXISTS "${_vcpkg_exe}")
+  SET(_vcpkg_need_bootstrap TRUE)
+ELSEIF(EXISTS "${_vcpkg_root}/scripts/vcpkg-tool-metadata.txt")
+  FILE(STRINGS "${_vcpkg_root}/scripts/vcpkg-tool-metadata.txt" _vcpkg_tool_tag
+       REGEX "^VCPKG_TOOL_RELEASE_TAG=")
+  STRING(REGEX REPLACE "^VCPKG_TOOL_RELEASE_TAG=" "" _vcpkg_tool_tag
+         "${_vcpkg_tool_tag}")
+  EXECUTE_PROCESS(
+    COMMAND "${_vcpkg_exe}" version
+    OUTPUT_VARIABLE _vcpkg_exe_version ERROR_QUIET RESULT_VARIABLE _rc)
+  IF(_vcpkg_tool_tag AND NOT (_rc EQUAL 0 AND
+                              _vcpkg_exe_version MATCHES "version ${_vcpkg_tool_tag}"))
+    MESSAGE(STATUS "vcpkg: the executable is not release ${_vcpkg_tool_tag}, "
+                   "which this checkout needs: bootstrapping it again")
+    SET(_vcpkg_need_bootstrap TRUE)
+  ENDIF()
+ENDIF()
+IF(_vcpkg_need_bootstrap)
   MESSAGE(STATUS "vcpkg: bootstrapping ${_vcpkg_root}")
   IF(CMAKE_HOST_WIN32)
     SET(_vcpkg_bootstrap_cmd cmd /c "${_vcpkg_bootstrap}" -disableMetrics)
