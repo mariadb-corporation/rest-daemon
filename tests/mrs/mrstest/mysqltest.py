@@ -104,6 +104,11 @@ class Parser:
         cmds: list[Command] = []
         stmt: list[str] = []
         stmt_line = 0
+        # the quote state at the end of "\n".join(stmt), kept up to date line
+        # by line: rescanning the whole statement for every line made long
+        # statements (the multi-thousand-line INSERTs of sakila-data.sql)
+        # quadratic, minutes of CPU per file
+        qstate: tuple[str | None, int] = (None, 0)
         while self.pos < len(self.lines):
             raw = self.lines[self.pos]
             lineno = self.pos + 1
@@ -159,15 +164,17 @@ class Parser:
             # statement (it shows in the echoed query), except inside quotes
             # and right after a line that ends with a closing quote (verified
             # against mysqltest; a side effect of its read_line() states)
-            prev = "\n".join(stmt)
-            if stmt and (self._open_quote(prev) or
-                         (prev.endswith(("'", '"', "`")) and
-                          not self._open_quote(prev))):
-                stmt.append(raw)
+            if stmt and (qstate[0] or stmt[-1].endswith(("'", '"', "`"))):
+                piece = raw
             else:
-                stmt.append(raw.lstrip())
-            joined = "\n".join(stmt).strip()
-            first = re.split(r"[\s(]", joined, maxsplit=1)[0].lower()
+                piece = raw.lstrip()
+            before = qstate
+            qstate = self._scan_quotes(("\n" if stmt else "") + piece, *qstate)
+            stmt.append(piece)
+            # stmt[0] starts with the statement's first non-blank character
+            first = re.split(r"[\s(]", stmt[0], maxsplit=1)[0].lower()
+            if first in ("if", "while", "perl", "delimiter"):
+                joined = "\n".join(stmt).strip()
             if first in ("if", "while"):
                 cond = self._complete_condition(joined[len(first):])
                 if cond is None:
@@ -177,6 +184,7 @@ class Parser:
                 cmd.body = self._block_after_condition(brace_seen=brace)
                 cmds.append(cmd)
                 stmt = []
+                qstate = (None, 0)
                 continue
             if first in ("perl",) and joined.endswith(";"):
                 arg = joined[len("perl"):].rstrip(";").strip()
@@ -184,6 +192,7 @@ class Parser:
                 cmd.heredoc = self._heredoc(arg or "EOF")
                 cmds.append(cmd)
                 stmt = []
+                qstate = (None, 0)
                 continue
             if first == "delimiter":
                 # "DELIMITER %%;" - the command is terminated by the current
@@ -193,8 +202,10 @@ class Parser:
                     arg = arg[: -len(self.delimiter)]
                 self.delimiter = arg
                 stmt = []
+                qstate = (None, 0)
                 continue
-            if self._ends_with_delimiter(joined):
+            if self._stmt_ends_with_delimiter(stmt, before):
+                joined = "\n".join(stmt).strip()
                 text = joined[: -len(self.delimiter)].strip()
                 word = re.split(r"[\s(]", text, maxsplit=1)[0]
                 if word.lower() in KNOWN_COMMANDS and word.lower() not in ("end",):
@@ -209,6 +220,7 @@ class Parser:
                     cmds.append(Command("sql", text, self.file, stmt_line,
                                         delimiter=self.delimiter))
                 stmt = []
+                qstate = (None, 0)
                 continue
         if stmt:
             raise ScriptFailed(f"{self.file}: unterminated statement at line {stmt_line}")
@@ -217,11 +229,14 @@ class Parser:
         return cmds, False
 
     @staticmethod
-    def _open_quote(text: str):
-        """the quote character still open at the end of text, or None"""
-        quote = None
-        i = 0
-        while i < len(text):
+    def _scan_quotes(text: str, quote: str | None = None,
+                     skip: int = 0) -> tuple[str | None, int]:
+        """the quote state at the end of text, starting from (quote, skip):
+        the quote character still open, or None, and whether the character
+        after text is escaped (1, a backslash inside quotes ended text) or
+        not (0). Scanning a text in pieces gives the state of the whole."""
+        i, n = skip, len(text)
+        while i < n:
             ch = text[i]
             if quote:
                 if ch == "\\":
@@ -232,7 +247,27 @@ class Parser:
             elif ch in "'\"`":
                 quote = ch
             i += 1
-        return quote
+        return quote, i - n
+
+    def _stmt_ends_with_delimiter(self, stmt: list[str],
+                                  before: tuple[str | None, int]) -> bool:
+        """_ends_with_delimiter("\\n".join(stmt).strip()), scanning only the
+        last line: before is the quote state at the end of the lines before
+        it"""
+        last = stmt[-1].rstrip()
+        if not last:
+            # the stripped statement is the one of the line before, which
+            # didn't end with the delimiter
+            return False
+        d = self.delimiter
+        if len(last) < len(d):
+            # the delimiter would reach into the lines before
+            return self._ends_with_delimiter("\n".join(stmt).strip())
+        if not last.endswith(d):
+            return False
+        head = last[: len(last) - len(d)]
+        quote, _ = self._scan_quotes(("\n" if len(stmt) > 1 else "") + head, *before)
+        return quote is None
 
     def _ends_with_delimiter(self, text: str) -> bool:
         """text ends with the delimiter, outside of quotes (like mysqltest's
