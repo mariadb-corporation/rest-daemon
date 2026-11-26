@@ -104,6 +104,12 @@ and builds against them, the way MariaDB Shell's `-DWITH_VCPKG_TRIPLET` works
   order. If there is no checkout there, configure clones vcpkg at the
   `builtin-baseline` commit of `vcpkg.json` and bootstraps it; a directory
   that exists and isn't a vcpkg checkout is left alone and configure stops.
+- An existing checkout follows `builtin-baseline`: the next configure, of a
+  new or an existing build directory, moves it to that commit (fetching it if
+  needed) and bootstraps vcpkg again when the commit needs a newer executable.
+  A checkout with local changes is left where it is, with a warning.
+  `-DVCPKG_GIT_TAG=<ref>` opts out: that ref is what a fresh clone checks out,
+  and an existing checkout is not moved.
 - The triplet is the host's dynamic one (`arm64-osx-dynamic`,
   `x64-linux-dynamic`, `x64-windows`, ...), as restd links the shared
   `libmariadb`; choose another with `-DWITH_VCPKG_TRIPLET=<triplet>`.
